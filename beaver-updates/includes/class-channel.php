@@ -287,6 +287,7 @@ final class Beaver_Updates_Channel {
 			$clean[ $slug ] = array(
 				'slug'         => $slug,
 				'name'         => isset( $entry['name'] ) ? sanitize_text_field( (string) $entry['name'] ) : $slug,
+				'description'  => isset( $entry['description'] ) ? sanitize_text_field( (string) $entry['description'] ) : '',
 				'version'      => $version,
 				'package'      => $package,
 				'homepage'     => isset( $entry['homepage'] ) ? esc_url_raw( (string) $entry['homepage'] ) : '',

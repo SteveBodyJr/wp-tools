@@ -1,11 +1,12 @@
 {
     "schema": 1,
-    "updated": "2026-08-09T18:10:42+00:00",
+    "updated": "2026-08-09T18:29:59+00:00",
     "plugins": {
         "beaver-access": {
             "slug": "beaver-access",
             "name": "Beaver Access",
             "version": "1.0.2",
+            "description": "Temporary login links. Give a developer or supporter time-limited access at the role you choose, without sharing a password — self-expiring, single-use by default, fully logged, and revocable in one…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -17,6 +18,7 @@
             "slug": "beaver-ai-chat",
             "name": "Beaver AI Chat",
             "version": "1.6.1",
+            "description": "A customisable AI chat assistant that answers visitor questions using your own site content, captures leads, and hands off to your team. Works with Claude, ChatGPT, DeepSeek, Gemini or any OpenAI-com…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "6.8",
@@ -28,6 +30,7 @@
             "slug": "beaver-alt-text",
             "name": "Beaver Alt Text",
             "version": "1.2.0",
+            "description": "Writes alt text for images that have none, using a vision model. Proposals are reviewed before they are published, human-written alt text is never overwritten, and decorative images are correctly lef…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -39,6 +42,7 @@
             "slug": "beaver-appbar",
             "name": "Beaver App Bar",
             "version": "1.0.0",
+            "description": "Gives a site the bottom tab bar of a phone app. Up to five items — pages, sections, WhatsApp, call, email, a menu sheet or search — fixed to the bottom of the screen on mobile, drawn with its own ico…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -50,6 +54,7 @@
             "slug": "beaver-debug",
             "name": "Beaver Debug",
             "version": "1.1.0",
+            "description": "Records what actually goes wrong on a site you cannot SSH into — PHP fatals with context, JavaScript errors from real visitors, failed API calls, database errors and slow pages — and turns it into a…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -61,6 +66,7 @@
             "slug": "beaver-filemanager",
             "name": "Beaver FileManager",
             "version": "1.1.0",
+            "description": "A full file manager inside wp-admin: browse, search, upload, download, zip, chmod and edit any file on the site with syntax highlighting, PHP syntax checking, automatic backups and a restorable trash.",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -72,6 +78,7 @@
             "slug": "beaver-image-optimizer",
             "name": "Beaver Image Optimizer",
             "version": "1.3.4",
+            "description": "Converts JPEG and PNG uploads to WebP using only the image libraries bundled with PHP and WordPress. Built for shared hosting: no root access, no CLI tools, no external APIs.",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -83,6 +90,7 @@
             "slug": "beaver-pwa",
             "name": "Beaver PWA",
             "version": "1.0.0",
+            "description": "Turns a WordPress site into an installable Progressive Web App: web app manifest, offline service worker, generated app icons and a native-feeling install prompt. No build step, no external services.",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -94,6 +102,7 @@
             "slug": "beaver-shutter",
             "name": "Beaver Shutter",
             "version": "1.0.0",
+            "description": "Takes a site dark and brings it back on command. Visitors get a holding page returning 503 while the front end is closed; you keep full wp-admin the whole time, and one click — or one WP-CLI command…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
@@ -104,13 +113,14 @@
         "beaver-updates": {
             "slug": "beaver-updates",
             "name": "Beaver Updates",
-            "version": "1.0.0",
+            "version": "1.1.0",
+            "description": "Brings the Digital Beaver plugins into Plugins → Updates, so they update in a click like any wordpress.org plugin. Reads one small manifest, cached, no key required.",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
             "author": "Digital Beaver",
             "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-updates",
-            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-updates-1.0.0/beaver-updates-1.0.0.zip"
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-updates-1.1.0/beaver-updates-1.1.0.zip"
         }
     }
 }

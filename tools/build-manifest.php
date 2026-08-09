@@ -79,10 +79,19 @@ foreach ( glob( 'beaver-*', GLOB_ONLYDIR ) as $slug ) {
 		$errors[] = sprintf( '%s: %s has not been built yet.', $slug, $archive );
 	}
 
+	// Kept short: this is read on a screen listing every plugin at once, not a
+	// page about one of them.
+	$description = $header( 'Description' );
+
+	if ( function_exists( 'mb_strlen' ) && mb_strlen( $description ) > 200 ) {
+		$description = rtrim( mb_substr( $description, 0, 199 ), " ,.;:" ) . '…';
+	}
+
 	$plugins[ $slug ] = array(
 		'slug'         => $slug,
 		'name'         => $name,
 		'version'      => $version,
+		'description'  => $description,
 		'requires'     => $header( 'Requires at least' ),
 		'requires_php' => $header( 'Requires PHP' ),
 		'tested'       => $tested,

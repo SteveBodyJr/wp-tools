@@ -17,6 +17,27 @@ no server of ours in the path.
 This is the one plugin that has to reach a site by hand. Everything else on the
 channel updates itself from then on.
 
+## The screen has two halves
+
+**On this site** is every plugin from the channel that is installed here, with
+the installed version against the published one, whether it is active, and a
+checkbox to let it update on its own.
+
+**Available to add** is everything else on the channel. Each one shows what it
+does and what version is current, with an **Install** button that fetches and
+unpacks it in place, and a **Download zip** link for when it cannot.
+
+Install leaves the plugin inactive, with an **Activate** link beside it.
+Nothing switches itself on.
+
+Anything published later joins the Available list by itself. There is nothing
+to configure when a new plugin appears: the screen lists whatever the manifest
+holds, so a plugin written next year shows up on every site that has this one.
+
+If WordPress needs credentials to write to the plugins folder, or the person
+looking cannot install plugins, the Install buttons are hidden and the screen
+says why. The download links keep working either way.
+
 ## Nothing else has to change
 
 The other plugins need no header, no new version and no re-upload. Whatever is

@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver Updates
  * Plugin URI:        https://github.com/SteveBodyJr/wp-tools
  * Description:       Brings the Digital Beaver plugins into Plugins → Updates, so they update in a click like any wordpress.org plugin. Reads one small manifest, cached, no key required.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Digital Beaver
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BEAVER_UPDATES_VERSION', '1.0.0' );
+define( 'BEAVER_UPDATES_VERSION', '1.1.0' );
 define( 'BEAVER_UPDATES_FILE', __FILE__ );
 define( 'BEAVER_UPDATES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BEAVER_UPDATES_URL', plugin_dir_url( __FILE__ ) );

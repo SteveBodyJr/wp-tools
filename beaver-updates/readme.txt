@@ -6,11 +6,11 @@ Tags: updates, plugin updates, self hosted, maintenance
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Brings the Digital Beaver plugins into Plugins → Updates, so they update in a click like any wordpress.org plugin.
+Brings the Digital Beaver plugins into Plugins → Updates, and lists the ones this site does not have yet so they can be added in a click.
 
 == Description ==
 
@@ -69,10 +69,20 @@ No. It fetches a static file and sends nothing but the request itself.
 
 == Changelog ==
 
+= 1.1.0 =
+* New **Available to add** section listing every plugin on the channel that this site does not have, with what it does and what version is current.
+* An **Install** button on each one, which fetches and unpacks it in place. The plugin is left inactive, with an **Activate** link beside it, so nothing switches itself on.
+* A **Download zip** link on every card as well, for sites where WordPress needs credentials to write to the plugins folder, or for a person without the capability to install.
+* Anything published later joins the list on its own. There is nothing to configure when a new plugin appears.
+* The installed table now shows whether each plugin is active.
+
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Adds a browsable list of the plugins this site does not have yet, and an install button for each.
 
 = 1.0.0 =
 First release.

@@ -8,8 +8,8 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * One screen answering one question: is every Digital Beaver plugin on this
- * site current, and if not, why not.
+ * One screen answering two questions: is every Digital Beaver plugin on this
+ * site current, and what else is there that this site does not have yet.
  *
  * @since 1.0.0
  */
@@ -60,8 +60,8 @@ final class Beaver_Updates_Admin {
 			$links,
 			sprintf(
 				'<a href="%s">%s</a>',
-				esc_url( admin_url( 'tools.php?page=' . self::MENU_SLUG ) ),
-				esc_html__( 'Updates', 'beaver-updates' )
+				esc_url( self::url() ),
+				esc_html__( 'Plugins', 'beaver-updates' )
 			)
 		);
 
@@ -84,7 +84,24 @@ final class Beaver_Updates_Admin {
 	}
 
 	/**
-	 * Handles the two form posts.
+	 * This screen's URL.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string
+	 */
+	private static function url() {
+		return admin_url( 'tools.php?page=' . self::MENU_SLUG );
+	}
+
+	/*
+	 * -----------------------------------------------------------------------
+	 * Actions
+	 * -----------------------------------------------------------------------
+	 */
+
+	/**
+	 * Handles the form posts.
 	 *
 	 * @since 1.0.0
 	 */
@@ -94,7 +111,7 @@ final class Beaver_Updates_Admin {
 		}
 
 		$action = sanitize_key( wp_unslash( $_REQUEST['beaver_updates_action'] ) );
-		$base   = admin_url( 'tools.php?page=' . self::MENU_SLUG );
+		$base   = self::url();
 
 		check_admin_referer( self::NONCE );
 
@@ -106,33 +123,170 @@ final class Beaver_Updates_Admin {
 			// and this one cannot disagree.
 			delete_site_transient( 'update_plugins' );
 
-			wp_safe_redirect( add_query_arg( 'bu_checked', '1', $base ) );
-			exit;
+			self::redirect( $base, 'bu_checked', '1' );
 		}
 
 		if ( 'auto' === $action ) {
+			self::save_auto_updates();
+			self::redirect( $base, 'bu_saved', '1' );
+		}
+
+		if ( 'install' === $action ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
-			$wanted = isset( $_POST['auto'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['auto'] ) ) : array();
+			$slug   = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
+			$result = self::install( $slug );
 
-			$ours    = Beaver_Updates_Updates::ours();
-			$enabled = (array) get_site_option( 'auto_update_plugins', array() );
-
-			// Only ever add or remove our own plugins. Whatever the site has
-			// decided about everything else is none of this plugin's business.
-			$enabled = array_values( array_diff( $enabled, array_keys( $ours ) ) );
-
-			foreach ( $wanted as $plugin_file ) {
-				if ( isset( $ours[ $plugin_file ] ) ) {
-					$enabled[] = $plugin_file;
-				}
+			if ( is_wp_error( $result ) ) {
+				self::redirect( $base, 'bu_error', $result->get_error_message() );
 			}
 
-			update_site_option( 'auto_update_plugins', array_values( array_unique( $enabled ) ) );
+			self::redirect( $base, 'bu_installed', $slug );
+		}
 
-			wp_safe_redirect( add_query_arg( 'bu_saved', '1', $base ) );
-			exit;
+		if ( 'activate' === $action ) {
+			// Arrives as a nonce protected link rather than a post, because the
+			// row it belongs to already sits inside the automatic updates form
+			// and forms do not nest. This is how core's own plugin activation
+			// links work.
+			$file   = isset( $_REQUEST['plugin'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['plugin'] ) ) : '';
+			$result = self::activate( $file );
+
+			if ( is_wp_error( $result ) ) {
+				self::redirect( $base, 'bu_error', $result->get_error_message() );
+			}
+
+			self::redirect( $base, 'bu_activated', dirname( $file ) );
 		}
 	}
+
+	/**
+	 * Redirects back to the screen with one message argument.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $base  Screen URL.
+	 * @param string $key   Query argument.
+	 * @param string $value Value.
+	 */
+	private static function redirect( $base, $key, $value ) {
+		wp_safe_redirect( add_query_arg( $key, rawurlencode( $value ), $base ) );
+
+		exit;
+	}
+
+	/**
+	 * Writes the automatic update choices.
+	 *
+	 * @since 1.0.0
+	 */
+	private static function save_auto_updates() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked by the caller.
+		$wanted = isset( $_POST['auto'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['auto'] ) ) : array();
+
+		$ours    = Beaver_Updates_Updates::ours();
+		$enabled = (array) get_site_option( 'auto_update_plugins', array() );
+
+		// Only ever add or remove our own plugins. Whatever the site has
+		// decided about everything else is none of this plugin's business.
+		$enabled = array_values( array_diff( $enabled, array_keys( $ours ) ) );
+
+		foreach ( $wanted as $plugin_file ) {
+			if ( isset( $ours[ $plugin_file ] ) ) {
+				$enabled[] = $plugin_file;
+			}
+		}
+
+		update_site_option( 'auto_update_plugins', array_values( array_unique( $enabled ) ) );
+	}
+
+	/**
+	 * Installs a plugin from the channel.
+	 *
+	 * The package URL comes from the channel, which only ever returns one
+	 * published where it publishes, so there is no user supplied URL anywhere
+	 * in this path: the form posts a slug and nothing else.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $slug Plugin slug.
+	 * @return true|WP_Error
+	 */
+	private static function install( $slug ) {
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			return new WP_Error( 'beaver_updates_cap', __( 'You are not allowed to install plugins.', 'beaver-updates' ) );
+		}
+
+		$entry = Beaver_Updates_Channel::plugin( $slug );
+
+		if ( ! $entry ) {
+			return new WP_Error( 'beaver_updates_unknown', __( 'That plugin is not on the channel.', 'beaver-updates' ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/misc.php';
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+		if ( 'direct' !== get_filesystem_method() ) {
+			return new WP_Error(
+				'beaver_updates_filesystem',
+				__( 'WordPress cannot write to the plugins folder on this host without credentials, so it cannot install from here. Use the download link and upload the zip instead.', 'beaver-updates' )
+			);
+		}
+
+		$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
+		$result   = $upgrader->install( $entry['package'] );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( true !== $result ) {
+			$messages = $upgrader->skin->get_upgrade_messages();
+
+			return new WP_Error(
+				'beaver_updates_install',
+				$messages ? (string) end( $messages ) : __( 'The install did not finish.', 'beaver-updates' )
+			);
+		}
+
+		// The new plugin belongs in WordPress's picture of what is installed.
+		delete_site_transient( 'update_plugins' );
+
+		return true;
+	}
+
+	/**
+	 * Activates a plugin, provided it is one of ours.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $plugin_file Plugin file.
+	 * @return true|WP_Error
+	 */
+	private static function activate( $plugin_file ) {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return new WP_Error( 'beaver_updates_cap', __( 'You are not allowed to activate plugins.', 'beaver-updates' ) );
+		}
+
+		// Never activate on the strength of a posted path. It has to be a
+		// plugin this channel publishes and that is already on disk.
+		$ours = Beaver_Updates_Updates::ours();
+
+		if ( ! isset( $ours[ $plugin_file ] ) ) {
+			return new WP_Error( 'beaver_updates_unknown', __( 'That is not a plugin from this channel.', 'beaver-updates' ) );
+		}
+
+		$activated = activate_plugin( $plugin_file );
+
+		return is_wp_error( $activated ) ? $activated : true;
+	}
+
+	/*
+	 * -----------------------------------------------------------------------
+	 * Screen
+	 * -----------------------------------------------------------------------
+	 */
 
 	/**
 	 * Renders the screen.
@@ -148,12 +302,14 @@ final class Beaver_Updates_Admin {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+
 		$manifest  = Beaver_Updates_Channel::get();
 		$published = Beaver_Updates_Channel::plugins();
 		$installed = get_plugins();
-		$ours      = Beaver_Updates_Updates::ours();
 		$auto      = (array) get_site_option( 'auto_update_plugins', array() );
 		$auto_ok   = function_exists( 'wp_is_auto_update_enabled_for_type' ) ? wp_is_auto_update_enabled_for_type( 'plugin' ) : true;
+		$can_add   = current_user_can( 'install_plugins' ) && 'direct' === get_filesystem_method();
 
 		$by_slug = array();
 
@@ -161,21 +317,25 @@ final class Beaver_Updates_Admin {
 			$by_slug[ dirname( $plugin_file ) ] = array( $plugin_file, $data );
 		}
 
-		$behind = 0;
+		$here = array();
+		$away = array();
+
+		foreach ( $published as $slug => $entry ) {
+			if ( isset( $by_slug[ $slug ] ) ) {
+				$here[ $slug ] = $entry;
+			} else {
+				$away[ $slug ] = $entry;
+			}
+		}
+
 		?>
 		<div class="wrap beaver-updates">
 			<h1><?php esc_html_e( 'Beaver Updates', 'beaver-updates' ); ?></h1>
 			<p class="beaver-updates-lead">
-				<?php esc_html_e( 'The Digital Beaver plugins on this site, checked against the published channel. Anything behind appears under Plugins → Updates with an update button, the same as a plugin from wordpress.org.', 'beaver-updates' ); ?>
+				<?php esc_html_e( 'Every Digital Beaver plugin, whether it is on this site or not. The ones here update from Plugins → Updates like anything from wordpress.org. The ones that are not can be added from this screen.', 'beaver-updates' ); ?>
 			</p>
 
-			<?php if ( isset( $_GET['bu_checked'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Checked.', 'beaver-updates' ); ?></p></div>
-			<?php endif; ?>
-
-			<?php if ( isset( $_GET['bu_saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Automatic updates saved.', 'beaver-updates' ); ?></p></div>
-			<?php endif; ?>
+			<?php self::render_notices(); ?>
 
 			<?php if ( '' !== $manifest['error'] ) : ?>
 				<div class="notice notice-error">
@@ -214,8 +374,17 @@ final class Beaver_Updates_Admin {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Plugins published', 'beaver-updates' ); ?></th>
-							<td><?php echo esc_html( (string) count( $published ) ); ?></td>
+							<th scope="row"><?php esc_html_e( 'Published', 'beaver-updates' ); ?></th>
+							<td>
+								<?php
+								printf(
+									/* translators: 1: plugins on this site, 2: total published. */
+									esc_html__( '%1$d of %2$d installed here', 'beaver-updates' ),
+									count( $here ),
+									count( $published )
+								);
+								?>
+							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -230,100 +399,262 @@ final class Beaver_Updates_Admin {
 				</form>
 			</div>
 
-			<form method="post" action="">
-				<?php wp_nonce_field( self::NONCE ); ?>
-				<input type="hidden" name="beaver_updates_action" value="auto" />
+			<h2><?php esc_html_e( 'On this site', 'beaver-updates' ); ?></h2>
+			<?php self::render_installed( $here, $by_slug, $auto, $auto_ok ); ?>
 
-				<table class="wp-list-table widefat striped beaver-updates-table">
-					<thead>
+			<h2><?php esc_html_e( 'Available to add', 'beaver-updates' ); ?></h2>
+			<?php self::render_available( $away, $can_add ); ?>
+
+			<?php self::render_credit(); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Prints whatever the last action had to say.
+	 *
+	 * @since 1.0.0
+	 */
+	private static function render_notices() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['bu_error'] ) ) {
+			printf(
+				'<div class="notice notice-error"><p>%s</p></div>',
+				esc_html( sanitize_text_field( wp_unslash( $_GET['bu_error'] ) ) )
+			);
+		}
+
+		if ( isset( $_GET['bu_checked'] ) ) {
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html__( 'Checked.', 'beaver-updates' ) );
+		}
+
+		if ( isset( $_GET['bu_saved'] ) ) {
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html__( 'Automatic updates saved.', 'beaver-updates' ) );
+		}
+
+		if ( isset( $_GET['bu_installed'] ) ) {
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: plugin slug. */
+						__( '%s installed. It is not active yet.', 'beaver-updates' ),
+						sanitize_key( wp_unslash( $_GET['bu_installed'] ) )
+					)
+				)
+			);
+		}
+
+		if ( isset( $_GET['bu_activated'] ) ) {
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: plugin slug. */
+						__( '%s activated.', 'beaver-updates' ),
+						sanitize_key( wp_unslash( $_GET['bu_activated'] ) )
+					)
+				)
+			);
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+	}
+
+	/**
+	 * The plugins from this channel that are on this site.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $here    Manifest entries installed here.
+	 * @param array $by_slug Installed plugins keyed by directory.
+	 * @param array $auto    Plugin files set to update on their own.
+	 * @param bool  $auto_ok Whether the site allows automatic plugin updates.
+	 */
+	private static function render_installed( array $here, array $by_slug, array $auto, $auto_ok ) {
+		if ( ! $here ) {
+			?>
+			<p class="beaver-updates-empty">
+				<?php esc_html_e( 'None of these plugins are on this site yet. Everything published is listed below.', 'beaver-updates' ); ?>
+			</p>
+			<?php
+
+			return;
+		}
+
+		$behind = 0;
+		?>
+		<form method="post" action="">
+			<?php wp_nonce_field( self::NONCE ); ?>
+			<input type="hidden" name="beaver_updates_action" value="auto" />
+
+			<table class="wp-list-table widefat striped beaver-updates-table">
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Plugin', 'beaver-updates' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Installed', 'beaver-updates' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Channel', 'beaver-updates' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'beaver-updates' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Update on its own', 'beaver-updates' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $here as $slug => $entry ) : ?>
+						<?php
+						$file    = $by_slug[ $slug ][0];
+						$current = (string) $by_slug[ $slug ][1]['Version'];
+						$active  = is_plugin_active( $file );
+
+						if ( version_compare( $entry['version'], $current, '>' ) ) {
+							$state = 'behind';
+							$label = __( 'Update available', 'beaver-updates' );
+							$behind++;
+						} elseif ( version_compare( $current, $entry['version'], '>' ) ) {
+							$state = 'ahead';
+							$label = __( 'Newer than the channel', 'beaver-updates' );
+						} else {
+							$state = 'current';
+							$label = __( 'Up to date', 'beaver-updates' );
+						}
+						?>
 						<tr>
-							<th scope="col"><?php esc_html_e( 'Plugin', 'beaver-updates' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Installed', 'beaver-updates' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Channel', 'beaver-updates' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Status', 'beaver-updates' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Update on its own', 'beaver-updates' ); ?></th>
+							<td>
+								<strong><?php echo esc_html( $entry['name'] ); ?></strong>
+								<div class="beaver-updates-dim">
+									<?php
+									echo esc_html( $slug );
+									echo $active
+										? ' &middot; ' . esc_html__( 'active', 'beaver-updates' )
+										: ' &middot; ' . esc_html__( 'inactive', 'beaver-updates' );
+									?>
+								</div>
+							</td>
+							<td><?php echo esc_html( $current ); ?></td>
+							<td><?php echo esc_html( $entry['version'] ); ?></td>
+							<td>
+								<span class="beaver-updates-state beaver-updates-state--<?php echo esc_attr( $state ); ?>">
+									<?php echo esc_html( $label ); ?>
+								</span>
+								<?php if ( 'behind' === $state ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>"><?php esc_html_e( 'Update', 'beaver-updates' ); ?></a>
+								<?php endif; ?>
+								<?php if ( ! $active && current_user_can( 'activate_plugins' ) ) : ?>
+									<a href="
+									<?php
+									echo esc_url(
+										wp_nonce_url(
+											add_query_arg(
+												array(
+													'beaver_updates_action' => 'activate',
+													'plugin'                => rawurlencode( $file ),
+												),
+												self::url()
+											),
+											self::NONCE
+										)
+									);
+									?>
+									"><?php esc_html_e( 'Activate', 'beaver-updates' ); ?></a>
+								<?php endif; ?>
+							</td>
+							<td>
+								<label>
+									<input type="checkbox" name="auto[]" value="<?php echo esc_attr( $file ); ?>" <?php checked( in_array( $file, $auto, true ) ); ?> <?php disabled( ! $auto_ok ); ?> />
+									<?php esc_html_e( 'Yes', 'beaver-updates' ); ?>
+								</label>
+							</td>
 						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ( $published as $slug => $entry ) : ?>
-							<?php
-							$here    = isset( $by_slug[ $slug ] ) ? $by_slug[ $slug ] : null;
-							$file    = $here ? $here[0] : '';
-							$current = $here ? (string) $here[1]['Version'] : '';
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 
-							if ( ! $here ) {
-								$state = 'absent';
-								$label = __( 'Not installed', 'beaver-updates' );
-							} elseif ( version_compare( $entry['version'], $current, '>' ) ) {
-								$state = 'behind';
-								$label = __( 'Update available', 'beaver-updates' );
-								$behind++;
-							} elseif ( version_compare( $current, $entry['version'], '>' ) ) {
-								$state = 'ahead';
-								$label = __( 'Newer than the channel', 'beaver-updates' );
-							} else {
-								$state = 'current';
-								$label = __( 'Up to date', 'beaver-updates' );
-							}
-							?>
-							<tr>
-								<td>
-									<strong><?php echo esc_html( $entry['name'] ); ?></strong>
-									<div class="beaver-updates-dim"><?php echo esc_html( $slug ); ?></div>
-								</td>
-								<td><?php echo $current ? esc_html( $current ) : '<span class="beaver-updates-dim">&mdash;</span>'; ?></td>
-								<td><?php echo esc_html( $entry['version'] ); ?></td>
-								<td>
-									<span class="beaver-updates-state beaver-updates-state--<?php echo esc_attr( $state ); ?>">
-										<?php echo esc_html( $label ); ?>
-									</span>
-									<?php if ( 'behind' === $state ) : ?>
-										<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>"><?php esc_html_e( 'Update', 'beaver-updates' ); ?></a>
-									<?php elseif ( 'absent' === $state && $entry['homepage'] ) : ?>
-										<a href="<?php echo esc_url( $entry['homepage'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Source', 'beaver-updates' ); ?></a>
-									<?php endif; ?>
-								</td>
-								<td>
-									<?php if ( $here ) : ?>
-										<label>
-											<input type="checkbox" name="auto[]" value="<?php echo esc_attr( $file ); ?>" <?php checked( in_array( $file, $auto, true ) ); ?> <?php disabled( ! $auto_ok ); ?> />
-											<?php esc_html_e( 'Yes', 'beaver-updates' ); ?>
-										</label>
-									<?php else : ?>
-										<span class="beaver-updates-dim">&mdash;</span>
-									<?php endif; ?>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-
-				<?php if ( ! $auto_ok ) : ?>
-					<p class="description">
-						<?php esc_html_e( 'Automatic plugin updates are switched off for this whole site, by a constant or a filter, so these boxes cannot do anything until that changes.', 'beaver-updates' ); ?>
-					</p>
-				<?php endif; ?>
-
+			<?php if ( ! $auto_ok ) : ?>
 				<p class="description">
-					<?php esc_html_e( 'Leaving a plugin to update on its own is worth it for the ones that cannot lock you out. Think twice about the file manager, the access links and the debug log: if a release of one of those is broken, you want to be the one who pressed the button.', 'beaver-updates' ); ?>
-				</p>
-
-				<?php submit_button( __( 'Save automatic updates', 'beaver-updates' ) ); ?>
-			</form>
-
-			<?php if ( $behind ) : ?>
-				<p>
-					<?php
-					printf(
-						/* translators: %d: number of plugins behind. */
-						esc_html( _n( '%d plugin is behind. Update it from the Plugins screen.', '%d plugins are behind. Update them from the Plugins screen.', $behind, 'beaver-updates' ) ),
-						(int) $behind
-					);
-					?>
+					<?php esc_html_e( 'Automatic plugin updates are switched off for this whole site, by a constant or a filter, so these boxes cannot do anything until that changes.', 'beaver-updates' ); ?>
 				</p>
 			<?php endif; ?>
 
-			<?php self::render_credit(); ?>
+			<p class="description">
+				<?php esc_html_e( 'Leaving a plugin to update on its own is worth it for the ones that cannot lock you out. Think twice about the file manager, the access links and the debug log: if a release of one of those is broken, you want to be the one who pressed the button.', 'beaver-updates' ); ?>
+			</p>
+
+			<?php submit_button( __( 'Save automatic updates', 'beaver-updates' ) ); ?>
+		</form>
+
+		<?php if ( $behind ) : ?>
+			<p>
+				<?php
+				printf(
+					/* translators: %d: number of plugins behind. */
+					esc_html( _n( '%d plugin is behind.', '%d plugins are behind.', $behind, 'beaver-updates' ) ),
+					(int) $behind
+				);
+				?>
+			</p>
+			<?php
+		endif;
+	}
+
+	/**
+	 * The plugins from this channel that this site does not have.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $away    Manifest entries not installed here.
+	 * @param bool  $can_add Whether this site can install from here.
+	 */
+	private static function render_available( array $away, $can_add ) {
+		if ( ! $away ) {
+			?>
+			<p class="beaver-updates-empty">
+				<?php esc_html_e( 'This site has all of them. Anything published later appears here on its own, with nothing to set up.', 'beaver-updates' ); ?>
+			</p>
+			<?php
+
+			return;
+		}
+		?>
+		<p class="beaver-updates-lead">
+			<?php esc_html_e( 'Not on this site yet. Anything published later joins this list on its own.', 'beaver-updates' ); ?>
+		</p>
+
+		<?php if ( ! $can_add ) : ?>
+			<p class="description">
+				<?php esc_html_e( 'This site cannot install plugins directly, either because of your role or because WordPress needs credentials to write to the plugins folder. Download a zip instead and upload it under Plugins → Add New → Upload.', 'beaver-updates' ); ?>
+			</p>
+		<?php endif; ?>
+
+		<div class="beaver-updates-cards">
+			<?php foreach ( $away as $slug => $entry ) : ?>
+				<div class="beaver-updates-card">
+					<h3 class="beaver-updates-card__title"><?php echo esc_html( $entry['name'] ); ?></h3>
+					<p class="beaver-updates-card__version">
+						<?php
+						printf(
+							/* translators: %s: version number. */
+							esc_html__( 'Version %s', 'beaver-updates' ),
+							esc_html( $entry['version'] )
+						);
+						?>
+					</p>
+					<?php if ( '' !== $entry['description'] ) : ?>
+						<p class="beaver-updates-card__text"><?php echo esc_html( $entry['description'] ); ?></p>
+					<?php endif; ?>
+					<p class="beaver-updates-card__actions">
+						<?php if ( $can_add ) : ?>
+							<form method="post" action="">
+								<?php wp_nonce_field( self::NONCE ); ?>
+								<input type="hidden" name="beaver_updates_action" value="install" />
+								<input type="hidden" name="slug" value="<?php echo esc_attr( $slug ); ?>" />
+								<?php submit_button( __( 'Install', 'beaver-updates' ), 'primary', 'submit', false ); ?>
+							</form>
+						<?php endif; ?>
+						<a class="button" href="<?php echo esc_url( $entry['package'] ); ?>"><?php esc_html_e( 'Download zip', 'beaver-updates' ); ?></a>
+						<?php if ( $entry['homepage'] ) : ?>
+							<a href="<?php echo esc_url( $entry['homepage'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Read more', 'beaver-updates' ); ?></a>
+						<?php endif; ?>
+					</p>
+				</div>
+			<?php endforeach; ?>
 		</div>
 		<?php
 	}
