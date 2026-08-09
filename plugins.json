@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "updated": "2026-08-09T17:57:22+00:00",
+    "updated": "2026-08-09T18:10:42+00:00",
     "plugins": {
         "beaver-access": {
             "slug": "beaver-access",
@@ -100,6 +100,17 @@
             "author": "Digital Beaver",
             "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-shutter",
             "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-shutter-1.0.0/beaver-shutter-1.0.0.zip"
+        },
+        "beaver-updates": {
+            "slug": "beaver-updates",
+            "name": "Beaver Updates",
+            "version": "1.0.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-updates",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-updates-1.0.0/beaver-updates-1.0.0.zip"
         }
     }
 }
