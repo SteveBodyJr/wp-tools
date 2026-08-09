@@ -1,0 +1,105 @@
+{
+    "schema": 1,
+    "updated": "2026-08-09T17:57:22+00:00",
+    "plugins": {
+        "beaver-access": {
+            "slug": "beaver-access",
+            "name": "Beaver Access",
+            "version": "1.0.2",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-access",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-access-1.0.2/beaver-access-1.0.2.zip"
+        },
+        "beaver-ai-chat": {
+            "slug": "beaver-ai-chat",
+            "name": "Beaver AI Chat",
+            "version": "1.6.1",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "6.8",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-ai-chat",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-ai-chat-1.6.1/beaver-ai-chat-1.6.1.zip"
+        },
+        "beaver-alt-text": {
+            "slug": "beaver-alt-text",
+            "name": "Beaver Alt Text",
+            "version": "1.2.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-alt-text",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-alt-text-1.2.0/beaver-alt-text-1.2.0.zip"
+        },
+        "beaver-appbar": {
+            "slug": "beaver-appbar",
+            "name": "Beaver App Bar",
+            "version": "1.0.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-appbar",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-appbar-1.0.0/beaver-appbar-1.0.0.zip"
+        },
+        "beaver-debug": {
+            "slug": "beaver-debug",
+            "name": "Beaver Debug",
+            "version": "1.1.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-debug",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-debug-1.1.0/beaver-debug-1.1.0.zip"
+        },
+        "beaver-filemanager": {
+            "slug": "beaver-filemanager",
+            "name": "Beaver FileManager",
+            "version": "1.1.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-filemanager",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-filemanager-1.1.0/beaver-filemanager-1.1.0.zip"
+        },
+        "beaver-image-optimizer": {
+            "slug": "beaver-image-optimizer",
+            "name": "Beaver Image Optimizer",
+            "version": "1.3.4",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-image-optimizer",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-image-optimizer-1.3.4/beaver-image-optimizer-1.3.4.zip"
+        },
+        "beaver-pwa": {
+            "slug": "beaver-pwa",
+            "name": "Beaver PWA",
+            "version": "1.0.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-pwa",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-pwa-1.0.0/beaver-pwa-1.0.0.zip"
+        },
+        "beaver-shutter": {
+            "slug": "beaver-shutter",
+            "name": "Beaver Shutter",
+            "version": "1.0.0",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-shutter",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-shutter-1.0.0/beaver-shutter-1.0.0.zip"
+        }
+    }
+}
