@@ -1,0 +1,165 @@
+/**
+ * Beaver Shutter admin styles.
+ */
+
+.beaver-shutter-note {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #646970;
+}
+
+/* Status card */
+
+.beaver-shutter-status {
+	display: flex;
+	gap: 24px;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	margin: 20px 0;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #00a32a;
+}
+
+.beaver-shutter-status--visitors {
+	border-left-color: #dba617;
+}
+
+.beaver-shutter-status--full {
+	border-left-color: #d63638;
+	background: #fcf0f1;
+}
+
+.beaver-shutter-state {
+	display: block;
+	font-size: 20px;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.beaver-shutter-status__actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.beaver-shutter-status__actions form {
+	margin: 0;
+}
+
+/* Levels */
+
+.beaver-shutter-levels {
+	max-width: 52em;
+}
+
+.beaver-shutter-levels td {
+	vertical-align: top;
+}
+
+.beaver-shutter-levels__pick {
+	width: 2.5em;
+	text-align: center;
+}
+
+/* Recovery box */
+
+.beaver-shutter-recovery {
+	max-width: 52em;
+	margin: 24px 0;
+	padding: 4px 20px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.beaver-shutter-recovery code {
+	background: #fff;
+}
+
+.beaver-shutter-recovery ol {
+	margin-left: 1.4em;
+}
+
+.beaver-shutter-recovery li {
+	margin-bottom: 6px;
+}
+
+/* Log */
+
+.beaver-shutter-log {
+	max-width: 52em;
+}
+
+.beaver-shutter-log td {
+	vertical-align: top;
+}
+
+.beaver-shutter-log__when {
+	width: 8em;
+	white-space: nowrap;
+	color: #50575e;
+}
+
+.beaver-shutter-badge {
+	display: inline-block;
+	margin-right: 6px;
+	padding: 1px 7px;
+	border-radius: 9px;
+	font-size: 11px;
+	line-height: 1.6;
+	text-transform: lowercase;
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.beaver-shutter-badge--reopened,
+.beaver-shutter-badge--installed {
+	background: #edfaef;
+	color: #005c12;
+}
+
+.beaver-shutter-badge--closed,
+.beaver-shutter-badge--deactivated {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.beaver-shutter-danger {
+	color: #b32d2e;
+}
+
+/* Credit */
+
+.beaver-shutter-credit {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	max-width: 46em;
+	margin: 28px 0 0;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-shutter-credit__logo {
+	width: 150px;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.beaver-shutter-credit__text {
+	font-size: 13px;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.beaver-shutter-credit__text strong {
+	display: block;
+	color: #1d2327;
+}

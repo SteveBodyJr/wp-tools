@@ -1,0 +1,207 @@
+/**
+ * Beaver Debug admin styles.
+ *
+ * Stock wp-admin palette, so the screen reads as part of WordPress.
+ */
+
+.beaver-debug-lead {
+	max-width: 46em;
+	font-size: 14px;
+	color: #50575e;
+}
+
+.beaver-debug-cards {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 170px, 1fr ) );
+	gap: 16px;
+	margin: 20px 0;
+}
+
+.beaver-debug-card {
+	padding: 14px 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #c3c4c7;
+}
+
+.beaver-debug-card--fatal { border-left-color: #b32d2e; }
+.beaver-debug-card--warning { border-left-color: #dba617; }
+.beaver-debug-card--http { border-left-color: #2271b1; }
+.beaver-debug-card--notice { border-left-color: #a7aaad; }
+
+.beaver-debug-card__label {
+	display: block;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #646970;
+}
+
+.beaver-debug-card__value {
+	display: block;
+	margin: 6px 0 2px;
+	font-size: 26px;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.beaver-debug-card__hint {
+	display: block;
+	font-size: 12px;
+	color: #646970;
+}
+
+.beaver-debug-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin: 16px 0;
+}
+
+.beaver-debug-size,
+.beaver-debug-copied {
+	font-size: 12px;
+	color: #646970;
+}
+
+.beaver-debug-empty {
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	color: #50575e;
+}
+
+.beaver-debug-table {
+	margin-top: 12px;
+}
+
+.beaver-debug-table td,
+.beaver-debug-table th {
+	vertical-align: top;
+}
+
+.beaver-debug-badge {
+	display: inline-block;
+	margin-right: 6px;
+	padding: 1px 7px;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.beaver-debug-badge--fatal { color: #8a2424; background: #fcf0f1; }
+.beaver-debug-badge--warning { color: #674600; background: #fcf9e8; }
+.beaver-debug-badge--notice { color: #50575e; background: #f0f0f1; }
+.beaver-debug-badge--http { color: #0a4b78; background: #f0f6fc; }
+.beaver-debug-badge--db { color: #8a2424; background: #fcf0f1; }
+.beaver-debug-badge--js { color: #5a2d82; background: #f5f0fa; }
+.beaver-debug-badge--slow { color: #674600; background: #fcf9e8; }
+
+.beaver-debug-file {
+	display: block;
+	margin-top: 4px;
+	font-size: 11px;
+	color: #50575e;
+	background: #f6f7f7;
+}
+
+.beaver-debug-trace {
+	margin-top: 6px;
+	font-size: 11px;
+}
+
+.beaver-debug-trace pre {
+	margin: 6px 0 0;
+	padding: 8px;
+	overflow-x: auto;
+	font-size: 11px;
+	line-height: 1.5;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+}
+
+.beaver-debug-context,
+.beaver-debug-uri {
+	display: block;
+	font-size: 11px;
+	color: #646970;
+	word-break: break-all;
+}
+
+.beaver-debug-note {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+	color: #646970;
+}
+
+.beaver-debug-status {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 6px;
+	border-radius: 50%;
+	vertical-align: baseline;
+}
+
+.beaver-debug-status--good { background: #00a32a; }
+.beaver-debug-status--warn { background: #dba617; }
+.beaver-debug-status--bad { background: #b32d2e; }
+
+/* Maker's mark. */
+
+.beaver-debug-credit {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 32px 0 0;
+	padding: 12px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-debug-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	height: 34px;
+	width: auto;
+}
+
+.beaver-debug-credit__text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.beaver-debug-credit__text strong {
+	display: block;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-debug-credit__text a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.beaver-debug-credit__text a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-debug-credit {
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-right: 12px;
+	}
+}
+
+.beaver-debug-card--db { border-left-color: #b32d2e; }
+.beaver-debug-card--js { border-left-color: #5a2d82; }
+.beaver-debug-badge--change { color: #0a4b78; background: #f0f6fc; }
+.beaver-debug-badge--deprecated { color: #674600; background: #fcf9e8; }
+.beaver-debug-row--change { background: #f6fbff !important; }

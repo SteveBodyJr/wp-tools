@@ -1,0 +1,1647 @@
+/**
+ * Beaver FileManager admin styles.
+ *
+ * The accent colour is taken from `--wp-admin-theme-color`, so the interface
+ * follows whichever admin colour scheme the person has chosen instead of
+ * hard-coding one blue. Everything else is a small set of tokens declared once
+ * on `.beaver-fm`, which keeps the surfaces, borders and radii consistent.
+ */
+
+.beaver-fm,
+.beaver-fm-settings,
+.beaver-fm-logscreen {
+	--bfm-accent: var( --wp-admin-theme-color, #2f6fed );
+	--bfm-accent-hover: var( --wp-admin-theme-color-darker-10, #1f5fd8 );
+	--bfm-accent-soft: color-mix( in srgb, var( --bfm-accent ) 10%, transparent );
+	--bfm-accent-line: color-mix( in srgb, var( --bfm-accent ) 32%, transparent );
+
+	--bfm-surface: #fff;
+	--bfm-surface-2: #f7f8fa;
+	--bfm-surface-3: #eef0f4;
+	--bfm-border: #e4e7ec;
+	--bfm-border-strong: #d0d5dd;
+
+	--bfm-text: #101828;
+	--bfm-text-2: #475467;
+	--bfm-muted: #737d8c;
+
+	--bfm-danger: #d92d20;
+	--bfm-danger-soft: #fef3f2;
+	--bfm-success: #12915a;
+	--bfm-warning: #b54708;
+
+	--bfm-radius: 12px;
+	--bfm-radius-sm: 8px;
+	--bfm-radius-xs: 6px;
+
+	--bfm-shadow-sm: 0 1px 2px rgba( 16, 24, 40, 0.05 );
+	--bfm-shadow: 0 1px 3px rgba( 16, 24, 40, 0.08 ), 0 1px 2px rgba( 16, 24, 40, 0.04 );
+	--bfm-shadow-lg: 0 24px 48px -12px rgba( 16, 24, 40, 0.28 );
+
+	--bfm-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Fallback for browsers without color-mix(). */
+@supports not ( color: color-mix( in srgb, red 10%, transparent ) ) {
+	.beaver-fm {
+		--bfm-accent-soft: rgba( 47, 111, 237, 0.1 );
+		--bfm-accent-line: rgba( 47, 111, 237, 0.32 );
+	}
+}
+
+.beaver-fm * {
+	box-sizing: border-box;
+}
+
+/*
+ * Safety net. Several rules below give elements an explicit `display`, and a
+ * class selector outranks the browser's own `[hidden] { display: none }` — so
+ * anything toggled with the hidden attribute would stay on screen. Declare it
+ * once, here, rather than remembering it at every call site.
+ */
+.beaver-fm [hidden] {
+	display: none !important;
+}
+
+/* Page header ------------------------------------------------------------ */
+
+.beaver-fm .wp-heading-inline {
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-rootline {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin: 6px 0 18px;
+	font-size: 12px;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-rootline code {
+	padding: 4px 10px;
+	border: 1px solid var( --bfm-border );
+	border-radius: 999px;
+	background: var( --bfm-surface-2 );
+	font-family: var( --bfm-mono );
+	font-size: 12px;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-rootline__disk::before {
+	content: "";
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 7px;
+	border-radius: 50%;
+	background: var( --bfm-success );
+	vertical-align: middle;
+}
+
+.beaver-fm-readonly-notice {
+	margin: 0 0 16px;
+	border-radius: var( --bfm-radius-sm );
+}
+
+/* Buttons ---------------------------------------------------------------- */
+
+.beaver-fm .button,
+.beaver-fm .button-primary {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 11px;
+	border: 1px solid var( --bfm-border-strong );
+	border-radius: var( --bfm-radius-xs );
+	background: var( --bfm-surface );
+	box-shadow: var( --bfm-shadow-sm );
+	color: var( --bfm-text-2 );
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	text-shadow: none;
+	transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
+}
+
+.beaver-fm .button:hover:not( [disabled] ),
+.beaver-fm .button:focus:not( [disabled] ) {
+	background: var( --bfm-surface-2 );
+	border-color: var( --bfm-border-strong );
+	color: var( --bfm-text );
+}
+
+.beaver-fm .button:active:not( [disabled] ) {
+	transform: translateY( 1px );
+}
+
+.beaver-fm .button:focus-visible,
+.beaver-fm button:focus-visible,
+.beaver-fm input:focus-visible {
+	outline: 2px solid var( --bfm-accent );
+	outline-offset: 1px;
+	box-shadow: none;
+}
+
+.beaver-fm .button-primary {
+	background: var( --bfm-accent );
+	border-color: var( --bfm-accent );
+	color: #fff;
+}
+
+.beaver-fm .button-primary:hover:not( [disabled] ),
+.beaver-fm .button-primary:focus:not( [disabled] ) {
+	background: var( --bfm-accent-hover );
+	border-color: var( --bfm-accent-hover );
+	color: #fff;
+}
+
+.beaver-fm .button[disabled] {
+	opacity: 0.45;
+	box-shadow: none;
+	cursor: default;
+}
+
+.beaver-fm .button-small {
+	height: 28px;
+	padding: 0 9px;
+	font-size: 12px;
+}
+
+.beaver-fm .button .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+}
+
+.beaver-fm-danger:not( [disabled] ) {
+	color: var( --bfm-danger ) !important;
+	border-color: #f4c4c1 !important;
+}
+
+.beaver-fm-danger:not( [disabled] ):hover {
+	background: var( --bfm-danger-soft ) !important;
+	border-color: var( --bfm-danger ) !important;
+	color: var( --bfm-danger ) !important;
+}
+
+.beaver-fm .button-primary.beaver-fm-danger:not( [disabled] ) {
+	background: var( --bfm-danger ) !important;
+	border-color: var( --bfm-danger ) !important;
+	color: #fff !important;
+}
+
+/* Shell ------------------------------------------------------------------ */
+
+.beaver-fm-app {
+	display: flex;
+	flex-direction: column;
+	background: var( --bfm-surface );
+	border: 1px solid var( --bfm-border );
+	border-radius: var( --bfm-radius );
+	box-shadow: var( --bfm-shadow );
+	overflow: hidden;
+}
+
+.beaver-fm-app[data-writable="0"] .beaver-fm-writeonly {
+	display: none;
+}
+
+/* Toolbar ---------------------------------------------------------------- */
+
+.beaver-fm-toolbar {
+	position: sticky;
+	top: 32px;
+	z-index: 20;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	padding: 11px 14px;
+	border-bottom: 1px solid var( --bfm-border );
+	background: rgba( 255, 255, 255, 0.88 );
+	backdrop-filter: saturate( 180% ) blur( 12px );
+	-webkit-backdrop-filter: saturate( 180% ) blur( 12px );
+}
+
+.beaver-fm-toolbar__group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.beaver-fm-toolbar__group + .beaver-fm-toolbar__group::before {
+	content: "";
+	align-self: stretch;
+	width: 1px;
+	margin: 3px 4px 3px 0;
+	background: var( --bfm-border );
+}
+
+.beaver-fm-toolbar__spacer {
+	flex: 1 1 auto;
+}
+
+/* Search ----------------------------------------------------------------- */
+
+.beaver-fm-search {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.beaver-fm-search input[type="search"] {
+	min-width: 230px;
+	height: 32px;
+	padding: 0 12px;
+	border: 1px solid var( --bfm-border-strong );
+	border-radius: 999px;
+	background: var( --bfm-surface-2 );
+	box-shadow: none;
+	font-size: 13px;
+	color: var( --bfm-text );
+	transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.beaver-fm-search input[type="search"]:focus {
+	background: var( --bfm-surface );
+	border-color: var( --bfm-accent );
+	outline: none;
+	box-shadow: 0 0 0 3px var( --bfm-accent-soft );
+}
+
+.beaver-fm-search__opt {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	color: var( --bfm-muted );
+	white-space: nowrap;
+}
+
+/* Body ------------------------------------------------------------------- */
+
+.beaver-fm-body {
+	display: flex;
+	align-items: stretch;
+	min-height: 60vh;
+}
+
+.beaver-fm-sidebar {
+	flex: 0 0 252px;
+	max-width: 252px;
+	max-height: 74vh;
+	padding: 10px 10px 18px;
+	border-right: 1px solid var( --bfm-border );
+	background: var( --bfm-surface-2 );
+	overflow: auto;
+	overscroll-behavior: contain;
+}
+
+.beaver-fm-main {
+	position: relative;
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Scrollbars ------------------------------------------------------------- */
+
+.beaver-fm-sidebar::-webkit-scrollbar,
+.beaver-fm-listing::-webkit-scrollbar,
+.beaver-fm-overlay__panel ::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+.beaver-fm-sidebar::-webkit-scrollbar-thumb,
+.beaver-fm-listing::-webkit-scrollbar-thumb,
+.beaver-fm-overlay__panel ::-webkit-scrollbar-thumb {
+	border: 3px solid transparent;
+	border-radius: 999px;
+	background-clip: content-box;
+	background-color: var( --bfm-border-strong );
+}
+
+.beaver-fm-sidebar::-webkit-scrollbar-track,
+.beaver-fm-listing::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+/* Shortcuts and tree ----------------------------------------------------- */
+
+.beaver-fm-shortcuts {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	padding-bottom: 10px;
+	margin-bottom: 8px;
+	border-bottom: 1px solid var( --bfm-border );
+}
+
+.beaver-fm-shortcut {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 7px 9px;
+	border: 0;
+	border-radius: var( --bfm-radius-xs );
+	background: none;
+	color: var( --bfm-text-2 );
+	font-size: 13px;
+	font-weight: 500;
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease;
+}
+
+.beaver-fm-shortcut:hover,
+.beaver-fm-shortcut:focus {
+	background: var( --bfm-surface-3 );
+	color: var( --bfm-text );
+}
+
+.beaver-fm-shortcut .dashicons {
+	font-size: 15px;
+	width: 15px;
+	height: 15px;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-tree {
+	font-size: 13px;
+}
+
+.beaver-fm-tree ul {
+	margin: 0;
+	padding: 0 0 0 15px;
+	list-style: none;
+}
+
+.beaver-fm-tree > ul {
+	padding-left: 0;
+}
+
+.beaver-fm-tree ul ul {
+	position: relative;
+}
+
+.beaver-fm-tree ul ul::before {
+	content: "";
+	position: absolute;
+	top: 2px;
+	bottom: 2px;
+	left: 6px;
+	width: 1px;
+	background: var( --bfm-border );
+}
+
+.beaver-fm-tree li {
+	margin: 0;
+}
+
+.beaver-fm-tree__row {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	padding: 5px 8px 5px 4px;
+	border-radius: var( --bfm-radius-xs );
+	color: var( --bfm-text-2 );
+	cursor: pointer;
+	transition: background 0.1s ease, color 0.1s ease;
+}
+
+.beaver-fm-tree__row:hover {
+	background: var( --bfm-surface-3 );
+	color: var( --bfm-text );
+}
+
+.beaver-fm-tree__row.is-current {
+	background: var( --bfm-accent-soft );
+	color: var( --bfm-accent );
+	font-weight: 600;
+}
+
+.beaver-fm-tree__toggle {
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: var( --bfm-muted );
+	line-height: 1;
+	cursor: pointer;
+}
+
+.beaver-fm-tree__toggle:hover {
+	background: rgba( 0, 0, 0, 0.06 );
+}
+
+.beaver-fm-tree__toggle .dashicons {
+	font-size: 15px;
+	width: 15px;
+	height: 15px;
+}
+
+.beaver-fm-tree__label {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Breadcrumbs ------------------------------------------------------------ */
+
+.beaver-fm-crumbs {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 1px;
+	padding: 10px 14px;
+	border-bottom: 1px solid var( --bfm-border );
+	background: var( --bfm-surface );
+	font-size: 13px;
+}
+
+.beaver-fm-crumb {
+	padding: 4px 9px;
+	border: 0;
+	border-radius: var( --bfm-radius-xs );
+	background: none;
+	color: var( --bfm-text-2 );
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.1s ease, color 0.1s ease;
+}
+
+.beaver-fm-crumb:hover:not( [disabled] ) {
+	background: var( --bfm-surface-3 );
+	color: var( --bfm-accent );
+}
+
+.beaver-fm-crumb[disabled] {
+	color: var( --bfm-text );
+	font-weight: 600;
+	cursor: default;
+}
+
+.beaver-fm-crumbs__sep {
+	color: #c7ccd4;
+	font-size: 12px;
+}
+
+/* Listing ---------------------------------------------------------------- */
+
+.beaver-fm-listing {
+	flex: 1 1 auto;
+	max-height: 68vh;
+	overflow: auto;
+	overscroll-behavior: contain;
+	outline: none;
+}
+
+.beaver-fm-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: 13px;
+}
+
+.beaver-fm-table th {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	padding: 9px 12px;
+	background: var( --bfm-surface-2 );
+	border-bottom: 1px solid var( --bfm-border );
+	text-align: left;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var( --bfm-muted );
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	transition: color 0.1s ease;
+}
+
+.beaver-fm-table th:hover:not( .is-static ) {
+	color: var( --bfm-text );
+}
+
+.beaver-fm-table th.is-static {
+	cursor: default;
+}
+
+.beaver-fm-table th .beaver-fm-sort {
+	margin-left: 2px;
+	font-size: 9px;
+	color: var( --bfm-accent );
+}
+
+.beaver-fm-table td {
+	padding: 9px 12px;
+	border-bottom: 1px solid var( --bfm-surface-3 );
+	vertical-align: middle;
+}
+
+.beaver-fm-table tbody tr {
+	transition: background 0.1s ease;
+}
+
+.beaver-fm-table tbody tr:hover {
+	background: var( --bfm-surface-2 );
+}
+
+.beaver-fm-table tbody tr.is-selected {
+	background: var( --bfm-accent-soft );
+}
+
+.beaver-fm-table tbody tr.is-selected td:first-child {
+	box-shadow: inset 3px 0 0 var( --bfm-accent );
+}
+
+.beaver-fm-table tbody tr.is-cut {
+	opacity: 0.5;
+}
+
+.beaver-fm-table input[type="checkbox"] {
+	margin: 0;
+	border-radius: 4px;
+}
+
+.beaver-fm-col-check {
+	width: 34px;
+}
+
+.beaver-fm-col-size,
+.beaver-fm-col-perms {
+	width: 108px;
+	white-space: nowrap;
+	color: var( --bfm-muted );
+	font-variant-numeric: tabular-nums;
+}
+
+.beaver-fm-col-perms code {
+	padding: 2px 6px;
+	border-radius: 5px;
+	background: var( --bfm-surface-3 );
+	font-family: var( --bfm-mono );
+	font-size: 11px;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-col-modified {
+	width: 150px;
+	white-space: nowrap;
+	color: var( --bfm-muted );
+	font-variant-numeric: tabular-nums;
+}
+
+.beaver-fm-col-actions {
+	width: 132px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.beaver-fm-name {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.beaver-fm-name__icon {
+	flex: 0 0 30px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: var( --bfm-radius-xs );
+	background: var( --bfm-surface-3 );
+	font-size: 17px;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-name__icon.is-folder {
+	background: #fef4e2;
+	color: #b7791f;
+}
+
+.beaver-fm-name__icon.is-code {
+	background: #eaf0ff;
+	color: #3858e9;
+}
+
+.beaver-fm-name__icon.is-image {
+	background: #e6f6ed;
+	color: #12915a;
+}
+
+.beaver-fm-name__icon.is-video,
+.beaver-fm-name__icon.is-audio {
+	background: #f3ebfd;
+	color: #7c3aed;
+}
+
+.beaver-fm-name__icon.is-archive {
+	background: #fdeeee;
+	color: #c2410c;
+}
+
+.beaver-fm-name__icon.is-pdf {
+	background: #fdeaea;
+	color: #b42318;
+}
+
+.beaver-fm-name__link {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var( --bfm-text );
+	font-size: 13px;
+	font-weight: 500;
+	text-align: left;
+	cursor: pointer;
+}
+
+.beaver-fm-name__link:hover {
+	color: var( --bfm-accent );
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.beaver-fm-name__badge {
+	flex: 0 0 auto;
+	padding: 2px 7px;
+	border: 1px solid var( --bfm-border );
+	border-radius: 999px;
+	background: var( --bfm-surface-2 );
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-rowaction {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: var( --bfm-radius-xs );
+	background: none;
+	color: var( --bfm-muted );
+	cursor: pointer;
+	opacity: 0.65;
+	transition: background 0.1s ease, color 0.1s ease, opacity 0.1s ease;
+}
+
+.beaver-fm-table tbody tr:hover .beaver-fm-rowaction {
+	opacity: 1;
+}
+
+.beaver-fm-rowaction:hover {
+	background: var( --bfm-surface-3 );
+	color: var( --bfm-accent );
+	opacity: 1;
+}
+
+.beaver-fm-rowaction .dashicons {
+	font-size: 17px;
+	width: 17px;
+	height: 17px;
+	line-height: 28px;
+}
+
+/* Search result rows ----------------------------------------------------- */
+
+.beaver-fm-hit {
+	padding: 2px 12px 10px 58px !important;
+	background: var( --bfm-surface-2 );
+	font-family: var( --bfm-mono );
+	font-size: 12px;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-hit div {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding: 2px 0;
+}
+
+.beaver-fm-hit b {
+	display: inline-block;
+	min-width: 62px;
+	margin-right: 10px;
+	color: var( --bfm-accent );
+	font-weight: 600;
+}
+
+.beaver-fm-path {
+	font-family: var( --bfm-mono );
+	font-size: 11px;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-name + .beaver-fm-path {
+	margin: 3px 0 0 40px;
+}
+
+/* Empty and error states ------------------------------------------------- */
+
+.beaver-fm-empty {
+	padding: 64px 20px;
+	text-align: center;
+	color: var( --bfm-muted );
+	font-size: 14px;
+}
+
+.beaver-fm-empty .dashicons {
+	display: block;
+	width: 52px;
+	height: 52px;
+	margin: 0 auto 14px;
+	border-radius: 50%;
+	background: var( --bfm-surface-3 );
+	font-size: 26px;
+	line-height: 52px;
+	color: var( --bfm-muted );
+	opacity: 0.85;
+}
+
+.beaver-fm-error {
+	display: flex;
+	gap: 10px;
+	margin: 16px;
+	padding: 13px 15px;
+	border: 1px solid #f3c6c2;
+	border-left: 3px solid var( --bfm-danger );
+	border-radius: var( --bfm-radius-sm );
+	background: var( --bfm-danger-soft );
+	color: #8f221c;
+	font-size: 13px;
+	line-height: 1.55;
+}
+
+/* Dropzone --------------------------------------------------------------- */
+
+/*
+ * The [hidden] rule has to be spelled out: a class selector that sets `display`
+ * beats the browser's own `[hidden] { display: none }`, which would otherwise
+ * leave this overlay — and its backdrop blur — sitting on top of the listing
+ * forever.
+ */
+.beaver-fm-dropzone[hidden] {
+	display: none;
+}
+
+.beaver-fm-dropzone {
+	position: absolute;
+	inset: 8px;
+	z-index: 15;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2px dashed var( --bfm-accent );
+	border-radius: var( --bfm-radius );
+	background: var( --bfm-accent-soft );
+	backdrop-filter: blur( 2px );
+	color: var( --bfm-accent );
+	font-size: 15px;
+	font-weight: 600;
+	pointer-events: none;
+}
+
+.beaver-fm-dropzone .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+	vertical-align: -5px;
+	margin-right: 4px;
+}
+
+/* Status bar ------------------------------------------------------------- */
+
+.beaver-fm-status {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 14px;
+	border-top: 1px solid var( --bfm-border );
+	background: var( --bfm-surface-2 );
+	font-size: 12px;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-progress {
+	display: inline-block;
+	width: 130px;
+	height: 6px;
+	margin-left: 10px;
+	border-radius: 999px;
+	background: var( --bfm-surface-3 );
+	vertical-align: middle;
+	overflow: hidden;
+}
+
+.beaver-fm-progress span {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: var( --bfm-accent );
+	transition: width 0.2s ease;
+}
+
+/* Overlays --------------------------------------------------------------- */
+
+.beaver-fm-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 160000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 28px;
+	background: rgba( 16, 24, 40, 0.5 );
+	backdrop-filter: blur( 4px );
+	-webkit-backdrop-filter: blur( 4px );
+	animation: beaver-fm-fade 0.14s ease-out;
+}
+
+.beaver-fm-overlay[hidden] {
+	display: none;
+}
+
+.beaver-fm-overlay__panel {
+	display: flex;
+	flex-direction: column;
+	max-height: 100%;
+	border-radius: var( --bfm-radius );
+	background: var( --bfm-surface );
+	box-shadow: var( --bfm-shadow-lg );
+	overflow: hidden;
+	animation: beaver-fm-pop 0.16s cubic-bezier( 0.2, 0.9, 0.3, 1.05 );
+}
+
+.beaver-fm-overlay__panel header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 18px;
+	border-bottom: 1px solid var( --bfm-border );
+}
+
+.beaver-fm-overlay__panel header strong {
+	font-size: 15px;
+	font-weight: 600;
+	color: var( --bfm-text );
+}
+
+@keyframes beaver-fm-fade {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes beaver-fm-pop {
+	from {
+		opacity: 0;
+		transform: translateY( 10px ) scale( 0.985 );
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* Editor ----------------------------------------------------------------- */
+
+.beaver-fm-editor {
+	width: 100%;
+	max-width: 1560px;
+	height: 100%;
+	background: #161b22;
+}
+
+.beaver-fm-editor__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 16px;
+	border-bottom: 1px solid #272e37;
+	background: #11151b;
+	color: #e6edf3;
+}
+
+.beaver-fm-editor__title {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 2px;
+}
+
+.beaver-fm-editor__title strong {
+	font-size: 14px;
+	font-weight: 600;
+	color: #e6edf3;
+}
+
+.beaver-fm-editor__title span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: var( --bfm-mono );
+	font-size: 11px;
+	color: #7d8590;
+}
+
+.beaver-fm-editor__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.beaver-fm-editor .button {
+	border-color: #30363d;
+	background: #21262d;
+	color: #c9d1d9;
+	box-shadow: none;
+}
+
+.beaver-fm-editor .button:hover:not( [disabled] ),
+.beaver-fm-editor .button:focus:not( [disabled] ) {
+	background: #2b3138;
+	border-color: #3d444d;
+	color: #f0f6fc;
+}
+
+.beaver-fm-editor .button-primary {
+	background: var( --bfm-accent );
+	border-color: var( --bfm-accent );
+	color: #fff;
+}
+
+.beaver-fm-editor__state {
+	margin-right: 4px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #7d8590;
+	max-width: 380px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.beaver-fm-editor__state.is-dirty {
+	color: #d29922;
+}
+
+.beaver-fm-editor__state.is-error {
+	color: #f85149;
+}
+
+.beaver-fm-editor__state.is-ok {
+	color: #3fb950;
+}
+
+.beaver-fm-editor__body {
+	position: relative;
+	flex: 1 1 auto;
+	display: flex;
+	min-height: 0;
+	background: var( --bfm-surface );
+}
+
+.beaver-fm-editor__body textarea {
+	flex: 1 1 auto;
+	width: 100%;
+	padding: 16px;
+	border: 0;
+	resize: none;
+	background: var( --bfm-surface );
+	font-family: var( --bfm-mono );
+	font-size: 13px;
+	line-height: 1.6;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-editor__body .CodeMirror {
+	flex: 1 1 auto;
+	height: 100%;
+	min-width: 0;
+	font-family: var( --bfm-mono );
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.beaver-fm-editor__body .CodeMirror-gutters {
+	border-right: 1px solid var( --bfm-border );
+	background: var( --bfm-surface-2 );
+}
+
+.beaver-fm-editor__history {
+	flex: 0 0 300px;
+	padding: 16px 18px;
+	border-left: 1px solid var( --bfm-border );
+	background: var( --bfm-surface-2 );
+	overflow: auto;
+}
+
+.beaver-fm-editor__history h3 {
+	margin: 0 0 12px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-version {
+	padding: 11px 12px;
+	margin-bottom: 8px;
+	border: 1px solid var( --bfm-border );
+	border-radius: var( --bfm-radius-sm );
+	background: var( --bfm-surface );
+	font-size: 12px;
+}
+
+.beaver-fm-version strong {
+	display: block;
+	margin-bottom: 2px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-version span {
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-version__actions {
+	display: flex;
+	gap: 12px;
+	margin-top: 8px;
+}
+
+.beaver-fm-version__actions button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var( --bfm-accent );
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.beaver-fm-version__actions button:hover {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.beaver-fm-editor__foot {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 9px 16px;
+	border-top: 1px solid #272e37;
+	background: #11151b;
+	font-family: var( --bfm-mono );
+	font-size: 11px;
+	color: #7d8590;
+}
+
+/* Preview ---------------------------------------------------------------- */
+
+.beaver-fm-preview {
+	width: 100%;
+	max-width: 1120px;
+	height: 100%;
+}
+
+.beaver-fm-preview__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 18px;
+	border-bottom: 1px solid var( --bfm-border );
+}
+
+.beaver-fm-preview__head strong {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.beaver-fm-preview__head > div {
+	display: flex;
+	gap: 8px;
+	flex: 0 0 auto;
+}
+
+.beaver-fm-preview__body {
+	flex: 1 1 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 22px;
+	overflow: auto;
+	background:
+		linear-gradient( 45deg, #e9ecf1 25%, transparent 25% ),
+		linear-gradient( -45deg, #e9ecf1 25%, transparent 25% ),
+		linear-gradient( 45deg, transparent 75%, #e9ecf1 75% ),
+		linear-gradient( -45deg, transparent 75%, #e9ecf1 75% ),
+		var( --bfm-surface-2 );
+	background-size: 22px 22px;
+	background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+}
+
+.beaver-fm-preview__body img {
+	max-width: 100%;
+	max-height: 100%;
+	border-radius: var( --bfm-radius-sm );
+	box-shadow: 0 10px 30px rgba( 16, 24, 40, 0.18 );
+}
+
+.beaver-fm-preview__body video,
+.beaver-fm-preview__body audio {
+	max-width: 100%;
+	border-radius: var( --bfm-radius-sm );
+}
+
+.beaver-fm-preview__body iframe {
+	width: 100%;
+	height: 100%;
+	border: 0;
+	border-radius: var( --bfm-radius-sm );
+	background: #fff;
+}
+
+/* Details ---------------------------------------------------------------- */
+
+.beaver-fm-info {
+	width: 100%;
+	max-width: 660px;
+}
+
+.beaver-fm-info__body {
+	padding: 6px 18px 20px;
+	overflow: auto;
+}
+
+.beaver-fm-info__body table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.beaver-fm-info__body th {
+	width: 152px;
+	padding: 9px 10px 9px 0;
+	text-align: left;
+	font-size: 12px;
+	font-weight: 500;
+	color: var( --bfm-muted );
+	vertical-align: top;
+}
+
+.beaver-fm-info__body td {
+	padding: 9px 0;
+	border-bottom: 1px solid var( --bfm-surface-3 );
+	word-break: break-all;
+}
+
+.beaver-fm-info__body td code {
+	padding: 0;
+	background: none;
+	font-family: var( --bfm-mono );
+	font-size: 12px;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-info__body h3 {
+	margin: 18px 0 0;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-fm-info__tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.beaver-fm-info__tools a.button {
+	text-decoration: none;
+}
+
+.beaver-fm-info__list {
+	max-height: 240px;
+	margin-top: 10px;
+	border: 1px solid var( --bfm-border );
+	border-radius: var( --bfm-radius-sm );
+	font-family: var( --bfm-mono );
+	font-size: 12px;
+	overflow: auto;
+}
+
+.beaver-fm-info__list div {
+	display: flex;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 5px 10px;
+	border-bottom: 1px solid var( --bfm-surface-3 );
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-info__list div:last-child {
+	border-bottom: 0;
+}
+
+/* Trash ------------------------------------------------------------------ */
+
+.beaver-fm-trashpanel {
+	width: 100%;
+	max-width: 880px;
+	max-height: 84vh;
+}
+
+.beaver-fm-trashpanel header > div {
+	display: flex;
+	gap: 8px;
+}
+
+.beaver-fm-trash__body {
+	padding: 4px 18px 20px;
+	overflow: auto;
+}
+
+.beaver-fm-trash__body table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.beaver-fm-trash__body th {
+	padding: 12px 10px 10px 0;
+	border-bottom: 1px solid var( --bfm-border );
+	text-align: left;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-trash__body td {
+	padding: 10px 10px 10px 0;
+	border-bottom: 1px solid var( --bfm-surface-3 );
+	vertical-align: middle;
+}
+
+.beaver-fm-trash__body td:last-child {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.beaver-fm-trash__body .beaver-fm-name__icon {
+	flex: none;
+	display: inline-flex;
+	width: 26px;
+	height: 26px;
+	margin-right: 8px;
+	font-size: 15px;
+	vertical-align: middle;
+}
+
+/* Dialog ----------------------------------------------------------------- */
+
+.beaver-fm-overlay--dialog {
+	z-index: 160010;
+}
+
+.beaver-fm-dialog {
+	width: 100%;
+	max-width: 480px;
+	padding: 24px;
+}
+
+.beaver-fm-dialog h2 {
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 17px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-dialog p {
+	margin: 0 0 14px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-dialog label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-dialog label span {
+	display: block;
+	margin-bottom: 5px;
+}
+
+.beaver-fm-dialog input[type="text"] {
+	width: 100%;
+	height: 36px;
+	padding: 0 12px;
+	border: 1px solid var( --bfm-border-strong );
+	border-radius: var( --bfm-radius-xs );
+	background: var( --bfm-surface );
+	box-shadow: none;
+	font-size: 13px;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-dialog input[type="text"]:focus {
+	border-color: var( --bfm-accent );
+	outline: none;
+	box-shadow: 0 0 0 3px var( --bfm-accent-soft );
+}
+
+.beaver-fm-dialog label.beaver-fm-check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 14px;
+	font-weight: 400;
+}
+
+.beaver-fm-dialog .description {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.55;
+	color: var( --bfm-muted );
+}
+
+.beaver-fm-dialog__foot {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 22px;
+}
+
+/* Toasts ----------------------------------------------------------------- */
+
+.beaver-fm-toasts {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 160020;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 400px;
+}
+
+.beaver-fm-toast {
+	display: flex;
+	gap: 10px;
+	padding: 13px 16px;
+	border: 1px solid var( --bfm-border );
+	border-left: 3px solid var( --bfm-accent );
+	border-radius: var( --bfm-radius-sm );
+	background: var( --bfm-surface );
+	box-shadow: var( --bfm-shadow-lg );
+	font-size: 13px;
+	line-height: 1.5;
+	color: var( --bfm-text );
+	transition: opacity 0.25s ease;
+	animation: beaver-fm-slide 0.18s cubic-bezier( 0.2, 0.9, 0.3, 1.05 );
+}
+
+.beaver-fm-toast.is-error {
+	border-left-color: var( --bfm-danger );
+}
+
+.beaver-fm-toast.is-success {
+	border-left-color: var( --bfm-success );
+}
+
+@keyframes beaver-fm-slide {
+	from {
+		opacity: 0;
+		transform: translateY( 10px );
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.beaver-fm-toast,
+	.beaver-fm-overlay,
+	.beaver-fm-overlay__panel {
+		animation: none;
+	}
+
+	.beaver-fm * {
+		transition: none !important;
+	}
+}
+
+/* Settings and log screens ----------------------------------------------- */
+
+.beaver-fm-settings h2.title {
+	margin-top: 32px;
+	padding-top: 18px;
+	border-top: 1px solid var( --bfm-border );
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.beaver-fm-settings .form-table code,
+.beaver-fm-logscreen code {
+	padding: 2px 7px;
+	border-radius: 5px;
+	background: var( --bfm-surface-3 );
+	font-family: var( --bfm-mono );
+	font-size: 12px;
+}
+
+.beaver-fm-logscreen .widefat {
+	border-radius: var( --bfm-radius-sm );
+	box-shadow: var( --bfm-shadow-sm );
+	overflow: hidden;
+}
+
+.beaver-fm-logscreen .widefat th {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var( --bfm-muted );
+}
+
+/* Maker's mark ----------------------------------------------------------- */
+
+.beaver-fm-credit {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	max-width: 720px;
+	margin: 28px 0 12px;
+	padding: 14px 20px;
+	border: 1px solid var( --bfm-border );
+	border-left: 3px solid var( --bfm-accent );
+	border-radius: var( --bfm-radius-sm );
+	background: var( --bfm-surface );
+	box-shadow: var( --bfm-shadow-sm );
+}
+
+.beaver-fm-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	width: auto;
+	height: 36px;
+}
+
+.beaver-fm-credit__text {
+	font-size: 13px;
+	line-height: 1.55;
+	color: var( --bfm-text-2 );
+}
+
+.beaver-fm-credit__text strong {
+	display: block;
+	margin-bottom: 1px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var( --bfm-text );
+}
+
+.beaver-fm-credit__text a {
+	color: var( --bfm-accent );
+	font-weight: 500;
+	text-decoration: none;
+}
+
+.beaver-fm-credit__text a:hover {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+/* Narrow screens --------------------------------------------------------- */
+
+@media screen and ( max-width: 1100px ) {
+	.beaver-fm-col-perms {
+		display: none;
+	}
+}
+
+@media screen and ( max-width: 960px ) {
+	.beaver-fm-sidebar {
+		display: none;
+	}
+
+	.beaver-fm-col-modified {
+		display: none;
+	}
+
+	.beaver-fm-search input[type="search"] {
+		min-width: 150px;
+	}
+
+	.beaver-fm-editor__history {
+		flex-basis: 240px;
+	}
+
+	.beaver-fm-toolbar {
+		top: 46px;
+	}
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-fm-toolbar {
+		position: static;
+	}
+
+	.beaver-fm-col-size,
+	.beaver-fm-col-actions {
+		display: none;
+	}
+
+	.beaver-fm-toolbar__group + .beaver-fm-toolbar__group::before {
+		display: none;
+	}
+
+	.beaver-fm-overlay {
+		padding: 0;
+	}
+
+	.beaver-fm-overlay__panel {
+		border-radius: 0;
+		height: 100%;
+		max-width: none;
+	}
+
+	.beaver-fm-editor__history {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		flex-basis: 82%;
+		z-index: 5;
+		box-shadow: var( --bfm-shadow-lg );
+	}
+
+	.beaver-fm-toasts {
+		right: 12px;
+		left: 12px;
+		bottom: 12px;
+		max-width: none;
+	}
+
+	.beaver-fm-credit {
+		flex-wrap: wrap;
+		gap: 12px;
+		margin-right: 12px;
+	}
+}

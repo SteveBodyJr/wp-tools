@@ -1,0 +1,177 @@
+/**
+ * Beaver Access admin styles.
+ */
+
+.beaver-access-lead {
+	max-width: 46em;
+	font-size: 14px;
+	color: #50575e;
+}
+
+.beaver-access-columns {
+	display: grid;
+	grid-template-columns: minmax( 280px, 24em ) 1fr;
+	gap: 24px;
+	margin: 20px 0;
+	align-items: start;
+}
+
+.beaver-access-new,
+.beaver-access-list {
+	padding: 4px 20px 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-access-new label {
+	display: block;
+	margin-bottom: 4px;
+}
+
+.beaver-access-new select,
+.beaver-access-new input[type="text"] {
+	width: 100%;
+	max-width: 100%;
+}
+
+.beaver-access-note {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #646970;
+}
+
+/* Custom expiry rows. Only the one the chosen option needs is on screen. */
+
+.beaver-access-custom[hidden] {
+	display: none;
+}
+
+.beaver-access-duration {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.beaver-access-duration select {
+	width: auto;
+	flex: 1 1 auto;
+}
+
+.beaver-access-new input[type="datetime-local"] {
+	width: 100%;
+	max-width: 100%;
+	padding: 0 8px;
+	line-height: 2;
+}
+
+.beaver-access-fresh {
+	margin: 16px 0;
+	padding: 4px 20px 20px;
+	background: #f0f6fc;
+	border: 1px solid #2271b1;
+	border-left-width: 4px;
+}
+
+.beaver-access-copyrow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.beaver-access-copyrow input {
+	flex: 1 1 24em;
+	font-size: 12px;
+}
+
+.beaver-access-table {
+	margin-bottom: 20px;
+}
+
+.beaver-access-table td {
+	vertical-align: top;
+}
+
+.beaver-access-badge {
+	display: inline-block;
+	padding: 1px 8px;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.beaver-access-badge--live {
+	color: #00450c;
+	background: #edfaef;
+}
+
+.beaver-access-badge--dead {
+	color: #50575e;
+	background: #f0f0f1;
+}
+
+.beaver-access-empty {
+	padding: 14px;
+	color: #646970;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+}
+
+/* Maker's mark. */
+
+.beaver-access-credit {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 32px 0 0;
+	padding: 12px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-access-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	height: 34px;
+	width: auto;
+}
+
+.beaver-access-credit__text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.beaver-access-credit__text strong {
+	display: block;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-access-credit__text a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.beaver-access-credit__text a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media screen and ( max-width: 960px ) {
+	.beaver-access-columns {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-access-credit {
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-right: 12px;
+	}
+}

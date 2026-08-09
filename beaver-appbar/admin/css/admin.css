@@ -1,0 +1,227 @@
+/**
+ * Beaver App Bar — admin styles.
+ *
+ * Loaded after the front-end stylesheet on this screen only. Its first job is
+ * to lift the bar out of `position: fixed` so the preview sits in the page
+ * instead of clamping itself to the bottom of wp-admin.
+ */
+
+.beaver-appbar-admin .beaver-appbar-lede {
+	max-width: 60em;
+	font-size: 14px;
+	color: #50575e;
+}
+
+.beaver-appbar-note {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #646970;
+}
+
+.beaver-appbar-hint {
+	max-width: 60em;
+}
+
+/* Preview */
+
+.beaver-appbar-preview {
+	margin: 18px 0 26px;
+}
+
+.beaver-appbar-preview__phone {
+	width: 390px;
+	max-width: 100%;
+	padding: 10px 10px 12px;
+	background: #1d2327;
+	border-radius: 30px;
+	box-shadow: 0 18px 40px -22px rgba( 0, 0, 0, 0.6 );
+}
+
+.beaver-appbar-preview__screen {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	min-height: 132px;
+	padding: 0;
+	overflow: hidden;
+	background: #f6f7f7;
+	background-image: linear-gradient( #f6f7f7 0%, #e9eaec 100% );
+	border-radius: 22px;
+}
+
+.beaver-appbar-preview__empty {
+	margin: auto;
+	padding: 20px;
+	font-size: 13px;
+	color: #646970;
+}
+
+/* The bar in the preview: same markup, same stylesheet, only unpinned. */
+
+.beaver-appbar-preview .beaver-appbar {
+	position: static;
+	width: 100%;
+	transform: none;
+	opacity: 1;
+}
+
+.beaver-appbar-preview .beaver-appbar--float {
+	margin: 0 10px 10px;
+	width: auto;
+}
+
+.beaver-appbar-preview .beaver-appbar__item {
+	cursor: default;
+}
+
+/* Items table */
+
+.beaver-appbar-items {
+	max-width: 78em;
+	margin-top: 6px;
+}
+
+.beaver-appbar-items td {
+	vertical-align: top;
+}
+
+.beaver-appbar-items input[type="text"] {
+	width: 100%;
+	max-width: 16em;
+}
+
+.beaver-appbar-items select {
+	max-width: 100%;
+}
+
+.beaver-appbar-items__order {
+	width: 3.4em;
+	white-space: nowrap;
+}
+
+.beaver-appbar-items__icon {
+	white-space: nowrap;
+}
+
+.beaver-appbar-items__flag,
+.beaver-appbar-items__bin {
+	width: 6em;
+	text-align: center;
+}
+
+.beaver-appbar-items__bin {
+	width: 3em;
+}
+
+.beaver-appbar-swatch {
+	display: inline-grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	margin-right: 6px;
+	vertical-align: middle;
+	color: #1d2327;
+	background: #f0f0f1;
+	border-radius: 8px;
+}
+
+.beaver-appbar-swatch svg {
+	display: block;
+}
+
+.beaver-appbar-move {
+	display: block;
+	padding: 0;
+	font-size: 11px;
+	line-height: 1.5;
+	color: #787c82;
+	text-decoration: none;
+}
+
+.beaver-appbar-move:hover {
+	color: #135e96;
+}
+
+.beaver-appbar-remove {
+	font-size: 20px;
+	line-height: 1;
+	color: #b32d2e;
+	text-decoration: none;
+}
+
+.beaver-appbar-remove:hover {
+	color: #8a2424;
+}
+
+/* A row whose type needs no link says so instead of offering an empty box. */
+
+.beaver-appbar-item.is-linkless [data-url-field],
+.beaver-appbar-item.is-linkless [data-url-note] {
+	display: none;
+}
+
+.beaver-appbar-item .beaver-appbar-item__auto {
+	display: none;
+	font-size: 12px;
+	color: #646970;
+}
+
+.beaver-appbar-item.is-linkless .beaver-appbar-item__auto {
+	display: block;
+}
+
+/* Credit */
+
+.beaver-appbar-credit {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	max-width: 46em;
+	margin: 28px 0 0;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-appbar-credit__logo {
+	width: 150px;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.beaver-appbar-credit__text {
+	font-size: 13px;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.beaver-appbar-credit__text strong {
+	display: block;
+	color: #1d2327;
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-appbar-items,
+	.beaver-appbar-items tbody,
+	.beaver-appbar-items tr,
+	.beaver-appbar-items td {
+		display: block;
+		width: auto;
+	}
+
+	.beaver-appbar-items thead {
+		display: none;
+	}
+
+	.beaver-appbar-items tr {
+		padding: 8px 0;
+		border-bottom: 1px solid #dcdcde;
+	}
+
+	.beaver-appbar-items__order {
+		display: flex !important;
+		gap: 10px;
+	}
+}

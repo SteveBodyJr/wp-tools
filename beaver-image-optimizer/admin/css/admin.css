@@ -1,0 +1,433 @@
+/**
+ * Beaver Image Optimizer admin styles.
+ *
+ * Built on the core admin palette so the screens inherit the active colour
+ * scheme instead of fighting it.
+ */
+
+.beaver-io .beaver-io-lead {
+	max-width: 46rem;
+	font-size: 14px;
+	color: #50575e;
+}
+
+/* Statistic cards -------------------------------------------------------- */
+
+.beaver-io-cards {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 210px, 1fr ) );
+	gap: 16px;
+	margin: 20px 0 24px;
+}
+
+.beaver-io-card {
+	display: flex;
+	flex-direction: column;
+	padding: 18px 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #2271b1;
+	border-radius: 4px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+}
+
+.beaver-io-card__label {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #646970;
+}
+
+.beaver-io-card__value {
+	margin-top: 6px;
+	font-size: 30px;
+	line-height: 1.15;
+	font-weight: 600;
+	color: #1d2327;
+	word-break: break-word;
+}
+
+.beaver-io-card__unit {
+	font-size: 20px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.beaver-io-card__hint {
+	margin-top: 8px;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Panels ----------------------------------------------------------------- */
+
+.beaver-io-columns {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 340px, 1fr ) );
+	gap: 20px;
+	align-items: start;
+}
+
+.beaver-io-panel {
+	padding: 4px 20px 20px;
+	margin-bottom: 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+}
+
+.beaver-io-panel h2 {
+	font-size: 15px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-io-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.beaver-io-table th,
+.beaver-io-table td {
+	padding: 9px 0;
+	text-align: left;
+	font-size: 13px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-io-table th {
+	font-weight: 400;
+	color: #646970;
+}
+
+.beaver-io-table td {
+	font-weight: 600;
+	text-align: right;
+}
+
+.beaver-io-table td .button {
+	margin-left: 8px;
+	font-weight: 400;
+}
+
+/* Health checklist ------------------------------------------------------- */
+
+.beaver-io-health {
+	margin: 0;
+}
+
+.beaver-io-health__item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	justify-content: space-between;
+	align-items: baseline;
+	padding: 9px 0 9px 22px;
+	margin: 0;
+	position: relative;
+	font-size: 13px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-io-health__item::before {
+	position: absolute;
+	left: 0;
+	top: 9px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	font: 700 10px/14px sans-serif;
+	text-align: center;
+	color: #fff;
+}
+
+.beaver-io-health__item--ok::before {
+	content: "\2713";
+	background: #00a32a;
+}
+
+.beaver-io-health__item--warn::before {
+	content: "!";
+	background: #dba617;
+}
+
+.beaver-io-health__item--bad::before {
+	content: "\00d7";
+	background: #d63638;
+}
+
+.beaver-io-health__label {
+	color: #646970;
+}
+
+.beaver-io-health__value {
+	font-weight: 600;
+	text-align: right;
+	word-break: break-word;
+}
+
+.beaver-io-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+/* Progress --------------------------------------------------------------- */
+
+.beaver-io-progress {
+	margin-top: 18px;
+}
+
+.beaver-io-progress__bar {
+	height: 22px;
+	background: #f0f0f1;
+	border-radius: 11px;
+	overflow: hidden;
+}
+
+.beaver-io-progress__bar span {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: linear-gradient( 90deg, #2271b1, #72aee6 );
+	transition: width 0.25s ease;
+}
+
+.beaver-io-progress__text {
+	margin: 8px 0 0;
+	font-size: 13px;
+	color: #50575e;
+}
+
+/* Log -------------------------------------------------------------------- */
+
+.beaver-io-log {
+	max-height: 280px;
+	margin-top: 16px;
+	padding: 10px 12px;
+	overflow-y: auto;
+	font-size: 12px;
+	line-height: 1.7;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.beaver-io-log__row {
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	border-bottom: 1px solid #e8e8e8;
+	padding: 3px 0;
+}
+
+.beaver-io-log__row:last-child {
+	border-bottom: 0;
+}
+
+.beaver-io-log__row--failed {
+	color: #d63638;
+}
+
+.beaver-io-log__row--skipped {
+	color: #8c8f94;
+}
+
+.beaver-io-log__name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.beaver-io-log__meta {
+	flex: none;
+	font-variant-numeric: tabular-nums;
+}
+
+.beaver-io-inline-notice {
+	margin-top: 14px;
+	padding: 10px 12px;
+	font-size: 13px;
+	border-left: 4px solid #2271b1;
+	background: #f6f7f7;
+}
+
+.beaver-io-inline-notice--error {
+	border-left-color: #d63638;
+}
+
+.beaver-io-inline-notice--success {
+	border-left-color: #00a32a;
+}
+
+/* Settings --------------------------------------------------------------- */
+
+.beaver-io-radio {
+	display: block;
+	max-width: 44rem;
+	margin-bottom: 12px;
+}
+
+.beaver-io-radio span {
+	font-weight: 600;
+}
+
+.beaver-io-radio em {
+	display: block;
+	margin: 2px 0 0 24px;
+	font-style: normal;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Media library column --------------------------------------------------- */
+
+.column-beaver_io {
+	width: 16%;
+}
+
+.beaver-io-badge {
+	display: inline-block;
+	padding: 1px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.7;
+	border-radius: 9px;
+	white-space: nowrap;
+}
+
+.beaver-io-badge--optimized {
+	background: #edfaef;
+	color: #00652b;
+}
+
+.beaver-io-badge--partial {
+	background: #fcf9e8;
+	color: #7a5c00;
+}
+
+.beaver-io-badge--skipped,
+.beaver-io-badge--pending {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+.beaver-io-badge--failed {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.beaver-io-saving {
+	font-size: 11px;
+	color: #646970;
+}
+
+.beaver-io-row-action {
+	display: inline-block;
+	margin-top: 3px;
+	font-size: 11px;
+}
+
+.beaver-io-row-action--danger {
+	color: #b32d2e;
+}
+
+.beaver-io-row-action[disabled] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.beaver-io-muted {
+	color: #a7aaad;
+}
+
+/* Failure reporting. */
+
+.beaver-io-error {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #b32d2e;
+}
+
+.beaver-io-panel--errors {
+	margin-top: 20px;
+	border-left: 4px solid #b32d2e;
+}
+
+.beaver-io-errors {
+	margin-top: 12px;
+}
+
+.beaver-io-errors th,
+.beaver-io-errors td {
+	vertical-align: top;
+}
+
+.beaver-io-error-code {
+	display: inline-block;
+	margin-left: 4px;
+	padding: 1px 5px;
+	font-size: 11px;
+	color: #50575e;
+	background: #f0f0f1;
+}
+
+/* Maker's mark. Stock wp-admin palette so it reads as part of the screen. */
+
+.beaver-io-credit {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 32px 0 0;
+	padding: 12px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-io-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	height: 34px;
+	width: auto;
+}
+
+.beaver-io-credit__text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.beaver-io-credit__text strong {
+	display: block;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-io-credit__text a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.beaver-io-credit__text a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-io-card__value {
+		font-size: 24px;
+	}
+
+	.beaver-io-credit {
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-right: 12px;
+	}
+}

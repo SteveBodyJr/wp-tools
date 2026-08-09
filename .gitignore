@@ -1,0 +1,22 @@
+# Release archives. Built from the source beside them and attached to a GitHub
+# release, so they are never committed: git would carry every historical copy
+# of every plugin for ever.
+*.zip
+
+# Generated per site. Shipping one would hand every install the same token.
+beaver-debug/viewer-config.php
+
+# Editor and OS noise.
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Nothing here should ever hold credentials, but make it explicit.
+.env
+.env.*
+*.pem
+*.key
+
+# Internal notes, never published.
+INTERNAL.md

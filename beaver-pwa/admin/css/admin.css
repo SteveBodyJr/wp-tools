@@ -1,0 +1,370 @@
+/**
+ * Beaver PWA admin styles.
+ *
+ * Built on the core admin palette so the screens inherit the active colour
+ * scheme instead of fighting it.
+ */
+
+.beaver-pwa .beaver-pwa-lead {
+	max-width: 46rem;
+	font-size: 14px;
+	color: #50575e;
+}
+
+.beaver-pwa-hint {
+	margin: 0 0 12px;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Status banner ----------------------------------------------------------- */
+
+.beaver-pwa-status {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 18px 20px;
+	margin: 20px 0 24px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #2271b1;
+	border-radius: 4px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+}
+
+.beaver-pwa-status--ready {
+	border-left-color: #00a32a;
+}
+
+.beaver-pwa-status--blocked {
+	border-left-color: #d63638;
+}
+
+.beaver-pwa-status__mark {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	font-size: 20px;
+	font-weight: 700;
+	color: #fff;
+	background: #2271b1;
+}
+
+.beaver-pwa-status--ready .beaver-pwa-status__mark {
+	background: #00a32a;
+}
+
+.beaver-pwa-status--blocked .beaver-pwa-status__mark {
+	background: #d63638;
+}
+
+.beaver-pwa-status__body {
+	flex: 1 1 auto;
+}
+
+.beaver-pwa-status__body h2 {
+	margin: 0;
+	font-size: 16px;
+	line-height: 1.3;
+}
+
+.beaver-pwa-status__body p {
+	margin: 4px 0 0;
+	font-size: 13px;
+	color: #646970;
+}
+
+/* Layout ------------------------------------------------------------------ */
+
+.beaver-pwa-columns {
+	display: grid;
+	grid-template-columns: minmax( 340px, 1.4fr ) minmax( 300px, 1fr );
+	gap: 20px;
+	align-items: start;
+}
+
+@media screen and ( max-width: 960px ) {
+	.beaver-pwa-columns {
+		grid-template-columns: 1fr;
+	}
+}
+
+.beaver-pwa-panel {
+	padding: 4px 20px 20px;
+	margin-bottom: 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+}
+
+.beaver-pwa-panel h2 {
+	font-size: 15px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-pwa-side .beaver-pwa-panel:last-child {
+	margin-bottom: 0;
+}
+
+/* Readiness list ---------------------------------------------------------- */
+
+.beaver-pwa-health {
+	margin: 0;
+}
+
+.beaver-pwa-health__item {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 0;
+	margin: 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-pwa-health__item:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+.beaver-pwa-health__mark {
+	position: relative;
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	margin-top: 2px;
+	border-radius: 50%;
+	background: #dcdcde;
+}
+
+.beaver-pwa-health__mark::before {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.beaver-pwa-health__item--pass .beaver-pwa-health__mark {
+	background: #00a32a;
+}
+
+.beaver-pwa-health__item--pass .beaver-pwa-health__mark::before {
+	content: "\2713";
+}
+
+.beaver-pwa-health__item--warn .beaver-pwa-health__mark {
+	background: #dba617;
+}
+
+.beaver-pwa-health__item--warn .beaver-pwa-health__mark::before {
+	content: "!";
+}
+
+.beaver-pwa-health__item--fail .beaver-pwa-health__mark {
+	background: #d63638;
+}
+
+.beaver-pwa-health__item--fail .beaver-pwa-health__mark::before {
+	content: "\00d7";
+	font-size: 14px;
+}
+
+.beaver-pwa-health__body {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-size: 13px;
+}
+
+.beaver-pwa-health__body strong {
+	display: block;
+}
+
+.beaver-pwa-health__message {
+	display: block;
+	margin-top: 2px;
+	color: #646970;
+	word-break: break-word;
+}
+
+.beaver-pwa-health__action {
+	display: inline-block;
+	margin-top: 4px;
+	font-size: 12px;
+}
+
+/* Home screen preview ----------------------------------------------------- */
+
+.beaver-pwa-preview {
+	display: flex;
+	justify-content: center;
+	padding: 8px 0 4px;
+}
+
+.beaver-pwa-preview__phone {
+	width: 168px;
+	border: 1px solid #dcdcde;
+	border-radius: 22px;
+	overflow: hidden;
+	background: var( --beaver-pwa-surface, #fff );
+	box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.08 );
+}
+
+.beaver-pwa-preview__bar {
+	height: 22px;
+	background: var( --beaver-pwa-theme, #1d2327 );
+}
+
+.beaver-pwa-preview__screen {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 28px 12px 32px;
+}
+
+.beaver-pwa-preview__icon {
+	width: 56px;
+	height: 56px;
+	border-radius: 14px;
+	object-fit: cover;
+	box-shadow: 0 2px 8px rgba( 0, 0, 0, 0.18 );
+}
+
+.beaver-pwa-preview__icon--empty {
+	background: repeating-linear-gradient( 45deg, #f0f0f1, #f0f0f1 6px, #e0e0e1 6px, #e0e0e1 12px );
+}
+
+.beaver-pwa-preview__label {
+	max-width: 100%;
+	font-size: 12px;
+	font-weight: 500;
+	text-align: center;
+	color: #1d2327;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Tables and fields ------------------------------------------------------- */
+
+.beaver-pwa-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.beaver-pwa-table th,
+.beaver-pwa-table td {
+	padding: 9px 0;
+	text-align: left;
+	font-size: 13px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-pwa-table th {
+	font-weight: 400;
+	color: #646970;
+}
+
+.beaver-pwa-table td {
+	font-weight: 600;
+	text-align: right;
+}
+
+.beaver-pwa-table tr:last-child th,
+.beaver-pwa-table tr:last-child td {
+	border-bottom: 0;
+}
+
+.beaver-pwa-icon-field {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+.beaver-pwa-icon-field__preview {
+	width: 72px;
+	height: 72px;
+	border-radius: 12px;
+	object-fit: cover;
+	border: 1px solid #dcdcde;
+	background: #f6f7f7;
+}
+
+.beaver-pwa-icon-field .description {
+	max-width: 34rem;
+}
+
+.beaver-pwa-danger {
+	color: #b32d2e;
+}
+
+.beaver-pwa-prefix {
+	display: inline-block;
+	margin-right: 4px;
+	color: #646970;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+}
+
+.beaver-pwa-inline {
+	margin-left: 20px;
+}
+
+.beaver-pwa-feedback {
+	min-height: 20px;
+	margin: 8px 0 0;
+	font-size: 13px;
+	color: #646970;
+}
+
+.beaver-pwa-feedback--error {
+	color: #b32d2e;
+}
+
+.beaver-pwa-feedback--done {
+	color: #007017;
+}
+
+.beaver-pwa .form-table th {
+	width: 190px;
+}
+
+/* Maker's mark ------------------------------------------------------------ */
+
+.beaver-pwa-credit {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	max-width: 46em;
+	margin: 28px 0 0;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-pwa-credit__logo {
+	width: 150px;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.beaver-pwa-credit__text {
+	font-size: 13px;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.beaver-pwa-credit__text strong {
+	display: block;
+	color: #1d2327;
+}

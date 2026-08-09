@@ -1,0 +1,427 @@
+/**
+ * Beaver AI Chat - settings screen.
+ */
+
+.bac-admin .bac-title {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+}
+
+.bac-admin .bac-title .dashicons {
+	font-size: 26px;
+	width: 26px;
+	height: 26px;
+	color: #1b7f5a;
+}
+
+.bac-admin .bac-lede {
+	max-width: 780px;
+	font-size: 13px;
+}
+
+.bac-admin .bac-tabs {
+	margin-top: 18px;
+}
+
+.bac-admin .bac-panel {
+	display: none;
+	background: #fff;
+	border: 1px solid #dcdfe1;
+	border-top: 0;
+	padding: 4px 20px 12px;
+}
+
+.bac-admin .bac-panel.is-active {
+	display: block;
+}
+
+.bac-admin .bac-h2 {
+	font-size: 15px;
+	margin: 22px 0 2px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #eceef0;
+}
+
+.bac-admin .bac-section-lede {
+	max-width: 780px;
+	margin: 8px 0 0;
+}
+
+.bac-admin .bac-tokens code {
+	margin-right: 4px;
+}
+
+/* The test result can run to a list of recipients, so let it wrap. */
+.bac-admin .bac-test-out:empty {
+	display: none;
+}
+
+.bac-admin .bac-strong {
+	font-weight: 600;
+}
+
+.bac-admin .bac-ok {
+	color: #1a7f37;
+	font-weight: 600;
+	margin-left: .5rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.bac-admin .bac-checklist {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	gap: 6px 18px;
+	max-width: 780px;
+	margin-bottom: 6px;
+}
+
+.bac-admin .bac-checklist label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.bac-admin .bac-checklist code {
+	font-size: 11px;
+	color: #6b7280;
+	background: #f3f4f5;
+}
+
+.bac-admin .bac-test-out {
+	margin-left: .75rem;
+	font-weight: 600;
+}
+
+.bac-admin .bac-test-out.is-busy { color: #555; }
+.bac-admin .bac-test-out.is-ok { color: #1a7f37; }
+.bac-admin .bac-test-out.is-bad { color: #b32d2e; }
+
+.bac-admin .bac-tool-form {
+	margin: 12px 0 22px;
+	max-width: 780px;
+}
+
+.bac-admin input[type="color"] {
+	vertical-align: middle;
+	width: 60px;
+	height: 30px;
+	padding: 2px;
+	margin-left: 6px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.bac-admin .form-table th {
+	width: 220px;
+}
+
+@media (max-width: 782px) {
+	.bac-admin .form-table th {
+		width: auto;
+	}
+}
+
+/* ------------------------------------------------- Conversations list + view */
+
+.bac-live {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+	color: #1a7f37;
+}
+
+.bac-live-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #22c55e;
+	box-shadow: 0 0 0 0 rgba(34, 197, 94, .6);
+	animation: bac-live-pulse 2s ease-out infinite;
+}
+
+@keyframes bac-live-pulse {
+	0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, .55); }
+	70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+#bac-lead-live {
+	transition: background-color .6s ease;
+	border-radius: 6px;
+}
+
+#bac-lead-live.is-updated {
+	animation: bac-flash 1.4s ease-out;
+}
+
+@keyframes bac-flash {
+	0% { background-color: rgba(34, 197, 94, .12); }
+	100% { background-color: transparent; }
+}
+
+.bac-lead-head {
+	margin-bottom: 12px;
+	font-size: 13px;
+}
+
+.bac-lead-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 18px;
+	font-size: 13px;
+}
+
+.bac-lead-table th {
+	width: 130px;
+	text-align: left;
+	padding: 7px 12px 7px 0;
+	color: #646970;
+	font-weight: 500;
+	vertical-align: top;
+}
+
+.bac-lead-table td {
+	padding: 7px 0;
+	color: #1d2327;
+}
+
+.bac-dash {
+	color: #b4b9bd;
+}
+
+.bac-alert-bad {
+	color: #b32d2e;
+}
+
+.bac-thread {
+	max-height: 460px;
+	overflow-y: auto;
+	padding: 16px;
+	background: #f6f7f7;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.bac-msg {
+	max-width: 78%;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.bac-msg.is-visitor {
+	align-self: flex-end;
+	align-items: flex-end;
+}
+
+.bac-msg-who {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .03em;
+	text-transform: uppercase;
+	color: #7c8b84;
+}
+
+.bac-msg-body {
+	padding: 10px 13px;
+	border-radius: 12px;
+	font-size: 13px;
+	line-height: 1.6;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	color: #1d2327;
+	word-break: break-word;
+}
+
+.bac-msg.is-visitor .bac-msg-body {
+	background: #16603f;
+	border-color: #16603f;
+	color: #fff;
+	border-bottom-right-radius: 4px;
+}
+
+.bac-msg.is-bot .bac-msg-body {
+	border-bottom-left-radius: 4px;
+}
+
+.bac-thread-raw {
+	white-space: pre-wrap;
+	margin: 0;
+	font: 13px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ------------------------------------------------------ Working the queue */
+
+.bac-status {
+	max-width: 150px;
+}
+
+.bac-status-note {
+	margin-left: 6px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.bac-status-note.is-busy { color: #646970; }
+.bac-status-note.is-ok { color: #1a7f37; }
+.bac-status-note.is-bad { color: #b32d2e; }
+
+/* ------------------------------------------------------------------- Spend */
+
+.bac-admin .bac-usage {
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	padding: 16px 18px;
+	margin: 14px 0 6px;
+	max-width: 780px;
+	background: #fff;
+}
+
+.bac-admin .bac-usage.is-capped {
+	border-color: #b32d2e;
+	background: #fcf0f1;
+}
+
+.bac-admin .bac-usage-figures {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 28px;
+	margin-bottom: 12px;
+}
+
+.bac-admin .bac-usage-big {
+	display: block;
+	font-size: 24px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.bac-admin .bac-usage-label {
+	font-size: 12px;
+	color: #646970;
+}
+
+.bac-admin .bac-usage-capped {
+	color: #b32d2e;
+	margin: 0 0 12px;
+}
+
+.bac-admin .bac-usage-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: 4px;
+	height: 56px;
+	margin: 14px 0 4px;
+}
+
+.bac-admin .bac-usage-bar {
+	flex: 1;
+	background: #16603f;
+	border-radius: 2px 2px 0 0;
+	min-height: 2px;
+	opacity: .85;
+}
+
+.bac-admin .bac-usage-models {
+	margin: 14px 0 0;
+}
+
+.bac-admin .bac-usage-models th {
+	width: 240px;
+}
+
+/* ------------------------------------------------------------ Answer gaps */
+
+.bac-admin .bac-gaps td {
+	vertical-align: top;
+}
+
+.bac-admin .bac-gap-form {
+	margin: 0 0 6px;
+}
+
+.bac-admin .bac-gap-closed {
+	opacity: .6;
+}
+
+.bac-admin .bac-gap-tag {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: #edf5f0;
+	color: #1a7f37;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+.bac-admin .bac-gap-empty {
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	background: #fff;
+	padding: 24px;
+	max-width: 640px;
+	margin-top: 12px;
+}
+
+/* ------------------------------------------------------------- Diagnostics */
+
+.bac-diag {
+	border-left: 4px solid #b32d2e;
+	background: #fcf0f1;
+	padding: 12px 16px;
+	margin: 0 0 16px;
+	max-width: 560px;
+	border-radius: 0 4px 4px 0;
+}
+
+.bac-diag p { margin: 0 0 8px; }
+.bac-diag p:last-child { margin-bottom: 0; }
+
+.bac-diag-msg {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	background: #fff;
+	border: 1px solid #e6d3d4;
+	padding: 8px 10px;
+	border-radius: 3px;
+	word-break: break-word;
+}
+
+.bac-diag-hint { color: #50575e; font-size: 13px; }
+
+/* ----------------------------------------------------------------- API key */
+
+.bac-key {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.bac-key[hidden] { display: none; }
+
+.bac-key-mask {
+	background: #f0f0f1;
+	color: #646970;
+	font-size: 12px;
+	padding: 3px 8px;
+	border-radius: 3px;
+}
+
+/* The usage reset form is a carrier for its nonce only; its button lives
+   inside the settings panel and reaches it through the form attribute. */
+.bac-admin .bac-hidden-form {
+	display: none;
+}

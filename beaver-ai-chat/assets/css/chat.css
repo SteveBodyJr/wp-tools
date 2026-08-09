@@ -1,0 +1,1012 @@
+/**
+ * Beaver AI Chat - front end widget.
+ *
+ * Scoped entirely under #bac-root. Colours, corner treatment, size and side all
+ * come from CSS variables the plugin writes inline from the settings, so a
+ * square, brand-coloured build needs no stylesheet edits. Light and dark are
+ * both first class.
+ */
+
+#bac-root {
+	/* Overwritten inline from the settings screen. */
+	--bac-accent: #1b7f5a;
+	--bac-accent-dark: #12563d;
+	--bac-accent-deep: #0a3325;
+	--bac-accent-light: #2f9a70;
+	--bac-accent-rgb: 27, 127, 90;
+	--bac-secondary: #c9a24a;
+	--bac-secondary-rgb: 201, 162, 74;
+
+	--bac-radius: 20px;
+	--bac-radius-bubble: 16px;
+	--bac-radius-bubble-tail: 5px;
+	--bac-radius-control: 14px;
+	--bac-radius-button: 13px;
+	--bac-radius-pill: 999px;
+	--bac-radius-launcher: 50%;
+	--bac-launcher: 64px;
+
+	/* Light palette. */
+	--bac-ink: #16211c;
+	--bac-ink-soft: #46564e;
+	--bac-muted: #7a8b83;
+	--bac-bg: #ffffff;
+	--bac-surface: #fbfcfb;
+	--bac-bubble: #f2f5f3;
+	--bac-soft: #f6f8f7;
+	--bac-line: #e6ebe8;
+	--bac-hairline: rgba(22, 33, 28, .07);
+
+	/* Layered shadows read as depth rather than a grey halo. */
+	--bac-shadow-panel:
+		0 1px 1px rgba(16, 32, 24, .04),
+		0 8px 16px -8px rgba(16, 32, 24, .12),
+		0 28px 56px -20px rgba(16, 32, 24, .28);
+	--bac-shadow-float:
+		0 2px 6px -2px rgba(16, 32, 24, .16),
+		0 12px 28px -10px rgba(var(--bac-accent-rgb), .42);
+	--bac-shadow-raised:
+		0 1px 2px rgba(16, 32, 24, .05),
+		0 6px 14px -8px rgba(16, 32, 24, .18);
+
+	--bac-ease: cubic-bezier(.22, 1, .36, 1);
+	--bac-spring: cubic-bezier(.2, .9, .3, 1.25);
+
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 99997;
+	font-family: var(--bac-font, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+#bac-root *,
+#bac-root *::before,
+#bac-root *::after {
+	box-sizing: border-box;
+}
+
+#bac-root button {
+	font-family: inherit;
+}
+
+/* ---------------------------------------------------------------- Launcher */
+
+#bac-launch {
+	position: relative;
+	width: var(--bac-launcher);
+	height: var(--bac-launcher);
+	border: 0;
+	padding: 0;
+	border-radius: var(--bac-radius-launcher);
+	cursor: pointer;
+	color: #fff;
+	background:
+		radial-gradient(130% 130% at 28% 18%, rgba(255, 255, 255, .28), rgba(255, 255, 255, 0) 46%),
+		linear-gradient(155deg, var(--bac-accent-light) 0%, var(--bac-accent) 52%, var(--bac-accent-dark) 100%);
+	box-shadow:
+		var(--bac-shadow-float),
+		inset 0 1px 0 rgba(255, 255, 255, .3),
+		inset 0 -1px 0 rgba(0, 0, 0, .16);
+	display: grid;
+	place-items: center;
+	transition: transform .4s var(--bac-spring), box-shadow .4s var(--bac-ease), filter .3s;
+}
+
+#bac-launch:hover {
+	transform: translateY(-2px) scale(1.04);
+	filter: brightness(1.05);
+	box-shadow:
+		0 4px 10px -4px rgba(16, 32, 24, .2),
+		0 20px 40px -12px rgba(var(--bac-accent-rgb), .55),
+		inset 0 1px 0 rgba(255, 255, 255, .34);
+}
+
+#bac-launch:active {
+	transform: translateY(0) scale(.98);
+}
+
+#bac-launch:focus-visible {
+	outline: 2px solid var(--bac-secondary);
+	outline-offset: 4px;
+}
+
+/* A single, slow halo. Restrained rather than a pulsing beacon. */
+#bac-launch::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	border: 1.5px solid rgba(var(--bac-accent-rgb), .55);
+	opacity: 0;
+	animation: bac-halo 4.5s var(--bac-ease) infinite;
+	pointer-events: none;
+}
+
+@keyframes bac-halo {
+	0% { transform: scale(1); opacity: .5; }
+	70%, 100% { transform: scale(1.5); opacity: 0; }
+}
+
+.bac-launch-icon,
+.bac-launch-close {
+	position: absolute;
+	display: grid;
+	place-items: center;
+	transition: transform .4s var(--bac-spring), opacity .25s var(--bac-ease);
+}
+
+.bac-launch-close {
+	opacity: 0;
+	transform: rotate(-90deg) scale(.5);
+}
+
+.bac-badge {
+	position: absolute;
+	top: 8px;
+	right: 9px;
+	width: 11px;
+	height: 11px;
+	border-radius: 50%;
+	background: var(--bac-secondary);
+	box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 10px rgba(var(--bac-secondary-rgb), .8);
+	animation: bac-pulse 2.6s var(--bac-ease) infinite;
+}
+
+@keyframes bac-pulse {
+	0% { box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 0 0 rgba(var(--bac-secondary-rgb), .55); }
+	70% { box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 0 8px rgba(var(--bac-secondary-rgb), 0); }
+	100% { box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 0 0 rgba(var(--bac-secondary-rgb), 0); }
+}
+
+#bac-root.bac-open .bac-launch-icon { opacity: 0; transform: rotate(90deg) scale(.5); }
+#bac-root.bac-open .bac-launch-close { opacity: 1; transform: rotate(0) scale(1); }
+#bac-root.bac-open .bac-badge,
+#bac-root.bac-open #bac-launch::before { display: none; }
+
+/* ------------------------------------------------------------------- Nudge */
+
+.bac-nudge {
+	position: absolute;
+	right: 2px;
+	bottom: calc(var(--bac-launcher) + 18px);
+	width: 256px;
+	max-width: calc(100vw - 44px);
+	background: var(--bac-bg);
+	color: var(--bac-ink);
+	border: 1px solid var(--bac-line);
+	border-radius: var(--bac-radius-bubble);
+	box-shadow: var(--bac-shadow-panel);
+	transform-origin: bottom right;
+	animation: bac-nudge-in .5s var(--bac-spring) both;
+}
+
+.bac-nudge[hidden] { display: none; }
+
+@keyframes bac-nudge-in {
+	from { opacity: 0; transform: translateY(10px) scale(.9); }
+	to { opacity: 1; transform: none; }
+}
+
+/* The open target and the dismiss control are siblings, never nested, so the
+   markup stays valid and both are reachable by keyboard. */
+.bac-nudge-open {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 14px 38px 14px 14px;
+	border: 0;
+	background: none;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	border-radius: inherit;
+}
+
+.bac-nudge-open:focus-visible,
+.bac-nudge-x:focus-visible {
+	outline: 2px solid var(--bac-accent);
+	outline-offset: 2px;
+}
+
+.bac-nudge-av {
+	width: 32px;
+	height: 32px;
+	flex: 0 0 auto;
+	border-radius: var(--bac-radius-launcher);
+	display: grid;
+	place-items: center;
+	color: #fff;
+	font-weight: 600;
+	font-size: .82rem;
+	letter-spacing: .02em;
+	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent-dark));
+	background-size: cover;
+	background-position: center;
+	overflow: hidden;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+
+.bac-nudge-text {
+	flex: 1 1 auto;
+	font-size: .845rem;
+	line-height: 1.45;
+	font-weight: 450;
+	color: var(--bac-ink-soft);
+}
+
+.bac-nudge-x {
+	position: absolute;
+	top: 7px;
+	right: 8px;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	color: var(--bac-muted);
+	background: var(--bac-soft);
+	cursor: pointer;
+	transition: color .18s, background .18s;
+}
+
+.bac-nudge-x:hover {
+	color: var(--bac-ink);
+	background: var(--bac-bubble);
+}
+
+/* ------------------------------------------------------------------- Panel */
+
+#bac-panel {
+	position: absolute;
+	right: 0;
+	bottom: calc(var(--bac-launcher) + 20px);
+	width: 390px;
+	max-width: calc(100vw - 32px);
+	height: 592px;
+	max-height: calc(100vh - 130px);
+	background: var(--bac-bg);
+	border-radius: var(--bac-radius);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--bac-hairline);
+	box-shadow: var(--bac-shadow-panel);
+	transform-origin: bottom right;
+	transform: translateY(14px) scale(.96);
+	opacity: 0;
+	pointer-events: none;
+	/* visibility keeps the closed panel out of the tab order, so keyboard users
+	   do not land inside an invisible dialog. */
+	visibility: hidden;
+	transition:
+		transform .42s var(--bac-spring),
+		opacity .28s var(--bac-ease),
+		visibility 0s linear .28s;
+}
+
+#bac-panel[hidden] { display: flex; }
+
+#bac-root.bac-open #bac-panel {
+	transform: translateY(0) scale(1);
+	opacity: 1;
+	pointer-events: auto;
+	visibility: visible;
+	transition:
+		transform .42s var(--bac-spring),
+		opacity .28s var(--bac-ease),
+		visibility 0s;
+}
+
+/* ------------------------------------------------------------------ Header */
+
+.bac-head {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	gap: 13px;
+	padding: 17px 16px 18px;
+	color: #fff;
+	overflow: hidden;
+	background:
+		linear-gradient(158deg, var(--bac-accent-light) 0%, var(--bac-accent) 44%, var(--bac-accent-deep) 100%);
+}
+
+/* A whisper of grain, so the header is not a flat block of colour. */
+.bac-head::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-image: repeating-radial-gradient(circle at 112% -12%, rgba(255, 255, 255, .05) 0 1px, transparent 1px 18px);
+	pointer-events: none;
+}
+
+/* A fine metallic hairline instead of a heavy border. */
+.bac-head::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 1px;
+	background: linear-gradient(90deg,
+		rgba(var(--bac-secondary-rgb), 0) 0%,
+		rgba(var(--bac-secondary-rgb), .75) 30%,
+		rgba(var(--bac-secondary-rgb), .75) 70%,
+		rgba(var(--bac-secondary-rgb), 0) 100%);
+	pointer-events: none;
+}
+
+.bac-head-glow {
+	position: absolute;
+	top: -76%;
+	right: -14%;
+	width: 220px;
+	height: 220px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(var(--bac-secondary-rgb), .32), transparent 66%);
+	pointer-events: none;
+}
+
+.bac-avatar {
+	position: relative;
+	z-index: 1;
+	width: 44px;
+	height: 44px;
+	border-radius: var(--bac-radius-launcher);
+	display: grid;
+	place-items: center;
+	flex: 0 0 auto;
+	background: linear-gradient(155deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .08));
+	background-size: cover;
+	background-position: center;
+	overflow: hidden;
+	color: #fff;
+	font-weight: 600;
+	font-size: 1.06rem;
+	letter-spacing: .01em;
+	box-shadow:
+		0 0 0 1px rgba(var(--bac-secondary-rgb), .5),
+		inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+
+.bac-avatar::after {
+	content: "";
+	position: absolute;
+	right: 1px;
+	bottom: 1px;
+	width: 11px;
+	height: 11px;
+	border-radius: 50%;
+	background: #4ade80;
+	box-shadow: 0 0 0 2px var(--bac-accent), 0 0 8px rgba(74, 222, 128, .7);
+}
+
+.bac-id {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.25;
+	flex: 1 1 auto;
+	min-width: 0;
+	position: relative;
+	z-index: 1;
+}
+
+.bac-name {
+	font-weight: 600;
+	font-size: 1.02rem;
+	letter-spacing: .012em;
+}
+
+.bac-status {
+	font-size: .715rem;
+	font-weight: 450;
+	letter-spacing: .028em;
+	opacity: .82;
+	margin-top: 3px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bac-actions {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	flex: 0 0 auto;
+	position: relative;
+	z-index: 1;
+}
+
+.bac-end {
+	background: rgba(255, 255, 255, .13);
+	border: 1px solid rgba(255, 255, 255, .2);
+	color: #fff;
+	cursor: pointer;
+	font-size: .695rem;
+	font-weight: 550;
+	letter-spacing: .035em;
+	padding: 6px 11px;
+	border-radius: var(--bac-radius-pill);
+	white-space: nowrap;
+	transition: background .2s, transform .2s var(--bac-ease);
+}
+
+.bac-end:hover { background: rgba(255, 255, 255, .24); }
+.bac-end:active { transform: scale(.96); }
+
+.bac-min {
+	background: rgba(255, 255, 255, .11);
+	border: 0;
+	color: #fff;
+	cursor: pointer;
+	width: 31px;
+	height: 31px;
+	border-radius: var(--bac-radius-button);
+	display: grid;
+	place-items: center;
+	transition: background .2s;
+}
+
+.bac-min:hover { background: rgba(255, 255, 255, .22); }
+
+.bac-end:focus-visible,
+.bac-min:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 1px;
+}
+
+/* --------------------------------------------------------------------- Log */
+
+.bac-log {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 20px 16px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 13px;
+	scroll-behavior: smooth;
+	background:
+		radial-gradient(120% 40% at 100% 0, rgba(var(--bac-secondary-rgb), .05), transparent 60%),
+		linear-gradient(180deg, var(--bac-surface) 0%, var(--bac-bg) 18%);
+}
+
+.bac-log::-webkit-scrollbar { width: 6px; }
+.bac-log::-webkit-scrollbar-thumb {
+	background: var(--bac-line);
+	border-radius: 999px;
+}
+.bac-log::-webkit-scrollbar-thumb:hover { background: var(--bac-muted); }
+.bac-log::-webkit-scrollbar-track { background: transparent; }
+.bac-log { scrollbar-width: thin; scrollbar-color: var(--bac-line) transparent; }
+
+.bac-row {
+	display: flex;
+	align-items: flex-end;
+	gap: 9px;
+	max-width: 100%;
+	animation: bac-in .42s var(--bac-spring) both;
+}
+
+@keyframes bac-in {
+	from { opacity: 0; transform: translateY(8px) scale(.985); }
+	to { opacity: 1; transform: none; }
+}
+
+.bac-row.me { justify-content: flex-end; }
+
+.bac-mini {
+	width: 27px;
+	height: 27px;
+	border-radius: var(--bac-radius-launcher);
+	flex: 0 0 auto;
+	display: grid;
+	place-items: center;
+	font-size: .7rem;
+	font-weight: 600;
+	color: #fff;
+	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent-dark));
+	background-size: cover;
+	background-position: center;
+	overflow: hidden;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+
+.bac-bubble {
+	padding: 11px 15px;
+	border-radius: var(--bac-radius-bubble);
+	font-size: .895rem;
+	line-height: 1.6;
+	letter-spacing: .003em;
+	color: var(--bac-ink);
+	max-width: 82%;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+
+.bac-row.bot .bac-bubble {
+	background: var(--bac-bubble);
+	border: 1px solid var(--bac-hairline);
+	border-bottom-left-radius: var(--bac-radius-bubble-tail);
+	box-shadow: 0 1px 1px rgba(16, 32, 24, .03);
+}
+
+.bac-row.me .bac-bubble {
+	color: #fff;
+	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent) 55%, var(--bac-accent-dark));
+	border-bottom-right-radius: var(--bac-radius-bubble-tail);
+	box-shadow:
+		0 1px 2px rgba(16, 32, 24, .1),
+		0 8px 18px -10px rgba(var(--bac-accent-rgb), .6),
+		inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+
+.bac-bubble a {
+	color: var(--bac-accent);
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 2.5px;
+	text-decoration-thickness: 1.2px;
+}
+
+.bac-row.me .bac-bubble a { color: #fff; }
+.bac-bubble strong { font-weight: 650; }
+
+.bac-bubble ul {
+	margin: .45rem 0 .15rem;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: .32rem;
+}
+
+.bac-bubble li {
+	position: relative;
+	padding-left: 1.1rem;
+}
+
+.bac-bubble li::before {
+	content: "";
+	position: absolute;
+	left: 3px;
+	top: .58em;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--bac-secondary);
+}
+
+.bac-row.me .bac-bubble li::before { background: rgba(255, 255, 255, .8); }
+
+.bac-typing {
+	display: inline-flex;
+	gap: 4px;
+	padding: 4px 2px;
+}
+
+.bac-typing span {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--bac-muted);
+	animation: bac-bounce 1.4s var(--bac-ease) infinite;
+}
+
+.bac-typing span:nth-child(2) { animation-delay: .16s; }
+.bac-typing span:nth-child(3) { animation-delay: .32s; }
+
+@keyframes bac-bounce {
+	0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+	30% { transform: translateY(-4px); opacity: .9; }
+}
+
+/* ------------------------------------------------------------------- Chips */
+
+.bac-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+	padding: 4px 16px 14px;
+}
+
+.bac-chips:empty { display: none; }
+
+.bac-chip {
+	border: 1px solid var(--bac-line);
+	background: var(--bac-bg);
+	color: var(--bac-accent);
+	font-weight: 550;
+	font-size: .785rem;
+	letter-spacing: .008em;
+	padding: 8px 14px;
+	border-radius: var(--bac-radius-pill);
+	cursor: pointer;
+	box-shadow: 0 1px 1px rgba(16, 32, 24, .03);
+	transition: all .22s var(--bac-ease);
+}
+
+.bac-chip:hover {
+	background: var(--bac-accent);
+	color: #fff;
+	border-color: var(--bac-accent);
+	transform: translateY(-1px);
+	box-shadow: 0 6px 14px -7px rgba(var(--bac-accent-rgb), .7);
+}
+
+.bac-chip:focus-visible {
+	outline: 2px solid var(--bac-accent);
+	outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------- CTA */
+
+.bac-cta {
+	display: flex;
+	gap: 8px;
+	padding: 2px 14px 12px;
+}
+
+.bac-cta[hidden] { display: none; }
+#bac-root.bac-ended .bac-cta { display: none; }
+
+.bac-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	flex: 1 1 auto;
+	padding: 11px 13px;
+	border-radius: var(--bac-radius-button);
+	cursor: pointer;
+	font-size: .81rem;
+	font-weight: 600;
+	letter-spacing: .012em;
+	text-decoration: none;
+	border: 0;
+	transition: transform .22s var(--bac-ease), filter .22s, background .22s, box-shadow .22s;
+}
+
+.bac-btn svg { flex: 0 0 auto; }
+
+.bac-btn:focus-visible {
+	outline: 2px solid var(--bac-accent);
+	outline-offset: 2px;
+}
+
+.bac-btn-primary {
+	color: #23301f;
+	background: var(--bac-secondary);
+	background: linear-gradient(150deg,
+		color-mix(in srgb, var(--bac-secondary) 74%, #fff),
+		var(--bac-secondary) 60%,
+		color-mix(in srgb, var(--bac-secondary) 86%, #000));
+	box-shadow:
+		0 1px 2px rgba(16, 32, 24, .12),
+		0 8px 18px -10px rgba(var(--bac-secondary-rgb), .75),
+		inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+
+.bac-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.03); }
+.bac-btn-primary:active { transform: translateY(0); }
+
+.bac-btn-primary:disabled {
+	opacity: 1;
+	cursor: default;
+	transform: none;
+	background: var(--bac-bubble);
+	color: var(--bac-muted);
+	box-shadow: none;
+	filter: none;
+}
+
+.bac-btn-wa {
+	color: #128c4a;
+	background: var(--bac-soft);
+	border: 1px solid var(--bac-line);
+	flex: 0 0 auto;
+	padding: 11px 15px;
+}
+
+.bac-btn-wa:hover { background: #e9f5ed; transform: translateY(-1px); }
+.bac-btn-wa[hidden] { display: none; }
+
+/* ---------------------------------------------------------------- Composer */
+
+.bac-compose {
+	display: flex;
+	align-items: flex-end;
+	gap: 9px;
+	padding: 12px 14px;
+	border-top: 1px solid var(--bac-line);
+	background: var(--bac-bg);
+	margin: 0;
+}
+
+.bac-compose textarea {
+	flex: 1 1 auto;
+	resize: none;
+	border: 1px solid var(--bac-line);
+	border-radius: var(--bac-radius-control);
+	padding: 11px 15px;
+	font-family: inherit;
+	font-size: .885rem;
+	line-height: 1.5;
+	max-height: 120px;
+	color: var(--bac-ink);
+	-webkit-text-fill-color: var(--bac-ink);
+	caret-color: var(--bac-accent);
+	background: var(--bac-soft);
+	outline: none;
+	transition: border-color .22s, background .22s, box-shadow .22s;
+}
+
+.bac-compose textarea::placeholder {
+	color: var(--bac-muted);
+	-webkit-text-fill-color: var(--bac-muted);
+	opacity: 1;
+}
+
+.bac-compose textarea:focus {
+	border-color: var(--bac-accent);
+	background: var(--bac-bg);
+	box-shadow: 0 0 0 3px rgba(var(--bac-accent-rgb), .13);
+}
+
+.bac-send {
+	flex: 0 0 auto;
+	width: 42px;
+	height: 42px;
+	border: 0;
+	border-radius: var(--bac-radius-button);
+	cursor: pointer;
+	color: #fff;
+	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent) 55%, var(--bac-accent-dark));
+	display: grid;
+	place-items: center;
+	box-shadow:
+		0 1px 2px rgba(16, 32, 24, .12),
+		0 8px 16px -9px rgba(var(--bac-accent-rgb), .7),
+		inset 0 1px 0 rgba(255, 255, 255, .2);
+	transition: transform .22s var(--bac-spring), opacity .2s, filter .2s;
+}
+
+.bac-send:hover { transform: scale(1.06); filter: brightness(1.05); }
+.bac-send:active { transform: scale(.96); }
+.bac-send:disabled { opacity: .4; cursor: default; transform: none; filter: none; }
+
+.bac-send:focus-visible {
+	outline: 2px solid var(--bac-accent);
+	outline-offset: 3px;
+}
+
+.bac-foot {
+	margin: 0;
+	padding: 0 16px 12px;
+	text-align: center;
+	font-size: .675rem;
+	line-height: 1.5;
+	letter-spacing: .015em;
+	color: var(--bac-muted);
+}
+
+.bac-foot:empty { display: none; }
+
+.bac-restart {
+	display: none;
+	margin: 14px;
+	padding: 12px 16px;
+	border: 0;
+	border-radius: var(--bac-radius-button);
+	cursor: pointer;
+	font-size: .885rem;
+	font-weight: 600;
+	color: #fff;
+	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent) 55%, var(--bac-accent-dark));
+	box-shadow: var(--bac-shadow-raised);
+	transition: transform .22s var(--bac-ease), filter .22s;
+}
+
+.bac-restart:hover { transform: translateY(-1px); filter: brightness(1.04); }
+
+#bac-root.bac-ended .bac-compose,
+#bac-root.bac-ended .bac-chips { display: none; }
+
+#bac-root.bac-ended .bac-restart { display: block; }
+
+/* ------------------------------------------------------------ Inline embed */
+
+#bac-root.bac-inline {
+	position: static;
+	right: auto;
+	bottom: auto;
+	width: 100%;
+}
+
+#bac-root.bac-inline #bac-panel {
+	position: static;
+	width: 100%;
+	max-width: 100%;
+	height: var(--bac-embed-height, 520px);
+	max-height: none;
+	transform: none;
+	opacity: 1;
+	pointer-events: auto;
+	visibility: visible;
+	box-shadow: var(--bac-shadow-raised);
+}
+
+.bac-embed {
+	width: 100%;
+	max-width: 640px;
+	margin: 1.75rem auto;
+}
+
+/* -------------------------------------------------------------- Responsive */
+
+@media (max-width: 480px) {
+	#bac-root { right: 14px; bottom: 14px; }
+
+	#bac-panel {
+		width: calc(100vw - 20px);
+		bottom: calc(var(--bac-launcher) + 14px);
+		height: calc(100vh - 104px);
+		height: calc(100dvh - 104px);
+		max-height: none;
+	}
+
+	.bac-nudge { width: 218px; }
+
+	#bac-root.bac-inline #bac-panel {
+		width: 100%;
+		height: var(--bac-embed-height, 520px);
+	}
+}
+
+/* --------------------------------------------------- Full screen on mobile */
+
+/*
+ * On a phone a floating panel wastes the screen and leaves the page showing
+ * behind it, so the chat takes over the viewport instead. Opted out per site
+ * with Appearance -> On mobile, and never applied to an embedded panel, which
+ * belongs inside the page.
+ *
+ * The rules are deliberately specific (#id + two classes) so they win over both
+ * the desktop panel and the small-screen tweaks above, wherever they land.
+ */
+@media (max-width: 600px) {
+	#bac-root.bac-fullscreen.bac-open #bac-panel {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		max-width: none;
+		height: 100vh;
+		height: 100dvh;
+		max-height: none;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		transform: none;
+		/* Keep the composer clear of the home indicator on a notched phone. */
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	/* Slide up from the bottom rather than scaling from a corner. */
+	#bac-root.bac-fullscreen #bac-panel {
+		transform: translateY(2%);
+		transform-origin: bottom center;
+	}
+
+	#bac-root.bac-fullscreen.bac-open .bac-head {
+		padding-top: calc(17px + env(safe-area-inset-top, 0px));
+	}
+
+	/* The header's own close button is the way out, so the launcher and its
+	   prompt bubble would only sit on top of the conversation. */
+	#bac-root.bac-fullscreen.bac-open #bac-launch,
+	#bac-root.bac-fullscreen.bac-open .bac-nudge {
+		display: none;
+	}
+
+	/* Give the tap targets a little more room on a touch screen. */
+	#bac-root.bac-fullscreen.bac-open .bac-min {
+		width: 38px;
+		height: 38px;
+	}
+
+	#bac-root.bac-fullscreen.bac-open .bac-log {
+		padding: 18px 14px 8px;
+	}
+
+	/* Stop the page behind scrolling under the chat. */
+	html.bac-scroll-lock,
+	html.bac-scroll-lock body {
+		overflow: hidden;
+		touch-action: none;
+	}
+}
+
+/* -------------------------------------------------------------------- Dark */
+
+@media (prefers-color-scheme: dark) {
+	#bac-root {
+		--bac-ink: #e8eeea;
+		--bac-ink-soft: #b8c6bf;
+		--bac-muted: #8b9d95;
+		--bac-bg: #121815;
+		--bac-surface: #161d1a;
+		--bac-bubble: #1c2521;
+		--bac-soft: #171f1b;
+		--bac-line: #29332e;
+		--bac-hairline: rgba(255, 255, 255, .07);
+
+		--bac-shadow-panel:
+			0 1px 1px rgba(0, 0, 0, .3),
+			0 10px 20px -10px rgba(0, 0, 0, .5),
+			0 30px 60px -22px rgba(0, 0, 0, .68);
+		--bac-shadow-raised:
+			0 1px 2px rgba(0, 0, 0, .35),
+			0 8px 18px -10px rgba(0, 0, 0, .5);
+	}
+
+	#bac-root .bac-log {
+		background:
+			radial-gradient(120% 40% at 100% 0, rgba(var(--bac-secondary-rgb), .07), transparent 60%),
+			var(--bac-bg);
+	}
+
+	#bac-root .bac-row.bot .bac-bubble { box-shadow: none; }
+	#bac-root .bac-btn-wa { color: #4fd08a; }
+	#bac-root .bac-btn-wa:hover { background: #1e2b25; }
+	#bac-root .bac-btn-primary { color: #1b2416; }
+}
+
+/* A forced theme wins over both the OS preference and a theme's own toggle. */
+:root[data-theme="dark"] #bac-root,
+#bac-root.bac-force-dark {
+	--bac-ink: #e8eeea;
+	--bac-ink-soft: #b8c6bf;
+	--bac-muted: #8b9d95;
+	--bac-bg: #121815;
+	--bac-surface: #161d1a;
+	--bac-bubble: #1c2521;
+	--bac-soft: #171f1b;
+	--bac-line: #29332e;
+	--bac-hairline: rgba(255, 255, 255, .07);
+}
+
+#bac-root.bac-force-dark .bac-log {
+	background:
+		radial-gradient(120% 40% at 100% 0, rgba(var(--bac-secondary-rgb), .07), transparent 60%),
+		var(--bac-bg);
+}
+
+#bac-root.bac-force-dark .bac-btn-wa { color: #4fd08a; }
+#bac-root.bac-force-dark .bac-btn-primary { color: #1b2416; }
+
+:root[data-theme="light"] #bac-root,
+#bac-root.bac-force-light {
+	--bac-ink: #16211c;
+	--bac-ink-soft: #46564e;
+	--bac-muted: #7a8b83;
+	--bac-bg: #ffffff;
+	--bac-surface: #fbfcfb;
+	--bac-bubble: #f2f5f3;
+	--bac-soft: #f6f8f7;
+	--bac-line: #e6ebe8;
+	--bac-hairline: rgba(22, 33, 28, .07);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#bac-root *,
+	#bac-panel {
+		animation: none !important;
+		transition: opacity .2s !important;
+	}
+}

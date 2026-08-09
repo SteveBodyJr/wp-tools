@@ -1,0 +1,504 @@
+/**
+ * Beaver App Bar — front end.
+ *
+ * Loaded only on requests that actually draw the bar.
+ *
+ * Two things make this safe to drop onto a theme nobody here has seen:
+ *
+ * 1. Every selector is prefixed and every property is set rather than
+ *    inherited, so a theme's own `ul`, `button` or `svg` rules cannot leak in
+ *    and nothing here can leak out.
+ * 2. The one number the page needs, --bappbar-h, is the space the bar takes up.
+ *    The plugin prints its value alongside this file, and it drops to 0px above
+ *    the breakpoint the bar stops at, so the page's bottom spacing follows the
+ *    bar automatically at every width.
+ */
+
+:root {
+	--bappbar-bar: 62px;
+	--bappbar-gap: 0px;
+	--bappbar-h: calc( var( --bappbar-bar ) + var( --bappbar-gap ) + env( safe-area-inset-bottom, 0px ) );
+
+	--bappbar-accent: #2f56f0;
+	--bappbar-surface: #ffffff;
+	--bappbar-ink: #101828;
+	--bappbar-muted: #667085;
+	--bappbar-line: rgba( 16, 24, 40, 0.1 );
+	--bappbar-shadow: 0 -12px 34px -26px rgba( 9, 16, 44, 0.55 );
+	--bappbar-radius: 18px;
+	--bappbar-ease: cubic-bezier( 0.22, 0.7, 0.24, 1 );
+}
+
+/* Dark. Applied when the visitor's system asks for it, unless the site has
+   pinned the bar to one scheme. Both directions are spelled out so the choice
+   wins over the system either way. */
+
+@media ( prefers-color-scheme: dark ) {
+	.beaver-appbar--auto,
+	.beaver-appbar-sheet--auto {
+		--bappbar-surface: #14161c;
+		--bappbar-ink: #f2f4f7;
+		--bappbar-muted: #98a2b3;
+		--bappbar-line: rgba( 255, 255, 255, 0.12 );
+		--bappbar-shadow: 0 -12px 34px -26px rgba( 0, 0, 0, 0.9 );
+	}
+}
+
+.beaver-appbar--dark,
+.beaver-appbar-sheet--dark {
+	--bappbar-surface: #14161c;
+	--bappbar-ink: #f2f4f7;
+	--bappbar-muted: #98a2b3;
+	--bappbar-line: rgba( 255, 255, 255, 0.12 );
+	--bappbar-shadow: 0 -12px 34px -26px rgba( 0, 0, 0, 0.9 );
+}
+
+/* ------------------------------------------------------------------ the bar */
+
+.beaver-appbar {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 99990;
+	margin: 0;
+	padding: 0 0 env( safe-area-inset-bottom, 0px );
+	/* The plain colour first, for engines without color-mix. */
+	background: var( --bappbar-surface );
+	background: color-mix( in srgb, var( --bappbar-surface ) 90%, transparent );
+	-webkit-backdrop-filter: saturate( 180% ) blur( 18px );
+	backdrop-filter: saturate( 180% ) blur( 18px );
+	border-top: 1px solid var( --bappbar-line );
+	box-shadow: var( --bappbar-shadow );
+	transition: transform 0.34s var( --bappbar-ease ), opacity 0.24s;
+}
+
+.beaver-appbar__row {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 0;
+	list-style: none;
+}
+
+.beaver-appbar__cell {
+	flex: 1 1 0;
+	min-width: 0;
+	display: flex;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	list-style: none;
+}
+
+.beaver-appbar__cell::before,
+.beaver-appbar__cell::marker {
+	content: none;
+}
+
+.beaver-appbar__item {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: var( --bappbar-bar );
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	position: relative;
+	margin: 0;
+	padding: 5px 3px;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.25;
+	letter-spacing: 0.01em;
+	text-align: center;
+	text-decoration: none;
+	text-transform: none;
+	color: var( --bappbar-muted );
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition: color 0.22s var( --bappbar-ease );
+}
+
+.beaver-appbar__ico {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 40px;
+	height: 30px;
+	border-radius: 11px;
+	transition: background 0.28s var( --bappbar-ease ), color 0.28s, transform 0.28s var( --bappbar-ease );
+}
+
+.beaver-appbar__svg {
+	display: block;
+	width: 22px;
+	height: 22px;
+}
+
+.beaver-appbar__lb {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Icons only. The word is taken off screen rather than removed, or the tab
+   would have no name for a screen reader to announce. */
+
+.beaver-appbar--nolabels .beaver-appbar__lb {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect( 0 0 0 0 );
+	clip-path: inset( 50% );
+	white-space: nowrap;
+	border: 0;
+}
+
+/* The tab you are on: brand colour, a tinted chip behind the icon, and a short
+   bar on the top edge that grows out from the middle. */
+
+.beaver-appbar__item::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: 28px;
+	height: 3px;
+	border-radius: 0 0 4px 4px;
+	background: var( --bappbar-accent );
+	opacity: 0;
+	transform: translateX( -50% ) scaleX( 0.3 );
+	transform-origin: 50% 0;
+	transition: transform 0.32s var( --bappbar-ease ), opacity 0.22s;
+}
+
+.beaver-appbar__item.is-active {
+	color: var( --bappbar-accent );
+}
+
+.beaver-appbar__item.is-active::before {
+	opacity: 1;
+	transform: translateX( -50% ) scaleX( 1 );
+}
+
+.beaver-appbar__item.is-active .beaver-appbar__ico {
+	background: color-mix( in srgb, var( --bappbar-accent ) 13%, transparent );
+	transform: translateY( -1px );
+}
+
+/* The one highlighted action. */
+
+.beaver-appbar__item--cta {
+	color: var( --bappbar-ink );
+}
+
+.beaver-appbar__item--cta::before {
+	display: none;
+}
+
+.beaver-appbar__item--cta .beaver-appbar__ico {
+	color: #fff;
+	background: var( --bappbar-accent );
+	box-shadow: 0 8px 18px -8px color-mix( in srgb, var( --bappbar-accent ) 80%, transparent );
+}
+
+.beaver-appbar__item--cta.is-active .beaver-appbar__ico {
+	transform: none;
+}
+
+@media ( hover: hover ) {
+	.beaver-appbar__item:hover {
+		color: var( --bappbar-accent );
+	}
+
+	.beaver-appbar__item:hover .beaver-appbar__ico {
+		background: color-mix( in srgb, var( --bappbar-accent ) 9%, transparent );
+	}
+
+	.beaver-appbar__item--cta:hover .beaver-appbar__ico {
+		background: var( --bappbar-accent );
+	}
+}
+
+.beaver-appbar__item:active .beaver-appbar__ico {
+	transform: scale( 0.9 );
+}
+
+.beaver-appbar__item:focus-visible {
+	outline: 3px solid var( --bappbar-accent );
+	outline-offset: -3px;
+	border-radius: 12px;
+}
+
+/* Floating variant: detached from the edges, rounded, on its own shadow. */
+
+.beaver-appbar--float {
+	left: 12px;
+	right: 12px;
+	bottom: calc( 12px + env( safe-area-inset-bottom, 0px ) );
+	padding-bottom: 0;
+	border: 1px solid var( --bappbar-line );
+	border-radius: var( --bappbar-radius );
+	box-shadow: 0 20px 44px -20px rgba( 9, 16, 44, 0.5 );
+}
+
+/* Inside the rounded edge, not hung over it. */
+
+.beaver-appbar--float .beaver-appbar__item::before {
+	top: 1px;
+	width: 24px;
+}
+
+/* Out of the way: scrolling down when that is switched on, while a sheet is
+   open, and while a form field has focus, because a bar sitting over the
+   on-screen keyboard covers the field being typed into. */
+
+.beaver-appbar.is-hidden,
+.beaver-appbar.is-typing,
+.beaver-appbar.is-sheet {
+	transform: translateY( calc( 100% + 24px ) );
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- the sheet */
+
+.beaver-appbar-sheet {
+	position: fixed;
+	inset: 0;
+	z-index: 99995;
+}
+
+.beaver-appbar-sheet[hidden] {
+	display: none;
+}
+
+.beaver-appbar-sheet__veil {
+	position: absolute;
+	inset: 0;
+	background: rgba( 16, 24, 40, 0.5 );
+	opacity: 0;
+	transition: opacity 0.28s var( --bappbar-ease );
+}
+
+.beaver-appbar-sheet__panel {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	max-height: 78vh;
+	display: flex;
+	flex-direction: column;
+	padding-bottom: env( safe-area-inset-bottom, 0px );
+	background: var( --bappbar-surface );
+	color: var( --bappbar-ink );
+	border-radius: var( --bappbar-radius ) var( --bappbar-radius ) 0 0;
+	box-shadow: 0 -30px 60px -30px rgba( 9, 16, 44, 0.6 );
+	transform: translateY( 100% );
+	transition: transform 0.34s var( --bappbar-ease );
+}
+
+.beaver-appbar-sheet.is-open .beaver-appbar-sheet__veil {
+	opacity: 1;
+}
+
+.beaver-appbar-sheet.is-open .beaver-appbar-sheet__panel {
+	transform: translateY( 0 );
+}
+
+.beaver-appbar-sheet__head {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex: none;
+	padding: 20px 16px 14px;
+	border-bottom: 1px solid var( --bappbar-line );
+}
+
+/* The grab handle above the title, the way a native sheet has one. */
+
+.beaver-appbar-sheet__head::before {
+	content: "";
+	position: absolute;
+	top: 7px;
+	left: 50%;
+	width: 38px;
+	height: 4px;
+	border-radius: 999px;
+	background: var( --bappbar-line );
+	transform: translateX( -50% );
+}
+
+.beaver-appbar-sheet__title {
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var( --bappbar-muted );
+}
+
+.beaver-appbar-sheet__close {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 38px;
+	height: 38px;
+	padding: 0;
+	color: var( --bappbar-ink );
+	background: none;
+	border: 1px solid var( --bappbar-line );
+	border-radius: 11px;
+	cursor: pointer;
+	transition: background 0.2s, color 0.2s;
+}
+
+.beaver-appbar-sheet__close:hover {
+	color: #fff;
+	background: var( --bappbar-accent );
+	border-color: var( --bappbar-accent );
+}
+
+.beaver-appbar-sheet__body {
+	flex: 1 1 auto;
+	padding: 8px 16px 20px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+.beaver-appbar-menu,
+.beaver-appbar-menu ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.beaver-appbar-menu li {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-bottom: 1px solid var( --bappbar-line );
+}
+
+.beaver-appbar-menu li:last-child {
+	border-bottom: 0;
+}
+
+.beaver-appbar-menu a {
+	display: flex;
+	align-items: center;
+	min-height: 52px;
+	padding: 12px 4px;
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 500;
+	text-decoration: none;
+	color: var( --bappbar-ink );
+	transition: color 0.2s, padding-left 0.2s var( --bappbar-ease );
+}
+
+.beaver-appbar-menu a:hover,
+.beaver-appbar-menu a:focus-visible,
+.beaver-appbar-menu .current-menu-item > a {
+	color: var( --bappbar-accent );
+	padding-left: 8px;
+}
+
+/* Second level, indented and quieter. */
+
+.beaver-appbar-menu ul a {
+	min-height: 44px;
+	padding-left: 18px;
+	font-size: 15px;
+	color: var( --bappbar-muted );
+}
+
+/* The search form is the theme's, so it arrives in whatever shape the theme
+   gives it: the field bare, or wrapped in its label. Both are handled — the
+   label carries the flex when it is there, and the field's own width takes
+   over when it is not. */
+
+.beaver-appbar-sheet__body form {
+	display: flex;
+	gap: 8px;
+	align-items: flex-end;
+	flex-wrap: wrap;
+	margin: 8px 0 4px;
+}
+
+.beaver-appbar-sheet__body input[type="search"],
+.beaver-appbar-sheet__body input[type="text"] {
+	flex: 1 1 12em;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	padding: 12px 14px;
+	font-family: inherit;
+	font-size: 16px; /* Under 16px, iOS zooms the page when the field is focused. */
+	color: var( --bappbar-ink );
+	background: transparent;
+	border: 1px solid var( --bappbar-line );
+	border-radius: 12px;
+}
+
+.beaver-appbar-sheet__body input[type="search"]:focus,
+.beaver-appbar-sheet__body input[type="text"]:focus {
+	outline: 2px solid var( --bappbar-accent );
+	outline-offset: 1px;
+}
+
+.beaver-appbar-sheet__body label {
+	flex: 1 1 12em;
+	display: block;
+	min-width: 0;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: var( --bappbar-muted );
+}
+
+.beaver-appbar-sheet__body input[type="submit"],
+.beaver-appbar-sheet__body button[type="submit"] {
+	flex: none;
+	padding: 12px 18px;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.2;
+	color: #fff;
+	background: var( --bappbar-accent );
+	border: 0;
+	border-radius: 12px;
+	box-shadow: none;
+	cursor: pointer;
+	text-shadow: none;
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.beaver-appbar,
+	.beaver-appbar__item,
+	.beaver-appbar__item::before,
+	.beaver-appbar__ico,
+	.beaver-appbar-sheet__veil,
+	.beaver-appbar-sheet__panel,
+	.beaver-appbar-menu a {
+		transition: none;
+	}
+}

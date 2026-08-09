@@ -1,0 +1,434 @@
+/**
+ * Beaver Alt Text admin styles.
+ *
+ * Stock wp-admin palette throughout, so the screens read as part of WordPress
+ * rather than as a bolted-on product.
+ */
+
+.beaver-alt-lead {
+	max-width: 46em;
+	font-size: 14px;
+	color: #50575e;
+}
+
+/* Stat cards. */
+
+.beaver-alt-cards {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 200px, 1fr ) );
+	gap: 16px;
+	margin: 20px 0;
+}
+
+.beaver-alt-card {
+	padding: 16px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-alt-card__label {
+	display: block;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #646970;
+}
+
+.beaver-alt-card__value {
+	display: block;
+	margin: 6px 0 2px;
+	font-size: 28px;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.beaver-alt-card__hint {
+	display: block;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Panels. */
+
+.beaver-alt-panel {
+	margin: 20px 0;
+	padding: 4px 20px 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-alt-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.beaver-alt-resume {
+	padding: 8px 12px;
+	background: #f6f7f7;
+	border-left: 4px solid #2271b1;
+}
+
+/* Progress. */
+
+.beaver-alt-progress {
+	margin: 16px 0;
+}
+
+.beaver-alt-progress__bar {
+	height: 8px;
+	background: #f0f0f1;
+	overflow: hidden;
+}
+
+.beaver-alt-progress__bar span {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: #2271b1;
+	transition: width 0.3s ease;
+}
+
+.beaver-alt-progress__label {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Inline notices. */
+
+.beaver-alt-inline-notice {
+	margin: 12px 0;
+	padding: 10px 14px;
+	background: #f6f7f7;
+	border-left: 4px solid #2271b1;
+	font-size: 13px;
+}
+
+.beaver-alt-inline-notice.is-error {
+	border-left-color: #b32d2e;
+}
+
+.beaver-alt-inline-notice.is-success {
+	border-left-color: #00a32a;
+}
+
+/* Run log. */
+
+.beaver-alt-log {
+	max-height: 320px;
+	margin: 12px 0;
+	padding: 4px;
+	overflow-y: auto;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+}
+
+.beaver-alt-log__row {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	padding: 6px 8px;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 12px;
+}
+
+.beaver-alt-log__row:last-child {
+	border-bottom: 0;
+}
+
+.beaver-alt-log__thumb {
+	flex: 0 0 auto;
+	width: 36px;
+	height: 36px;
+	object-fit: cover;
+	background: #fff;
+}
+
+.beaver-alt-log__text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.beaver-alt-log__text strong {
+	color: #1d2327;
+}
+
+.beaver-alt-log__text span {
+	color: #50575e;
+}
+
+.beaver-alt-log__row--failed .beaver-alt-log__text span {
+	color: #b32d2e;
+}
+
+.beaver-alt-log__row--skipped .beaver-alt-log__text span {
+	color: #a7aaad;
+}
+
+/* Review queue. */
+
+.beaver-alt-review__row {
+	display: flex;
+	gap: 20px;
+	margin: 16px 0;
+	padding: 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	transition: opacity 0.3s ease;
+}
+
+.beaver-alt-review__row.is-done {
+	opacity: 0.35;
+}
+
+.beaver-alt-review__thumb {
+	flex: 0 0 180px;
+}
+
+.beaver-alt-review__thumb img {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: #f0f0f1;
+}
+
+.beaver-alt-review__body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.beaver-alt-review__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-top: 0;
+}
+
+.beaver-alt-review__reason {
+	margin: 4px 0 8px;
+	font-size: 12px;
+	color: #b26200;
+}
+
+.beaver-alt-review__input {
+	width: 100%;
+	max-width: 100%;
+}
+
+.beaver-alt-review__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.beaver-alt-review__status {
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Confidence and status badges. */
+
+.beaver-alt-confidence {
+	padding: 2px 8px;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.beaver-alt-confidence--high {
+	color: #00450c;
+	background: #edfaef;
+}
+
+.beaver-alt-confidence--medium {
+	color: #674600;
+	background: #fcf9e8;
+}
+
+.beaver-alt-confidence--low {
+	color: #8a2424;
+	background: #fcf0f1;
+}
+
+.beaver-alt-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+.beaver-alt-badge--generated {
+	color: #00450c;
+	background: #edfaef;
+}
+
+.beaver-alt-badge--human {
+	color: #0a4b78;
+	background: #f0f6fc;
+}
+
+.beaver-alt-badge--review {
+	color: #674600;
+	background: #fcf9e8;
+}
+
+.beaver-alt-badge--decorative {
+	color: #50575e;
+	background: #f0f0f1;
+}
+
+.beaver-alt-badge--missing {
+	color: #8a2424;
+	background: #fcf0f1;
+}
+
+.beaver-alt-preview {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #50575e;
+}
+
+.beaver-alt-error {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #b32d2e;
+}
+
+.beaver-alt-muted {
+	color: #a7aaad;
+}
+
+.beaver-alt-row-action {
+	display: inline-block;
+	margin-top: 3px;
+	font-size: 11px;
+}
+
+/* Maker's mark. */
+
+.beaver-alt-credit {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 32px 0 0;
+	padding: 12px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-alt-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	height: 34px;
+	width: auto;
+}
+
+.beaver-alt-credit__text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.beaver-alt-credit__text strong {
+	display: block;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-alt-credit__text a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.beaver-alt-credit__text a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-alt-card__value {
+		font-size: 24px;
+	}
+
+	.beaver-alt-review__row {
+		flex-direction: column;
+	}
+
+	.beaver-alt-review__thumb {
+		flex-basis: auto;
+		max-width: 220px;
+	}
+
+	.beaver-alt-credit {
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-right: 12px;
+	}
+}
+
+/* Provider list in settings. */
+
+.beaver-alt-providers {
+	margin: 10px 0 0;
+	max-width: 46em;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.beaver-alt-providers li {
+	margin: 0 0 6px;
+	padding-left: 10px;
+	border-left: 3px solid #dcdcde;
+}
+
+.beaver-alt-providers li.is-unavailable {
+	border-left-color: #b32d2e;
+	color: #8a2424;
+}
+
+.beaver-alt-providers strong {
+	display: inline-block;
+	min-width: 9em;
+	color: #1d2327;
+}
+
+.beaver-alt-providers em {
+	display: block;
+	color: #646970;
+}
+
+/* Bulk approve bar. */
+
+.beaver-alt-bulkbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin: 16px 0;
+	padding: 12px 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-alt-bulkbar .description {
+	flex-basis: 100%;
+	margin: 0;
+}
+
+.beaver-alt-bulkbar__status {
+	font-size: 12px;
+	color: #646970;
+}
