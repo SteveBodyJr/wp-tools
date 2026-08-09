@@ -182,13 +182,18 @@ final class Beaver_Updates_Channel {
 	 * @return array|null
 	 */
 	public static function plugin( $slug ) {
-		$manifest = self::get();
+		$plugins = self::plugins();
 
-		return isset( $manifest['plugins'][ $slug ] ) ? $manifest['plugins'][ $slug ] : null;
+		return isset( $plugins[ $slug ] ) ? $plugins[ $slug ] : null;
 	}
 
 	/**
-	 * Returns every entry.
+	 * Returns every entry that is safe to act on.
+	 *
+	 * The package URL is checked here as well as at fetch time, deliberately.
+	 * Validating only on the way in trusts whatever is in the cache, and this
+	 * URL is about to be handed to the installer: it is checked immediately
+	 * before use, however it got there.
 	 *
 	 * @since 1.0.0
 	 *
@@ -196,8 +201,33 @@ final class Beaver_Updates_Channel {
 	 */
 	public static function plugins() {
 		$manifest = self::get();
+		$plugins  = isset( $manifest['plugins'] ) && is_array( $manifest['plugins'] ) ? $manifest['plugins'] : array();
 
-		return isset( $manifest['plugins'] ) ? $manifest['plugins'] : array();
+		foreach ( $plugins as $slug => $entry ) {
+			if ( ! is_array( $entry ) || empty( $entry['package'] ) || empty( $entry['version'] ) ) {
+				unset( $plugins[ $slug ] );
+
+				continue;
+			}
+
+			if ( ! self::is_allowed_package( $entry['package'] ) ) {
+				unset( $plugins[ $slug ] );
+			}
+		}
+
+		return $plugins;
+	}
+
+	/**
+	 * Whether a package URL is published where this channel publishes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $package Package URL.
+	 * @return bool
+	 */
+	public static function is_allowed_package( $package ) {
+		return 0 === strpos( (string) $package, self::PACKAGE_PREFIX );
 	}
 
 	/**
@@ -248,8 +278,9 @@ final class Beaver_Updates_Channel {
 			}
 
 			// The package must live where this channel publishes. Without this
-			// check a tampered manifest could point an install anywhere.
-			if ( 0 !== strpos( $package, self::PACKAGE_PREFIX ) ) {
+			// check a tampered manifest could point an install anywhere. It is
+			// checked again on the way out, in plugins().
+			if ( ! self::is_allowed_package( $package ) ) {
 				continue;
 			}
 

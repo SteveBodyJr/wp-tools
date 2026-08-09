@@ -1,6 +1,6 @@
 # Digital Beaver WP Tools
 
-Nine WordPress plugins built for running client sites on ordinary shared
+Ten WordPress plugins built for running client sites on ordinary shared
 hosting. Each one is self-contained: no framework, no build step, no external
 service, and no API key ships with any of them. Every site supplies its own.
 
@@ -23,6 +23,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.4 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
 | [beaver-pwa](beaver-pwa/README.md) | 1.0.0 | Makes a site installable as an app: manifest, offline worker, generated icons, install prompt. |
 | [beaver-shutter](beaver-shutter/README.md) | 1.0.0 | Puts a holding page over the front end for a launch window or a migration, and takes it off again. wp-admin is never touched. |
+| [beaver-updates](beaver-updates/README.md) | 1.0.0 | Puts the others into Plugins → Updates, so they update in a click instead of by upload. |
 
 Each folder has its own README covering how that plugin works and why it makes
 the choices it does.
@@ -34,6 +35,11 @@ under **Plugins → Add New → Upload**, or unzip it into `wp-content/plugins/`
 
 Release tags are per plugin, in the form `beaver-pwa-1.0.0`, because the
 plugins are versioned independently of each other.
+
+**Install [beaver-updates](beaver-updates/README.md) first and the rest become
+one click.** It puts everything else on this list into Plugins → Updates, and
+it works with whatever is already installed: no other plugin needs re-uploading
+for it to take effect.
 
 ## Where each one appears after activating
 
@@ -52,6 +58,7 @@ which is the reliable way in when the menu item is not where you expect it.
 | beaver-image-optimizer | **Beaver Optimizer** (top level) |
 | beaver-pwa | **Beaver PWA** (top level) |
 | beaver-shutter | **Tools → Shutter** |
+| beaver-updates | **Tools → Beaver Updates** |
 
 ## How they are built
 
