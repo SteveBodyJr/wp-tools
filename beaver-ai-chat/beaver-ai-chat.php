@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver AI Chat
  * Plugin URI:        https://digitalbeavertz.com/
  * Description:       A customisable AI chat assistant that answers visitor questions using your own site content, captures leads, and hands off to your team. Works with Claude, ChatGPT, DeepSeek, Gemini or any OpenAI-compatible endpoint. Your API key is stored on your server and never exposed to visitors.
- * Version:           1.6.1
+ * Version:           1.6.2
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Digital Beaver
@@ -33,7 +33,7 @@ if ( defined( 'BAC_VERSION' ) ) {
 	return;
 }
 
-define( 'BAC_VERSION', '1.6.1' );
+define( 'BAC_VERSION', '1.6.2' );
 define( 'BAC_FILE', __FILE__ );
 define( 'BAC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BAC_URL', plugin_dir_url( __FILE__ ) );

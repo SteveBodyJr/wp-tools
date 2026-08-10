@@ -4,7 +4,7 @@ Tags: ai, chat, chatbot, live chat, lead generation
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.6.1
+Stable tag: 1.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -209,6 +209,17 @@ variable. Create a template with one body variable in your Meta account, wait
 for approval, and put its name in the settings.
 
 == Changelog ==
+
+= 1.6.2 =
+* Fixed: the assistant could refuse a visitor part way through a long
+  conversation. The "messages per minute" limit counted into one running total
+  whose expiry was pushed out by every message, so it never reset for anyone
+  still talking: a steady one message every fifty seconds — well inside any
+  sane limit — added up until it hit the ceiling and the chat stopped
+  answering. Each minute now has a counter of its own, which is what per
+  minute means.
+* Fixed: the Endpoint URL and Reasoning labels pointed at controls that do not
+  exist, so clicking them did nothing.
 
 = 1.6.1 =
 * Fixed: **Save settings did nothing.** The "Clear the usage history" button

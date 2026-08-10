@@ -86,20 +86,33 @@ class BAC_Rest {
 	}
 
 	/**
-	 * Per IP rate limit.
+	 * Per IP rate limit, counted in fixed one minute windows.
+	 *
+	 * The minute is part of the key rather than the expiry, and that is the
+	 * whole point. Counting into a single transient and refreshing its expiry on
+	 * every message means the count never resets for anyone who keeps talking:
+	 * each message pushes the sixty seconds out again, so a visitor chatting at
+	 * a steady one message every fifty seconds — well inside any sane per minute
+	 * limit — still accumulates until they reach it, and the assistant then
+	 * refuses them in the middle of the conversation. Keying on the minute gives
+	 * every minute a counter of its own, which is what "per minute" means.
+	 *
+	 * The row is kept for two minutes so it survives the whole of the minute it
+	 * belongs to, then expires by itself.
 	 *
 	 * @param int $limit Messages allowed per minute.
 	 * @return bool True when the caller is over the limit.
 	 */
 	private static function rate_limited( $limit ) {
-		$key   = 'bac_rl_' . md5( self::ip() );
+		$limit = max( 1, (int) $limit );
+		$key   = 'bac_rl_' . md5( self::ip() ) . '_' . floor( time() / MINUTE_IN_SECONDS );
 		$count = (int) get_transient( $key );
 
 		if ( $count >= $limit ) {
 			return true;
 		}
 
-		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+		set_transient( $key, $count + 1, 2 * MINUTE_IN_SECONDS );
 		return false;
 	}
 

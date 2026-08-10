@@ -222,7 +222,7 @@ class BAC_Admin {
 				</tr>
 
 				<tr class="bac-row-custom">
-					<th scope="row"><label for="bac-endpoint"><?php esc_html_e( 'Endpoint URL', 'beaver-ai-chat' ); ?></label></th>
+					<th scope="row"><label for="bac-custom-endpoint"><?php esc_html_e( 'Endpoint URL', 'beaver-ai-chat' ); ?></label></th>
 					<td>
 						<?php self::text( 'custom_endpoint', $s, 'https://your-host/v1/chat/completions', 'large-text' ); ?>
 						<p class="description"><?php esc_html_e( 'Any endpoint that speaks the OpenAI chat/completions format, including self-hosted models.', 'beaver-ai-chat' ); ?></p>
@@ -330,7 +330,7 @@ class BAC_Admin {
 				</tr>
 
 				<tr class="bac-row-claude">
-					<th scope="row"><label for="bac-thinking"><?php esc_html_e( 'Reasoning', 'beaver-ai-chat' ); ?></label></th>
+					<th scope="row"><label for="bac-claude-thinking"><?php esc_html_e( 'Reasoning', 'beaver-ai-chat' ); ?></label></th>
 					<td>
 						<?php
 						self::select(
