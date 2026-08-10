@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "updated": "2026-08-10T07:14:13+00:00",
+    "updated": "2026-08-10T07:56:32+00:00",
     "plugins": {
         "beaver-access": {
             "slug": "beaver-access",
@@ -109,6 +109,18 @@
             "author": "Digital Beaver",
             "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-shutter",
             "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-shutter-1.0.0/beaver-shutter-1.0.0.zip"
+        },
+        "beaver-sync": {
+            "slug": "beaver-sync",
+            "name": "Beaver Sync",
+            "version": "1.0.0",
+            "description": "Brings the live site's media down to a local copy over HTTPS, no SSH and no FTP. The live site only ever publishes a read-only list of what it has; the copy compares that against its own uploads fold…",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-sync",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-sync-1.0.0/beaver-sync-1.0.0.zip"
         },
         "beaver-updates": {
             "slug": "beaver-updates",

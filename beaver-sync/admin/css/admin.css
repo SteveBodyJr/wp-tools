@@ -1,0 +1,172 @@
+/**
+ * Beaver Sync admin styles.
+ */
+
+.beaver-sync-lede {
+	max-width: 60em;
+	font-size: 14px;
+}
+
+.beaver-sync-note {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #646970;
+}
+
+/* Role picker */
+
+.beaver-sync-roles {
+	max-width: 52em;
+}
+
+.beaver-sync-roles td {
+	vertical-align: top;
+}
+
+.beaver-sync-roles__pick {
+	width: 2.5em;
+	text-align: center;
+}
+
+/* The dry run */
+
+.beaver-sync-plan {
+	max-width: 60em;
+	margin: 18px 0;
+	padding: 4px 20px 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-sync-plan__head {
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.beaver-sync-counts {
+	display: flex;
+	gap: 26px;
+	flex-wrap: wrap;
+	margin: 0 0 14px;
+	padding: 0;
+	list-style: none;
+}
+
+.beaver-sync-counts li {
+	margin: 0;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.beaver-sync-counts strong {
+	display: block;
+	font-size: 20px;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.beaver-sync-list {
+	margin: 0 0 12px;
+}
+
+.beaver-sync-list summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: #2271b1;
+}
+
+.beaver-sync-list ul {
+	max-height: 320px;
+	margin: 8px 0 0;
+	padding: 8px 12px;
+	overflow-y: auto;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+}
+
+.beaver-sync-list li {
+	margin: 0 0 3px;
+	font-size: 12px;
+}
+
+.beaver-sync-list .beaver-sync-note {
+	display: inline;
+	margin-left: 8px;
+}
+
+.beaver-sync-plan__actions {
+	margin-top: 6px;
+}
+
+/* Progress */
+
+.beaver-sync-run {
+	max-width: 60em;
+	margin: 18px 0;
+	padding: 4px 20px 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #00a32a;
+}
+
+.beaver-sync-bar {
+	height: 10px;
+	margin: 4px 0 14px;
+	overflow: hidden;
+	background: #f0f0f1;
+	border-radius: 999px;
+}
+
+.beaver-sync-bar span {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: #00a32a;
+	transition: width 0.3s ease;
+}
+
+.beaver-sync-failed {
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 12px;
+	color: #b32d2e;
+}
+
+.beaver-sync-danger {
+	color: #b32d2e;
+}
+
+/* Credit */
+
+.beaver-sync-credit {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	max-width: 46em;
+	margin: 28px 0 0;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.beaver-sync-credit__logo {
+	width: 150px;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.beaver-sync-credit__text {
+	font-size: 13px;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.beaver-sync-credit__text strong {
+	display: block;
+	color: #1d2327;
+}

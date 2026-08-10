@@ -22,6 +22,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | [beaver-filemanager](beaver-filemanager/README.md) | 1.1.0 | A full file manager inside wp-admin, with backups and a restorable trash. |
 | [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.4 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
 | [beaver-pwa](beaver-pwa/README.md) | 1.0.0 | Makes a site installable as an app: manifest, offline worker, generated icons, install prompt. |
+| [beaver-sync](beaver-sync/README.md) | 1.0.0 | Brings the live site's media down to a local copy over HTTPS. Read-only on the live site. |
 | [beaver-shutter](beaver-shutter/README.md) | 1.0.0 | Puts a holding page over the front end for a launch window or a migration, and takes it off again. wp-admin is never touched. |
 | [beaver-updates](beaver-updates/README.md) | 1.1.0 | Puts the others into Plugins → Updates, and lists the ones a site is missing so they can be added in a click. |
 
@@ -58,6 +59,7 @@ which is the reliable way in when the menu item is not where you expect it.
 | beaver-image-optimizer | **Beaver Optimizer** (top level) |
 | beaver-pwa | **Beaver PWA** (top level) |
 | beaver-shutter | **Tools → Shutter** |
+| beaver-sync | **Tools → Beaver Sync** |
 | beaver-updates | **Tools → Beaver Updates** |
 
 ## How they are built
