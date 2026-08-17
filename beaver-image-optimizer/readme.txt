@@ -6,7 +6,7 @@ Tags: webp, image optimization, performance, compression, lazy loading
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.3.4
+Stable tag: 1.3.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,6 +81,15 @@ No. Deactivation removes only the rewrite rules. Image files and statistics are 
 4. WebP status column in the media library.
 
 == Changelog ==
+
+= 1.3.6 =
+* Fixed "delete originals" mode becoming a dead end. Once an attachment's original was removed, its mime type became image/webp, which the plugin's own file-type filter then excluded from every future path — auto-optimize on a new thumbnail size, a bulk rescan, even pressing Optimize on it by hand. Attachments this plugin converted are now recognised by their own status record and stay reachable.
+* Fixed the "recent errors" list on the dashboard sorting by an attachment's post-modified date rather than when it actually failed, since recording a failure never touches that column. A library with more failures than fit on screen could permanently hide a fresh one behind an older attachment that happened to have a later post edit. It now sorts by the failure's own recorded time.
+* Two bulk-optimize runs started at once — a second browser tab, or the dashboard racing a WP-CLI pass — could shift overlapping images off the same stored queue and silently overwrite each other's progress. A batch now claims a short-lived lock before touching the queue and yields to whichever run holds it, self-clearing within seconds if a run ever dies mid-batch.
+* The uploads-directory boundary check no longer treats every path as outside uploads when realpath() itself fails, which some restrictive open_basedir configurations do even for paths the plugin can legitimately read and write. It falls back to a normalised comparison that still rejects path traversal.
+
+= 1.3.5 =
+* Fixed thumbnail sizes added after an image was already marked optimized being skipped forever. A theme switch, a page builder, or Regenerate Thumbnails can register a new size on an attachment that finished its first pass long ago; the plugin used to check only the full-size image before deciding there was nothing left to do, so that new size sat unconverted with no error and no way to catch it short of forcing a full re-optimization. Every current size is now checked before an attachment is treated as finished.
 
 = 1.3.4 =
 * Fixed crash reports inventing a cause. Any unfinished request was reported as "ran out of memory or time", which produced the nonsense of a 176 x 50 logo being blamed for exhausting memory. When PHP records a fatal error its text is now quoted verbatim; when it records nothing, the report says the request was interrupted instead of guessing.

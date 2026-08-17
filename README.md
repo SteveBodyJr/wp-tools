@@ -20,7 +20,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | [beaver-appbar](beaver-appbar/README.md) | 1.0.0 | Gives a site the bottom tab bar of a phone app. Any theme, no external request. |
 | [beaver-debug](beaver-debug/README.md) | 1.1.0 | Records what goes wrong on a site you cannot SSH into, and makes it shareable. |
 | [beaver-filemanager](beaver-filemanager/README.md) | 1.1.0 | A full file manager inside wp-admin, with backups and a restorable trash. |
-| [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.4 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
+| [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.6 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
 | [beaver-pwa](beaver-pwa/README.md) | 1.0.0 | Makes a site installable as an app: manifest, offline worker, generated icons, install prompt. |
 | [beaver-sync](beaver-sync/README.md) | 1.0.0 | Brings the live site's media down to a local copy over HTTPS. Read-only on the live site. |
 | [beaver-shutter](beaver-shutter/README.md) | 1.0.0 | Puts a holding page over the front end for a launch window or a migration, and takes it off again. wp-admin is never touched. |

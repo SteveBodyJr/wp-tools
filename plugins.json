@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "updated": "2026-08-10T07:56:32+00:00",
+    "updated": "2026-08-17T14:30:29+00:00",
     "plugins": {
         "beaver-access": {
             "slug": "beaver-access",
@@ -77,14 +77,14 @@
         "beaver-image-optimizer": {
             "slug": "beaver-image-optimizer",
             "name": "Beaver Image Optimizer",
-            "version": "1.3.4",
+            "version": "1.3.6",
             "description": "Converts JPEG and PNG uploads to WebP using only the image libraries bundled with PHP and WordPress. Built for shared hosting: no root access, no CLI tools, no external APIs.",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "7.0",
             "author": "Digital Beaver",
             "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-image-optimizer",
-            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-image-optimizer-1.3.4/beaver-image-optimizer-1.3.4.zip"
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-image-optimizer-1.3.6/beaver-image-optimizer-1.3.6.zip"
         },
         "beaver-pwa": {
             "slug": "beaver-pwa",

@@ -21,6 +21,7 @@ class Beaver_Image_Optimizer {
 	const OPTION_STATS    = 'beaver_io_stats';
 	const OPTION_QUEUE    = 'beaver_io_queue';
 	const OPTION_INFLIGHT = 'beaver_io_inflight';
+	const OPTION_LOCK     = 'beaver_io_lock';
 
 	/**
 	 * Seconds that must remain before another attachment is started.
@@ -28,6 +29,18 @@ class Beaver_Image_Optimizer {
 	 * @var float
 	 */
 	const MIN_ATTACHMENT_BUDGET = 3.0;
+
+	/**
+	 * Seconds a batch lock is honoured before it is treated as abandoned.
+	 *
+	 * Comfortably longer than one batch is ever expected to take, so a
+	 * process that dies while holding the lock — the same failure mode the
+	 * in-flight marker already recovers from — only blocks a concurrent run
+	 * briefly rather than forever.
+	 *
+	 * @var int
+	 */
+	const LOCK_TTL = 45;
 
 	const META_STATUS = '_beaver_io_status';
 	const META_STATS  = '_beaver_io_stats';
@@ -333,7 +346,21 @@ class Beaver_Image_Optimizer {
 
 		$mime = get_post_mime_type( $attachment_id );
 
-		if ( ! in_array( $mime, (array) $settings['file_types'], true ) ) {
+		/*
+		 * "Delete originals" turns an attachment's own mime type into
+		 * image/webp once its full size is replaced — it is the only
+		 * surviving file. Without the second half of this condition, that
+		 * left every attachment converted under that setting permanently
+		 * unreachable the moment it finished: not by auto-optimize when a
+		 * new thumbnail size appeared later, not by a bulk rescan, not even
+		 * by pressing Optimize on it by hand, all for the same reason —
+		 * "image/webp" is never in $settings['file_types']. The status meta
+		 * only this plugin writes is what tells the two cases apart from a
+		 * genuine native WebP upload, which is correctly left alone.
+		 */
+		$was_converted = '' !== get_post_meta( $attachment_id, self::META_STATUS, true );
+
+		if ( ! in_array( $mime, (array) $settings['file_types'], true ) && ! ( 'image/webp' === $mime && $was_converted ) ) {
 			return self::finish( $attachment_id, $result, 'skipped', __( 'File type is not enabled in the settings.', 'beaver-image-optimizer' ), false );
 		}
 
@@ -347,7 +374,20 @@ class Beaver_Image_Optimizer {
 			return self::finish( $attachment_id, $result, 'failed', __( 'The attachment lives outside the uploads directory.', 'beaver-image-optimizer' ) );
 		}
 
-		if ( ! $args['force'] && 'optimized' === get_post_meta( $attachment_id, self::META_STATUS, true ) && is_file( Beaver_Image_Converter::sidecar_path( $file ) ) ) {
+		$targets = self::collect_targets( $file, $metadata );
+
+		if ( empty( $targets ) ) {
+			// Every current file is already a WebP sidecar or, in "delete
+			// originals" mode, already is the WebP file itself. There is
+			// nothing left on disk to convert, which is a finished state,
+			// not a skip — reporting it as "no gain" would be false.
+			$result['status']  = 'optimized';
+			$result['message'] = __( 'Already optimized.', 'beaver-image-optimizer' );
+
+			return $result;
+		}
+
+		if ( ! $args['force'] && 'optimized' === get_post_meta( $attachment_id, self::META_STATUS, true ) && self::all_targets_current( $targets ) ) {
 			// Reports the state the attachment is actually in. Returning the
 			// initial 'skipped' here would log a finished image as though it had
 			// been passed over. No stats are touched: this path never reaches
@@ -358,7 +398,6 @@ class Beaver_Image_Optimizer {
 			return $result;
 		}
 
-		$targets = self::collect_targets( $file, $metadata );
 		$quality = self::current_quality();
 		$started = microtime( true );
 		$failed  = 0;
@@ -577,6 +616,14 @@ class Beaver_Image_Optimizer {
 	 * Several registered sizes routinely resolve to the same file on disk, so
 	 * paths are keyed by their normalised value to avoid converting twice.
 	 *
+	 * Anything already named as a WebP sidecar is left out entirely rather
+	 * than collected as a target. In "delete originals" mode the full size,
+	 * and every size converted alongside it, has its metadata rewritten to
+	 * point straight at the sidecar — there is no source file left to hand
+	 * the converter, which would just reject it as the wrong mime type. This
+	 * is also what lets a genuinely new, still-unconverted size registered
+	 * later stand out on its own: it is the one entry that is not a sidecar.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $file     Absolute path to the full size file.
@@ -584,13 +631,15 @@ class Beaver_Image_Optimizer {
 	 * @return array<string,array> Target key => target descriptor.
 	 */
 	private static function collect_targets( $file, $metadata ) {
-		$targets = array(
-			'full' => array(
+		$targets = array();
+
+		if ( ! Beaver_Image_Converter::is_sidecar( $file ) ) {
+			$targets['full'] = array(
 				'path'      => $file,
 				'size'      => 'full',
 				'converted' => false,
-			),
-		);
+			);
+		}
 
 		$seen     = array( wp_normalize_path( $file ) => true );
 		$base_dir = trailingslashit( dirname( $file ) );
@@ -608,7 +657,7 @@ class Beaver_Image_Optimizer {
 			$name = wp_basename( $data['file'] );
 			$path = $base_dir . $name;
 
-			if ( isset( $seen[ wp_normalize_path( $path ) ] ) || ! is_file( $path ) ) {
+			if ( isset( $seen[ wp_normalize_path( $path ) ] ) || ! is_file( $path ) || Beaver_Image_Converter::is_sidecar( $path ) ) {
 				continue;
 			}
 
@@ -622,6 +671,36 @@ class Beaver_Image_Optimizer {
 		}
 
 		return $targets;
+	}
+
+	/**
+	 * Checks whether every target already has a current WebP sidecar.
+	 *
+	 * A status of 'optimized' describes the attachment as a whole and can go
+	 * stale: a thumbnail size registered after the original run — by a theme
+	 * switch, a page builder, or "Regenerate Thumbnails" — arrives with no
+	 * sidecar of its own, but nothing ever revisits it once the attachment is
+	 * marked done. Checking every current target, not just the full size,
+	 * catches that file instead of leaving it unconverted forever.
+	 *
+	 * Uses the same freshness rule as Beaver_Image_Converter::convert(), so an
+	 * attachment this reports as current is one convert() would also skip.
+	 *
+	 * @since 1.3.5
+	 *
+	 * @param array $targets Target descriptors from self::collect_targets().
+	 * @return bool True when nothing here needs converting.
+	 */
+	private static function all_targets_current( $targets ) {
+		foreach ( $targets as $target ) {
+			$sidecar = Beaver_Image_Converter::sidecar_path( $target['path'] );
+
+			if ( ! is_file( $sidecar ) || filemtime( $sidecar ) < filemtime( $target['path'] ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -823,11 +902,11 @@ class Beaver_Image_Optimizer {
 
 		$uploads = wp_get_upload_dir();
 
-		if ( ! empty( $uploads['error'] ) ) {
+		if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) ) {
 			return false;
 		}
 
-		$base = realpath( $uploads['basedir'] );
+		$base = self::resolve_boundary( $uploads['basedir'] );
 		$real = realpath( $path );
 
 		if ( ! $real ) {
@@ -835,7 +914,26 @@ class Beaver_Image_Optimizer {
 			$real = realpath( dirname( $path ) );
 		}
 
-		if ( ! $base || ! $real ) {
+		if ( ! $real ) {
+			$real = self::resolve_boundary( $path );
+
+			/*
+			 * realpath() itself came back empty, which some open_basedir
+			 * configurations do even for a path they can otherwise read and
+			 * write. Falling all the way through to "not inside uploads"
+			 * here would mean a restrictive but entirely legitimate host
+			 * silently disables every conversion and every cleanup the
+			 * plugin does, with nothing on screen to explain why. The
+			 * normalised path is a weaker guarantee than a resolved real
+			 * path, but rejecting anything with a `..` segment still stops
+			 * the traversal this check exists to prevent.
+			 */
+			if ( false !== strpos( $real, '../' ) || false !== strpos( $real, '..\\' ) ) {
+				return false;
+			}
+		}
+
+		if ( ! $base ) {
 			return false;
 		}
 
@@ -843,6 +941,21 @@ class Beaver_Image_Optimizer {
 		$real = trailingslashit( wp_normalize_path( $real ) );
 
 		return 0 === strpos( $real, $base );
+	}
+
+	/**
+	 * Resolves a path to its real, symlink-free form, falling back to the
+	 * normalised input when realpath() cannot.
+	 *
+	 * @since 1.3.6
+	 *
+	 * @param string $path Absolute path, existing or not.
+	 * @return string Resolved or normalised path.
+	 */
+	private static function resolve_boundary( $path ) {
+		$real = realpath( $path );
+
+		return $real ? $real : wp_normalize_path( $path );
 	}
 
 	/**
@@ -1173,13 +1286,32 @@ class Beaver_Image_Optimizer {
 	 * @return array<int,array> List of 'id', 'title', 'message', 'code' and 'timestamp'.
 	 */
 	public static function recent_errors( $limit = 10 ) {
+		$limit = max( 1, (int) $limit );
+
+		/*
+		 * Every candidate has to be read before the newest can be picked out.
+		 * update_post_meta() — the only thing that ever records a failure —
+		 * never touches wp_posts.post_modified, so asking WP_Query to sort
+		 * attachments by 'modified' sorts by whatever last touched the post
+		 * row instead, usually its upload date. On a library with more
+		 * failures than fit on screen that silently drops recent ones behind
+		 * older attachments that happen to have a later post_modified, and
+		 * can pin a months-old failure at the top forever. The error record
+		 * carries its own timestamp; that is the only clock worth trusting,
+		 * so it is what the final order is built from.
+		 *
+		 * Capped rather than unbounded: a host in a genuinely bad state can
+		 * fail hundreds of images at once, and reading each one's meta to
+		 * sort it is not free. 200 candidates is generous for the number of
+		 * failures a report like this is ever meant to be read for.
+		 */
 		$ids = get_posts(
 			array(
 				'post_type'              => 'attachment',
 				'post_status'            => 'inherit',
-				'posts_per_page'         => max( 1, (int) $limit ),
+				'posts_per_page'         => 200,
 				'fields'                 => 'ids',
-				'orderby'                => 'modified',
+				'orderby'                => 'ID',
 				'order'                  => 'DESC',
 				'no_found_rows'          => true,
 				'update_post_term_cache' => false,
@@ -1213,7 +1345,14 @@ class Beaver_Image_Optimizer {
 			);
 		}
 
-		return $out;
+		usort(
+			$out,
+			static function ( $a, $b ) {
+				return $b['timestamp'] <=> $a['timestamp'];
+			}
+		);
+
+		return array_slice( $out, 0, $limit );
 	}
 
 	/*
@@ -1427,6 +1566,64 @@ class Beaver_Image_Optimizer {
 	}
 
 	/**
+	 * Claims the batch lock, or reports that another request already holds it.
+	 *
+	 * add_option() only succeeds when the row does not yet exist, which is
+	 * the one atomic test-and-set primitive core offers without a bespoke SQL
+	 * statement — the fit is deliberate, since this plugin explicitly targets
+	 * hosts with no persistent object cache to lock against instead. The
+	 * takeover branch below is best effort, not a hard guarantee: two
+	 * requests can in principle both see the same stale lock and both take
+	 * it over. That residual gap only opens once a previous holder has
+	 * already crashed, which is rare enough that closing it with real
+	 * database locking is not worth the complexity on shared hosting.
+	 *
+	 * @since 1.3.6
+	 *
+	 * @return string|false A token to release the lock with, or false when it is held.
+	 */
+	private static function acquire_batch_lock() {
+		$token  = wp_generate_password( 12, false, false );
+		$holder = get_option( self::OPTION_LOCK, false );
+
+		if ( is_array( $holder ) && isset( $holder['time'] ) && ( time() - (int) $holder['time'] ) < self::LOCK_TTL ) {
+			return false;
+		}
+
+		if ( false === $holder ) {
+			if ( ! add_option( self::OPTION_LOCK, array( 'token' => $token, 'time' => time() ), '', 'no' ) ) {
+				// Another request won the race between the read above and
+				// this insert. Their lock stands; this call yields to it.
+				return false;
+			}
+
+			return $token;
+		}
+
+		// The existing lock is stale — its holder never released it, most
+		// likely a crashed request. Taking it over is the same recovery the
+		// in-flight marker already relies on elsewhere in this class.
+		update_option( self::OPTION_LOCK, array( 'token' => $token, 'time' => time() ), false );
+
+		return $token;
+	}
+
+	/**
+	 * Releases the batch lock, but only if it still belongs to this request.
+	 *
+	 * @since 1.3.6
+	 *
+	 * @param string $token Token returned by self::acquire_batch_lock().
+	 */
+	private static function release_batch_lock( $token ) {
+		$holder = get_option( self::OPTION_LOCK, false );
+
+		if ( is_array( $holder ) && isset( $holder['token'] ) && $holder['token'] === $token ) {
+			delete_option( self::OPTION_LOCK );
+		}
+	}
+
+	/**
 	 * Processes the next slice of the queue.
 	 *
 	 * Stops early once the request time budget is spent so that shared hosts
@@ -1441,9 +1638,37 @@ class Beaver_Image_Optimizer {
 	 *     @type int   $total     Queue length.
 	 *     @type bool  $complete  Whether the queue is now empty.
 	 *     @type array $items     Per-attachment log entries.
+	 *     @type bool  $locked    Present and true only when another request
+	 *                            held the batch lock and nothing ran.
 	 * }
 	 */
 	public static function run_queue_batch( $batch_size = 0 ) {
+		$lock = self::acquire_batch_lock();
+
+		if ( false === $lock ) {
+			/*
+			 * Another request already holds the batch lock — most often a
+			 * second browser tab racing the first, occasionally WP-CLI
+			 * running at the same time as the dashboard. Both would
+			 * otherwise read the same queue option, shift overlapping
+			 * attachments off it, and write back two different truncated
+			 * lists where the second write silently erases the first's
+			 * progress. Reporting the queue's current state and doing no
+			 * work this call is the safe outcome; the caller is expected to
+			 * retry shortly.
+			 */
+			$queue = self::get_queue();
+
+			return array(
+				'processed' => 0,
+				'done'      => (int) $queue['done'],
+				'total'     => (int) $queue['total'],
+				'complete'  => '' === $queue['ids'],
+				'items'     => array(),
+				'locked'    => true,
+			);
+		}
+
 		$queue = self::get_queue();
 		$ids   = '' === $queue['ids'] ? array() : array_map( 'intval', explode( ',', $queue['ids'] ) );
 
@@ -1512,6 +1737,8 @@ class Beaver_Image_Optimizer {
 		} else {
 			update_option( self::OPTION_QUEUE, $queue, false );
 		}
+
+		self::release_batch_lock( $lock );
 
 		return array(
 			'processed' => $processed,

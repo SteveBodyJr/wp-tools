@@ -232,6 +232,17 @@
 					return;
 				}
 
+				if ( data.locked ) {
+					// Another run holds the batch lock right now — most
+					// likely a second tab, occasionally a WP-CLI pass
+					// started at the same time. Wait briefly rather than
+					// hammering admin-ajax.php until it clears.
+					window.setTimeout( function () {
+						runBatches( data.total || total, data.done, 0 );
+					}, 1500 );
+					return;
+				}
+
 				runBatches( data.total || total, data.done, 0 );
 			} )
 			.catch( function ( error ) {
