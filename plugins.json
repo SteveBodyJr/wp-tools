@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "updated": "2026-08-17T14:30:29+00:00",
+    "updated": "2026-08-24T17:35:00+00:00",
     "plugins": {
         "beaver-access": {
             "slug": "beaver-access",
@@ -49,6 +49,18 @@
             "author": "Digital Beaver",
             "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-appbar",
             "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-appbar-1.0.0/beaver-appbar-1.0.0.zip"
+        },
+        "beaver-chameleon": {
+            "slug": "beaver-chameleon",
+            "name": "Beaver Chameleon",
+            "version": "1.0.0",
+            "description": "A daily-mutating honeypot and a human-interaction trap for the comment and login forms — invisible to visitors, expensive for a bot to reverse-engineer, and every block is logged rather than just dis…",
+            "requires": "5.8",
+            "requires_php": "7.4",
+            "tested": "7.0",
+            "author": "Digital Beaver",
+            "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-chameleon",
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-chameleon-1.0.0/beaver-chameleon-1.0.0.zip"
         },
         "beaver-debug": {
             "slug": "beaver-debug",

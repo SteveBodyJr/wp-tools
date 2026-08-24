@@ -1,6 +1,6 @@
 # Digital Beaver WP Tools
 
-Ten WordPress plugins built for running client sites on ordinary shared
+Fourteen WordPress plugins built for running client sites on ordinary shared
 hosting. Each one is self-contained: no framework, no build step, no external
 service, and no API key ships with any of them. Every site supplies its own.
 
@@ -14,16 +14,19 @@ already bundles, and nothing that assumes a persistent object cache.
 
 | Plugin | Version | What it does |
 |---|---|---|
-| [beaver-ai-chat](beaver-ai-chat/README.md) | 1.6.1 | AI chat assistant that answers from your own content, captures leads, hands off to your team. |
+| [beaver-ai-chat](beaver-ai-chat/README.md) | 1.6.2 | AI chat assistant that answers from your own content, captures leads, hands off to your team. |
 | [beaver-access](beaver-access/README.md) | 1.0.2 | Temporary login links. Time-limited access at a chosen role, no password shared. |
 | [beaver-alt-text](beaver-alt-text/README.md) | 1.2.0 | Writes alt text for images that have none, using a vision model. Reviewed before publishing. |
 | [beaver-appbar](beaver-appbar/README.md) | 1.0.0 | Gives a site the bottom tab bar of a phone app. Any theme, no external request. |
+| [beaver-chameleon](beaver-chameleon/README.md) | 1.0.0 | A daily-mutating honeypot and a human-interaction trap for the comment and login forms. Invisible to visitors, every block logged. |
 | [beaver-debug](beaver-debug/README.md) | 1.1.0 | Records what goes wrong on a site you cannot SSH into, and makes it shareable. |
 | [beaver-filemanager](beaver-filemanager/README.md) | 1.1.0 | A full file manager inside wp-admin, with backups and a restorable trash. |
 | [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.6 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
 | [beaver-pwa](beaver-pwa/README.md) | 1.0.0 | Makes a site installable as an app: manifest, offline worker, generated icons, install prompt. |
+| [beaver-seo](beaver-seo/README.md) | 1.0.0 | Titles, meta descriptions, Open Graph tags, canonical URLs, an XML sitemap and a redirect manager — generated from what WordPress already knows. |
 | [beaver-sync](beaver-sync/README.md) | 1.0.0 | Brings the live site's media down to a local copy over HTTPS. Read-only on the live site. |
 | [beaver-shutter](beaver-shutter/README.md) | 1.0.0 | Puts a holding page over the front end for a launch window or a migration, and takes it off again. wp-admin is never touched. |
+| [beaver-translate](beaver-translate/README.md) | 1.4.0 | AI-drafted translations for posts and pages, reviewed by a human before anything goes live, each published at its own /fr/ address. |
 | [beaver-updates](beaver-updates/README.md) | 1.1.0 | Puts the others into Plugins → Updates, and lists the ones a site is missing so they can be added in a click. |
 
 Each folder has its own README covering how that plugin works and why it makes
@@ -54,12 +57,15 @@ which is the reliable way in when the menu item is not where you expect it.
 | beaver-access | **Users → Access Links** |
 | beaver-alt-text | **Alt Text** (top level) |
 | beaver-appbar | **Appearance → App Bar** |
+| beaver-chameleon | **Chameleon Shield** (top level) |
 | beaver-debug | **Tools → Beaver Debug** |
 | beaver-filemanager | **Beaver Files** (top level) |
 | beaver-image-optimizer | **Beaver Optimizer** (top level) |
 | beaver-pwa | **Beaver PWA** (top level) |
+| beaver-seo | **SEO** (top level) |
 | beaver-shutter | **Tools → Shutter** |
 | beaver-sync | **Tools → Beaver Sync** |
+| beaver-translate | **Translate** (top level) |
 | beaver-updates | **Tools → Beaver Updates** |
 
 ## How they are built

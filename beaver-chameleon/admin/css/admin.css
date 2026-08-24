@@ -1,0 +1,25 @@
+/**
+ * Beaver Chameleon — admin styles.
+ *
+ * Tailwind's Play CDN (enqueued alongside this file) handles almost
+ * everything on the screen. What's here is the handful of things that are
+ * either outside Tailwind's reach or exist to keep wp-admin's own chrome from
+ * fighting the dashboard's layout.
+ */
+
+/* wp-admin's default heading margins otherwise poke through the card
+ * spacing Tailwind sets on h2/h3 inside the dashboard. */
+.beaver-chameleon-admin .bc-app h2,
+.beaver-chameleon-admin .bc-app h3 {
+	padding: 0;
+}
+
+/* wp-admin underlines every link by default; the credit line manages its
+ * own underline via Tailwind's `underline` utility. */
+.beaver-chameleon-admin .bc-app a {
+	text-decoration: none;
+}
+
+.beaver-chameleon-admin .bc-app a.underline {
+	text-decoration: underline;
+}
