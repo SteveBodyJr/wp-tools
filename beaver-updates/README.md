@@ -64,7 +64,7 @@ Everything is answered from a single cached document instead:
 | | |
 |---|---|
 | Requests per site per check | 1, whatever the plugin count |
-| Cache on success | 12 hours, matching WordPress's own check interval |
+| Cache on success | 12 hours, matching WordPress's own check interval; "Check now" and WordPress's "Check again" read it afresh |
 | Cache on failure | 1 hour |
 | Timeout | 5 seconds |
 | Front end requests | never fetched |

@@ -71,6 +71,7 @@ No. It fetches a static file and sends nothing but the request itself.
 
 = 1.2.0 =
 * Plugin icons (and banners) from the manifest on Plugins -> Updates and in the details window; only images published in the wp-tools repository are shown.
+* WordPress's own "Check again" (Dashboard -> Updates) now reads the manifest afresh too, so a newly published plugin or version shows at once (a manifest fetched in the last minute is kept).
 
 = 1.1.0 =
 * New **Available to add** section listing every plugin on the channel that this site does not have, with what it does and what version is current.

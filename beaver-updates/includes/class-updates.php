@@ -44,6 +44,32 @@ final class Beaver_Updates_Updates {
 		add_filter( 'update_plugins_github.com', array( __CLASS__, 'via_header' ), 10, 3 );
 		add_filter( 'plugins_api', array( __CLASS__, 'details' ), 20, 3 );
 		add_filter( 'plugin_row_meta', array( __CLASS__, 'row_meta' ), 10, 2 );
+		add_action( 'load-update-core.php', array( __CLASS__, 'on_force_check' ) );
+	}
+
+	/**
+	 * Makes WordPress's own "Check again" (Dashboard -> Updates) read the
+	 * manifest afresh, so a newly published plugin or version shows at once
+	 * instead of after the cache expires.
+	 *
+	 * A manifest fetched in the last minute is kept: reloading the screen
+	 * should not fetch it again each time.
+	 *
+	 * @since 1.2.0
+	 */
+	public static function on_force_check() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- WordPress's own link carries no nonce; this only drops a cache.
+		if ( empty( $_GET['force-check'] ) || ! current_user_can( 'update_plugins' ) ) {
+			return;
+		}
+
+		$cached = get_site_transient( Beaver_Updates_Channel::TRANSIENT );
+
+		if ( is_array( $cached ) && ! empty( $cached['fetched'] ) && time() - (int) $cached['fetched'] < MINUTE_IN_SECONDS ) {
+			return;
+		}
+
+		Beaver_Updates_Channel::forget();
 	}
 
 	/**
