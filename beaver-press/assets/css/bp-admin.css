@@ -1,0 +1,136 @@
+/* Beaver AI panel: layout only, WordPress / TranslatePress colours. */
+.bp-panel .bp-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.bp-panel .bp-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bp-panel .trp-text-input { max-width: 420px; }
+.bp-panel .bp-narrow { max-width: 90px; }
+.bp-panel .bp-status { margin: 0; }
+.bp-panel .bp-status--ok { color: #00a32a; }
+.bp-panel .bp-status--error { color: #d63638; }
+.bp-panel .bp-remove { margin-left: 8px; white-space: nowrap; }
+.bp-panel .bp-glossary { max-width: 520px; width: 100%; }
+.bp-panel .bp-names p { max-width: 720px; margin: 6px 0 0; color: #50575e; }
+/* Settings -> Beaver Press */
+.bp-page .bp-card { max-width: 820px; margin: 18px 0; padding: 4px 22px 18px; background: #fff; border: 1px solid #c3c4c7; }
+.bp-page .bp-checks { margin: 0 0 12px; }
+.bp-page .bp-checks li { position: relative; padding-left: 24px; }
+.bp-page .bp-checks li::before { position: absolute; left: 0; font-weight: 700; }
+.bp-page .bp-checks .is-ok::before { content: "\2713"; color: #00a32a; }
+.bp-page .bp-checks .is-no::before { content: "\2715"; color: #d63638; }
+.bp-page .bp-checks .is-wait::before { content: "\2022"; color: #996800; }
+.bp-page .bp-langs { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0; }
+.bp-page .bp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bp-page .bp-bar { height: 10px; margin: 6px 0; background: #f0f0f1; border: 1px solid #dcdcde; overflow: hidden; }
+.bp-page .bp-bar span { display: block; height: 100%; width: 0; background: #2271b1; transition: width .4s; }
+.bp-page .bp-progress__status { margin: 14px 0 0; font-weight: 600; }
+.bp-page .bp-progress__strings { margin: 6px 0; }
+.bp-page .bp-status--error { color: #d63638; }
+.bp-page .bp-estimate, .bp-page .bp-days { max-width: 780px; margin: 10px 0 6px; }
+.bp-page .bp-budget { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bp-page .bp-budget input { width: 130px; }
+/* Review tab */
+.bp-page .bp-tabs { margin: 14px 0 6px; }
+.bp-page .bp-status-links { float: none; margin: 10px 0; }
+.bp-page .bp-review-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.bp-page .bp-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.bp-page .bp-bulk__total { margin-left: auto; color: #50575e; }
+.bp-page .bp-review { max-width: 1200px; table-layout: fixed; }
+.bp-page .bp-review .check-column { width: 2.2em; }
+.bp-page .bp-review .bp-col-actions { width: 190px; }
+.bp-page .bp-review td { vertical-align: top; }
+.bp-page .bp-original { white-space: pre-wrap; word-break: break-word; color: #1d2327; }
+.bp-page .bp-translation { width: 100%; min-height: 3em; }
+.bp-page .bp-row-msg { margin: 4px 0 0; font-size: 12px; }
+.bp-page .bp-row-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bp-page .bp-badge { display: inline-block; padding: 1px 8px; border: 1px solid #c3c4c7; border-radius: 10px; font-size: 12px; }
+.bp-page .bp-badge--2 { border-color: #00a32a; color: #00a32a; }
+.bp-page .bp-badge--0 { color: #50575e; }
+@media (max-width: 782px) { .bp-page .bp-review, .bp-page .bp-review thead, .bp-page .bp-review tbody, .bp-page .bp-review tr, .bp-page .bp-review td, .bp-page .bp-review th { display: block; width: auto; } .bp-page .bp-review thead { display: none; } .bp-page .bp-review .bp-col-actions { width: auto; } }
+.bp-page .bp-quiet { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; }
+.bp-page .bp-quiet .description { flex-basis: 100%; }
+/* Branding: title and maker's credit (same look as the other Digital Beaver plugins). */
+.bp-page .bp-title__version { margin-left: 6px; padding: 2px 8px; border: 1px solid #c3c4c7; border-radius: 10px; font-size: 12px; font-weight: 400; color: #50575e; vertical-align: middle; }
+.bp-credit { display: flex; align-items: center; gap: 16px; max-width: 820px; margin: 32px 0 0; padding: 12px 18px; background: #fff; border: 1px solid #c3c4c7; border-left: 4px solid #2271b1; }
+.bp-credit__logo { flex: 0 0 auto; display: block; height: 34px; width: auto; }
+.bp-credit__text { font-size: 13px; line-height: 1.5; color: #50575e; }
+.bp-credit__text strong { display: block; color: #1d2327; font-size: 13px; font-weight: 600; }
+.bp-credit__text a { color: #2271b1; text-decoration: none; }
+.bp-credit__text a:hover { color: #135e96; text-decoration: underline; }
+.bp-panel .bp-credit { margin-top: 12px; }
+@media screen and (max-width: 782px) { .bp-credit { flex-wrap: wrap; gap: 10px; margin-right: 12px; } }
+.bp-panel .bp-model-pick { min-width: 220px; }
+/* Pages tab. */
+.bp-page .bp-pages { max-width: none; }
+.bp-page .bp-pages__tools, .bp-page .bp-pages__bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
+.bp-page .bp-pages__count { color: #50575e; }
+.bp-page .bp-pages__now p { margin: 4px 0; font-weight: 600; }
+.bp-page .bp-pages__table .check-column { width: 2.2em; }
+.bp-page .bp-pages__table { table-layout: auto; }
+.bp-page .bp-pages__table thead th:nth-child(2) { width: 32%; }
+.bp-page .bp-pages__lcol { width: 7.5em; }
+.bp-page .bp-pages__acol { width: 11em; white-space: nowrap; }
+.bp-page .bp-pages__type-label { margin-left: 6px; color: #646970; font-size: 12px; }
+.bp-page .bp-cell { font-size: 12px; text-decoration: none; }
+.bp-page .bp-cell--done { color: #00a32a; }
+.bp-page .bp-cell--missing { color: #b32d2e; }
+.bp-page .bp-cell--none { color: #8c8f94; }
+.bp-page .bp-pages__cell.is-queued .bp-cell::after { content: " \2022"; color: #2271b1; }
+.bp-page .bp-pages__table tr.is-current td, .bp-page .bp-pages__table tr.is-current th { background: #f0f6fc; }
+.bp-page .bp-scope { margin: 8px 0; }
+@media (max-width: 782px) { .bp-page .bp-pages__table thead { display: none; } .bp-page .bp-pages__table tr { display: block; padding: 8px 0; } .bp-page .bp-pages__table td, .bp-page .bp-pages__table th { display: inline-block; width: auto; border: 0; } }
+/* Instructions tab. */
+.bp-page .bp-ins textarea { font-family: inherit; }
+.bp-page .bp-ins__buttons { display: flex; gap: 8px; }
+.bp-page .bp-ins-try__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bp-page .bp-ins-try__out { margin: 10px 0 0; padding: 10px 14px; background: #f6f7f7; border-left: 4px solid #2271b1; white-space: pre-wrap; }
+.bp-page .bp-ins-prompt__text { max-height: 360px; overflow: auto; padding: 10px 12px; background: #f6f7f7; border: 1px solid #dcdcde; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+.bp-page .bp-ins-redo__list li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* Export / import. */
+.bp-page .bp-transfer__row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.bp-page .bp-transfer__row form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Names to keep. */
+.bp-page .bp-names__group { margin: 8px 0; border: 1px solid #dcdcde; background: #fff; }
+.bp-page .bp-names__group summary { display: flex; align-items: center; gap: 12px; padding: 8px 12px; cursor: pointer; }
+.bp-page .bp-names__count { color: #646970; font-size: 12px; }
+.bp-page .bp-names__tools { margin: 0 12px 6px; }
+.bp-page .bp-names__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 16px; padding: 4px 12px 12px; }
+.bp-page .bp-names__list label { font-size: 13px; }
+.bp-page .bp-names__list label[hidden], .bp-page .bp-names__group[hidden], .bp-page .bp-names .button[hidden], .bp-page .bp-names__shown[hidden], .bp-page .bp-names__found[hidden] { display: none; }
+.bp-page .bp-names__rule { margin: 12px 0; border: 1px solid #dcdcde; background: #fff; padding: 0 12px; }
+.bp-page .bp-names__rule summary { padding: 8px 0; cursor: pointer; }
+.bp-page .bp-names__rule textarea { font-size: 13px; line-height: 1.5; }
+.bp-page .bp-names__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0 4px; }
+.bp-page .bp-names__search { min-width: 220px; }
+.bp-page .bp-names__ai-tools { display: flex; gap: 8px; margin-left: auto; }
+.bp-page .bp-names__msg { min-height: 1.4em; margin: 4px 0 8px; }
+.bp-page .bp-names__ai { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid #c3c4c7; border-radius: 2px; font-size: 11px; line-height: 18px; color: #50575e; cursor: help; }
+.bp-page .bp-names__ai--translate { border-color: #dba617; background: #fcf9e8; }
+.bp-page .bp-names__ai--keep { border-color: #68de7c; background: #edfaef; }
+.bp-page .bp-names__find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.bp-page .bp-names__found { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.bp-page .bp-price { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 8px 0; }
+.bp-page .bp-price .description { flex-basis: 100%; }
+/* Beaver Press header and credit on the Languages (engine) screens. */
+.bp-engine-head, .bp-engine-foot { margin: 16px 32px 0; }
+.bp-engine-head { margin-bottom: 0; }
+.bp-engine-head .bp-tabs { margin-bottom: 0; }
+.bp-engine-foot { margin-top: 0; }
+/* Same look as the Languages (engine) screens: white cards, primary headings with a separator,
+   grey descriptions, tab spacing. Values from the engine's own stylesheet. */
+.bp-page { --bp-primary: #1D2327; --bp-line: #E2E2E4; --bp-muted: #757575; --bp-accent: #2271B1; }
+.bp-page .bp-tabs .nav-tab { margin-left: 8px; padding: 10px 12px; color: var(--bp-primary); }
+.bp-page .bp-tabs .nav-tab:first-child { margin-left: 32px; }
+.bp-page .bp-tabs .nav-tab:focus { box-shadow: none; }
+.bp-page .bp-card { box-sizing: border-box; max-width: 1280px; margin: 24px 32px; padding: 32px; background: #fff; border: 1px solid var(--bp-line); border-radius: 0; box-shadow: none; }
+.bp-page .bp-card > h2 { margin: 0 0 24px; padding-bottom: 12px; border-bottom: 1px solid var(--bp-line); color: var(--bp-primary); font-size: 18px; font-weight: 590; }
+.bp-page .bp-card .description, .bp-page > .description { color: var(--bp-muted); font-size: 13px; }
+.bp-page > .description, .bp-page > .bp-title { margin-left: 32px; margin-right: 32px; }
+.bp-page .bp-credit { margin-left: 32px; }
+@media (max-width: 782px) { .bp-page .bp-card { margin: 16px 0; padding: 20px; } .bp-page .bp-tabs .nav-tab:first-child { margin-left: 8px; } .bp-page > .description, .bp-page > .bp-title, .bp-page .bp-credit { margin-left: 0; } }
+.bp-page .bp-tabs .nav-tab { text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+
+/* Pages tab: which texts are missing (2.3.0). */
+.bp-page .bp-miss summary { cursor: pointer; list-style-position: inside; }
+.bp-page .bp-miss ul { margin: 4px 0 4px 16px; list-style: disc; font-size: 12px; max-width: 280px; }
+.bp-page .bp-miss li { margin: 2px 0; overflow-wrap: anywhere; }
+.bp-page .bp-miss__again { display: block; color: #8a2424; font-size: 11px; }
+.bp-page .bp-miss > a { font-size: 12px; }

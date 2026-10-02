@@ -1,0 +1,17 @@
+/* Beaver Press quiet mode: TranslatePress upsells and links a client site does not need. */
+.trp-header-link[href*="translatepress.com/pricing"],
+.trp-header-link[href*="wordpress.org/support/plugin/translatepress"],
+.nav-tab[href*="page=trp_addons_page"],
+.nav-tab[href*="page=trp_ai_api_key"],
+.trp_mt_subtab_glossary,
+a[href*="translatepress.com/website-word-count"],
+.trp-automatic-translation-get-license-buttons,
+.trp-upgrade-notice-at__wrapper,
+.trp-upgrade-notice,
+.tp-ai-upsell,
+.trp-upsell-multiple-languages,
+#deepl_upsell,
+#trp-translation-engine-deepl_upsell,
+.trp-license-page-upsell-container {
+	display: none !important;
+}
