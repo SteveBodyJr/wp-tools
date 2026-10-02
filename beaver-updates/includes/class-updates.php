@@ -193,10 +193,26 @@ final class Beaver_Updates_Updates {
 			'tested'       => $entry['tested'],
 			'requires'     => $entry['requires'],
 			'requires_php' => $entry['requires_php'],
-			'icons'        => array(),
-			'banners'      => array(),
+			// Shown on Dashboard -> Updates and in the plugin rows. Checked again
+			// here, like the package, however the entry got into the cache.
+			'icons'        => self::safe_images( $entry['icons'] ?? array() ),
+			'banners'      => self::safe_images( $entry['banners'] ?? array() ),
 			'banners_rtl'  => array(),
 		);
+	}
+
+	/**
+	 * Icon or banner URLs that are still allowed, whatever the cache holds.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param mixed $images Size => URL.
+	 * @return array
+	 */
+	private static function safe_images( $images ) {
+		return is_array( $images )
+			? array_filter( $images, array( 'Beaver_Updates_Channel', 'is_allowed_image' ) )
+			: array();
 	}
 
 	/**
@@ -231,6 +247,8 @@ final class Beaver_Updates_Updates {
 			'tested'        => $entry['tested'],
 			'download_link' => $entry['package'],
 			'trunk'         => $entry['package'],
+			'icons'         => self::safe_images( $entry['icons'] ?? array() ),
+			'banners'       => self::safe_images( $entry['banners'] ?? array() ),
 			'sections'      => array(
 				'description' => sprintf(
 					/* translators: 1: plugin name, 2: source URL. */

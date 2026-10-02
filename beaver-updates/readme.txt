@@ -6,7 +6,7 @@ Tags: updates, plugin updates, self hosted, maintenance
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ For the plugins that cannot lock you out, yes. Think twice about the file manage
 No. It fetches a static file and sends nothing but the request itself.
 
 == Changelog ==
+
+= 1.2.0 =
+* Plugin icons (and banners) from the manifest on Plugins -> Updates and in the details window; only images published in the wp-tools repository are shown.
 
 = 1.1.0 =
 * New **Available to add** section listing every plugin on the channel that this site does not have, with what it does and what version is current.

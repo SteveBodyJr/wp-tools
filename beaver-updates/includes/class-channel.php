@@ -35,6 +35,19 @@ final class Beaver_Updates_Channel {
 	 */
 	const PACKAGE_PREFIX = 'https://github.com/SteveBodyJr/wp-tools/releases/download/';
 
+	/**
+	 * Only images under these prefixes are shown as plugin icons and banners.
+	 *
+	 * They end up in <img> tags on every site's Updates screen, so a tampered
+	 * manifest must not be able to make wp-admin load pictures from elsewhere.
+	 *
+	 * @since 1.2.0
+	 */
+	const IMAGE_PREFIXES = array(
+		'https://raw.githubusercontent.com/SteveBodyJr/wp-tools/',
+		'https://github.com/SteveBodyJr/wp-tools/',
+	);
+
 	const TRANSIENT = 'beaver_updates_manifest';
 
 	/**
@@ -295,10 +308,58 @@ final class Beaver_Updates_Channel {
 				'requires_php' => isset( $entry['requires_php'] ) ? trim( (string) $entry['requires_php'] ) : '',
 				'tested'       => isset( $entry['tested'] ) ? trim( (string) $entry['tested'] ) : '',
 				'author'       => isset( $entry['author'] ) ? sanitize_text_field( (string) $entry['author'] ) : '',
+				'icons'        => self::images( $entry['icons'] ?? array(), array( '1x', '2x', 'svg', 'default' ) ),
+				'banners'      => self::images( $entry['banners'] ?? array(), array( 'low', 'high' ) ),
 			);
 		}
 
 		return $clean;
+	}
+
+	/**
+	 * Icon or banner URLs from a manifest entry, keeping only known sizes and
+	 * images published where this channel publishes.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param mixed $raw  Manifest value, e.g. { "1x": "...png", "2x": "...png" }.
+	 * @param array $keys Sizes WordPress understands for this kind of image.
+	 * @return array Size => URL.
+	 */
+	private static function images( $raw, array $keys ) {
+		$out = array();
+
+		if ( ! is_array( $raw ) ) {
+			return $out;
+		}
+
+		foreach ( $keys as $key ) {
+			$url = isset( $raw[ $key ] ) ? esc_url_raw( (string) $raw[ $key ], array( 'https' ) ) : '';
+
+			if ( '' !== $url && self::is_allowed_image( $url ) ) {
+				$out[ $key ] = $url;
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Whether an image URL is published where this channel publishes.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $url Image URL.
+	 * @return bool
+	 */
+	public static function is_allowed_image( $url ) {
+		foreach ( self::IMAGE_PREFIXES as $prefix ) {
+			if ( 0 === strpos( (string) $url, $prefix ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
