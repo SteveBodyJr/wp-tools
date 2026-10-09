@@ -30,6 +30,8 @@ class BAC_Settings {
 			'enabled'          => 0,
 			'provider'         => 'claude',
 			'api_key'          => '',
+			'api_keys'         => array(),
+			'fallback'         => array(),
 			'model'            => '',
 			'custom_endpoint'  => '',
 			'max_tokens'       => 1024,
@@ -47,7 +49,7 @@ class BAC_Settings {
 			'nudge_enabled'    => 1,
 			'nudge_text'       => 'Need a hand? Ask me anything.',
 			'nudge_delay'      => 1800,
-			'footer_note'      => 'Your details stay private and go straight to our team.',
+			'footer_note'      => '{assistant} is an AI assistant and can make mistakes.',
 
 			/* ---- What the assistant knows ------------------------------ */
 			'business_name'    => '',
@@ -129,6 +131,10 @@ class BAC_Settings {
 			/* ---- Appearance -------------------------------------------- */
 			'accent'           => '#1b7f5a',
 			'secondary'        => '#c9a24a',
+			'surface'          => '#ffffff',
+			'font'             => 'site',
+			'launcher_label'   => '',
+			'credit'           => 1,
 			'position'         => 'right',
 			'theme'            => 'auto',
 			'corner_style'     => 'rounded',
@@ -288,35 +294,130 @@ class BAC_Settings {
 	}
 
 	/**
-	 * The API key actually used for requests.
+	 * The API key for one provider, the main one when none is named.
 	 *
-	 * A BAC_API_KEY constant in wp-config.php always wins, which lets you keep
-	 * the key out of the database entirely and out of any settings export.
+	 * Each provider keeps its own key, so a site can hold keys for Claude,
+	 * ChatGPT and Gemini at once, switch between them without retyping, and
+	 * fall back from one to another. Lookup order:
 	 *
+	 *  1. A per-provider constant in wp-config.php, BAC_API_KEY_CLAUDE,
+	 *     BAC_API_KEY_OPENAI, BAC_API_KEY_GEMINI and so on.
+	 *  2. For the main provider only, the original BAC_API_KEY constant.
+	 *  3. The key saved for that provider on the settings screen.
+	 *  4. For the main provider only, the single key saved by versions before
+	 *     2.0.0, so an upgrade keeps working without anyone touching it.
+	 *
+	 * @since 2.0.0 Accepts a provider.
+	 *
+	 * @param string|null $provider Provider id, or null for the main one.
 	 * @return string
 	 */
-	public static function api_key() {
-		if ( defined( 'BAC_API_KEY' ) && '' !== trim( (string) BAC_API_KEY ) ) {
+	public static function api_key( $provider = null ) {
+		$main     = (string) self::get( 'provider' );
+		$provider = null === $provider ? $main : (string) $provider;
+		$constant = self::key_constant( $provider );
+
+		if ( '' !== $constant ) {
+			return $constant;
+		}
+
+		if ( $provider === $main && defined( 'BAC_API_KEY' ) && '' !== trim( (string) BAC_API_KEY ) ) {
 			return trim( (string) BAC_API_KEY );
 		}
-		return trim( (string) self::get( 'api_key' ) );
-	}
 
-	/** Whether the key comes from wp-config.php rather than the database. */
-	public static function key_is_constant() {
-		return defined( 'BAC_API_KEY' ) && '' !== trim( (string) BAC_API_KEY );
+		$keys = (array) self::get( 'api_keys' );
+
+		if ( isset( $keys[ $provider ] ) && '' !== trim( (string) $keys[ $provider ] ) ) {
+			return trim( (string) $keys[ $provider ] );
+		}
+
+		return ( $provider === $main ) ? trim( (string) self::get( 'api_key' ) ) : '';
 	}
 
 	/**
-	 * Config for the selected provider, merged with any custom endpoint.
+	 * A provider's key from its own wp-config.php constant, if one is set.
 	 *
-	 * @param array|null $s Settings (read fresh when omitted).
+	 * @since 2.0.0
+	 *
+	 * @param string $provider Provider id.
+	 * @return string
+	 */
+	private static function key_constant( $provider ) {
+		$name = 'BAC_API_KEY_' . strtoupper( preg_replace( '/[^a-z0-9]/i', '', (string) $provider ) );
+
+		return defined( $name ) ? trim( (string) constant( $name ) ) : '';
+	}
+
+	/**
+	 * Whether a provider's key comes from wp-config.php rather than the
+	 * database. Without a provider, asks about the main one.
+	 *
+	 * @param string|null $provider Provider id.
+	 * @return bool
+	 */
+	public static function key_is_constant( $provider = null ) {
+		$main     = (string) self::get( 'provider' );
+		$provider = null === $provider ? $main : (string) $provider;
+
+		if ( '' !== self::key_constant( $provider ) ) {
+			return true;
+		}
+
+		return $provider === $main && defined( 'BAC_API_KEY' ) && '' !== trim( (string) BAC_API_KEY );
+	}
+
+	/**
+	 * The backup providers to try, in order, when the main one fails: the ones
+	 * ticked as backups that are not the main provider and have a key.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array|null $s Settings.
+	 * @return array Provider ids.
+	 */
+	public static function fallbacks( $s = null ) {
+		$s   = null === $s ? self::get() : $s;
+		$out = array();
+
+		foreach ( array_keys( self::providers() ) as $id ) {
+			if ( $id !== $s['provider'] && in_array( $id, (array) $s['fallback'], true ) && '' !== self::api_key( $id ) ) {
+				$out[] = $id;
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Whether the assistant can answer at all: a key for the main provider or
+	 * for at least one backup.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array|null $s Settings.
+	 * @return bool
+	 */
+	public static function can_answer( $s = null ) {
+		$s = null === $s ? self::get() : $s;
+
+		return '' !== self::api_key( $s['provider'] ) || ! empty( self::fallbacks( $s ) );
+	}
+
+	/**
+	 * Config for a provider, the main one by default, merged with any custom
+	 * endpoint.
+	 *
+	 * @since 2.0.0 Accepts a provider.
+	 *
+	 * @param array|null  $s        Settings (read fresh when omitted).
+	 * @param string|null $provider Provider id, or null for the main one.
 	 * @return array
 	 */
-	public static function provider_config( $s = null ) {
+	public static function provider_config( $s = null, $provider = null ) {
 		$s         = null === $s ? self::get() : $s;
 		$providers = self::providers();
-		$key       = isset( $providers[ $s['provider'] ] ) ? $s['provider'] : 'claude';
+		$wanted    = null === $provider ? $s['provider'] : $provider;
+		$key       = isset( $providers[ $wanted ] ) ? $wanted : 'claude';
 		$cfg       = $providers[ $key ];
 		$cfg['id'] = $key;
 
@@ -324,7 +425,12 @@ class BAC_Settings {
 			$cfg['url'] = trim( (string) $s['custom_endpoint'] );
 		}
 
-		$cfg['model'] = '' !== trim( (string) $s['model'] ) ? trim( (string) $s['model'] ) : $cfg['model'];
+		// The model field belongs to the main provider. A backup runs on its
+		// own recommended model: a model name typed for one provider means
+		// nothing to another.
+		if ( $key === $s['provider'] && '' !== trim( (string) $s['model'] ) ) {
+			$cfg['model'] = trim( (string) $s['model'] );
+		}
 
 		return $cfg;
 	}
@@ -349,11 +455,46 @@ class BAC_Settings {
 		$provider         = isset( $in['provider'] ) ? sanitize_key( $in['provider'] ) : 'claude';
 		$out['provider']  = array_key_exists( $provider, self::providers() ) ? $provider : 'claude';
 
-		$key = isset( $in['api_key'] ) ? trim( wp_unslash( $in['api_key'] ) ) : '';
-		if ( '' === $key ) {
-			$key = (string) self::get( 'api_key' ); // Preserve what is already stored.
+		/*
+		 * One key per provider. A blank box keeps the stored key, so a key is
+		 * never retyped and never echoed back into the form; a key goes only
+		 * when its Remove button was used. The single api_key of earlier
+		 * versions is folded in as the key of the provider it was saved for,
+		 * and is kept mirrored to the main provider's key so a downgrade still
+		 * finds one.
+		 */
+		$keys = array_filter( (array) self::get( 'api_keys' ), 'strlen' );
+		$old  = trim( (string) self::get( 'api_key' ) );
+		$was  = (string) self::get( 'provider' );
+
+		if ( '' !== $old && ! isset( $keys[ $was ] ) ) {
+			$keys[ $was ] = $old;
 		}
-		$out['api_key'] = sanitize_text_field( $key );
+
+		$typed = ( isset( $in['api_keys'] ) && is_array( $in['api_keys'] ) ) ? $in['api_keys'] : array();
+
+		// A single key from an older form, the legacy importer or a script.
+		if ( isset( $in['api_key'] ) && '' !== trim( (string) $in['api_key'] ) && ! isset( $typed[ $out['provider'] ] ) ) {
+			$typed[ $out['provider'] ] = $in['api_key'];
+		}
+
+		$remove = ( isset( $in['api_keys_remove'] ) && is_array( $in['api_keys_remove'] ) ) ? $in['api_keys_remove'] : array();
+
+		foreach ( array_keys( self::providers() ) as $id ) {
+			$value = isset( $typed[ $id ] ) ? sanitize_text_field( trim( wp_unslash( (string) $typed[ $id ] ) ) ) : '';
+
+			if ( '' !== $value ) {
+				$keys[ $id ] = $value;
+			} elseif ( ! empty( $remove[ $id ] ) ) {
+				unset( $keys[ $id ] );
+			}
+		}
+
+		$out['api_keys'] = array_intersect_key( $keys, self::providers() );
+		$out['api_key']  = isset( $out['api_keys'][ $out['provider'] ] ) ? $out['api_keys'][ $out['provider'] ] : '';
+
+		$fallback        = ( isset( $in['fallback'] ) && is_array( $in['fallback'] ) ) ? array_map( 'sanitize_key', $in['fallback'] ) : array();
+		$out['fallback'] = array_values( array_intersect( array_keys( self::providers() ), $fallback ) );
 
 		$out['model']           = isset( $in['model'] ) ? sanitize_text_field( $in['model'] ) : '';
 		$out['custom_endpoint'] = isset( $in['custom_endpoint'] ) ? esc_url_raw( trim( (string) $in['custom_endpoint'] ) ) : '';
@@ -487,6 +628,11 @@ class BAC_Settings {
 		/* ---- Appearance ------------------------------------------------- */
 		$out['accent']        = self::hex( isset( $in['accent'] ) ? $in['accent'] : '', $def['accent'] );
 		$out['secondary']     = self::hex( isset( $in['secondary'] ) ? $in['secondary'] : '', $def['secondary'] );
+		$out['surface']       = self::hex( isset( $in['surface'] ) ? $in['surface'] : '', $def['surface'] );
+		$font                 = isset( $in['font'] ) ? sanitize_key( $in['font'] ) : 'site';
+		$out['font']          = in_array( $font, array( 'site', 'system' ), true ) ? $font : 'site';
+		$out['launcher_label'] = self::text( $in, 'launcher_label' );
+		$out['credit']        = empty( $in['credit'] ) ? 0 : 1;
 		$position             = isset( $in['position'] ) ? sanitize_key( $in['position'] ) : 'right';
 		$out['position']      = in_array( $position, array( 'right', 'left' ), true ) ? $position : 'right';
 		$theme                = isset( $in['theme'] ) ? sanitize_key( $in['theme'] ) : 'auto';
@@ -687,7 +833,7 @@ class BAC_Settings {
 	 * @return array
 	 */
 	public static function secrets() {
-		return array( 'api_key', 'slack_webhook', 'telegram_token', 'wa_token', 'webhook_url', 'webhook_secret' );
+		return array( 'api_key', 'api_keys', 'slack_webhook', 'telegram_token', 'wa_token', 'webhook_url', 'webhook_secret' );
 	}
 
 	/**

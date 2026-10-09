@@ -85,16 +85,35 @@ class BAC_Widget {
 
 		$s = BAC_Settings::get();
 
-		wp_enqueue_style( 'beaver-ai-chat', BAC_URL . 'assets/css/chat.css', array(), BAC_VERSION );
+		wp_enqueue_style( 'beaver-ai-chat', BAC_URL . 'assets/css/chat.css', array(), self::asset_version( 'assets/css/chat.css' ) );
 		wp_add_inline_style( 'beaver-ai-chat', self::critical_css( $s ) . self::inline_css( $s ) );
 
-		wp_enqueue_script( 'beaver-ai-chat', BAC_URL . 'assets/js/chat.js', array(), BAC_VERSION, true );
+		wp_enqueue_script( 'beaver-ai-chat', BAC_URL . 'assets/js/chat.js', array(), self::asset_version( 'assets/js/chat.js' ), true );
 		wp_localize_script( 'beaver-ai-chat', 'BAC_CONFIG', self::config( $s ) );
 
 		if ( self::async_assets() ) {
 			add_filter( 'style_loader_tag', array( __CLASS__, 'async_style_tag' ), 10, 2 );
 			add_filter( 'script_loader_tag', array( __CLASS__, 'defer_script_tag' ), 10, 2 );
 		}
+	}
+
+	/**
+	 * Cache-busting version for a widget asset: the plugin version plus the
+	 * file's modification time. The version alone is not enough: a stylesheet
+	 * edited without a version bump (a hotfix, or a copy patched on the
+	 * server) keeps its old URL, and browsers and page caches go on serving
+	 * the previous file, so the chat renders with markup and styles that no
+	 * longer match.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $file Path relative to the plugin folder.
+	 * @return string
+	 */
+	private static function asset_version( $file ) {
+		$mtime = @filemtime( BAC_PATH . $file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a missing file must not break the page.
+
+		return $mtime ? BAC_VERSION . '.' . $mtime : BAC_VERSION;
 	}
 
 	/**
@@ -177,12 +196,11 @@ class BAC_Widget {
 
 		return '#bac-root{position:fixed;bottom:24px;' . $side . ':24px;}'
 			. '#bac-root.bac-inline{position:static;}'
-			. '#bac-launch{position:relative;width:var(--bac-launcher);height:var(--bac-launcher);'
-			. 'border:0;padding:0;border-radius:var(--bac-radius-launcher);cursor:pointer;color:#fff;'
-			. 'display:grid;place-items:center;'
-			. 'background:linear-gradient(155deg,var(--bac-accent-light),var(--bac-accent) 52%,var(--bac-accent-dark));}'
-			. '#bac-launch .bac-launch-close{opacity:0;position:absolute;}'
-			. '#bac-launch .bac-launch-icon{position:absolute;}';
+			. '#bac-launch{position:relative;height:var(--bac-launcher);min-width:var(--bac-launcher);'
+			. 'border:0;padding:0;border-radius:999px;cursor:pointer;'
+			. 'display:flex;align-items:center;justify-content:center;'
+			. 'background:var(--bac-accent);color:var(--bac-on-accent);}'
+			. '#bac-launch .bac-launch-close{display:none;}';
 	}
 
 	/**
@@ -212,6 +230,11 @@ class BAC_Widget {
 				6
 			),
 			'historyTurns' => (int) $s['history_turns'],
+			// Where the site lives, so a bare "/page/" link in a reply still
+			// works when WordPress is installed in a sub folder.
+			'home'        => (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ),
+			'privacy'     => esc_url_raw( (string) get_privacy_policy_url() ),
+			'launcherLabel' => BAC_Prompt::tokens( $s['launcher_label'], $s ),
 			'nudge'       => ! empty( $s['nudge_enabled'] ) ? BAC_Prompt::tokens( $s['nudge_text'], $s ) : '',
 			'nudgeDelay'  => (int) $s['nudge_delay'],
 			// The hand-off needs a stored lead to attach itself to, so it is
@@ -225,6 +248,13 @@ class BAC_Widget {
 				'send'      => __( 'Send', 'beaver-ai-chat' ),
 				'end'       => __( 'End chat', 'beaver-ai-chat' ),
 				'restart'   => __( 'Start a new chat', 'beaver-ai-chat' ),
+				'menu'      => __( 'More options', 'beaver-ai-chat' ),
+				'retry'     => __( 'Try again', 'beaver-ai-chat' ),
+				/* translators: %s: link to the privacy policy, reading "privacy policy". */
+				'agree'     => __( 'By chatting, you agree to our %s.', 'beaver-ai-chat' ),
+				'policy'    => __( 'privacy policy', 'beaver-ai-chat' ),
+				/* translators: %s: assistant name. */
+				'typing'    => sprintf( __( '%s is typing', 'beaver-ai-chat' ), $assistant ),
 				'dismiss'   => __( 'Dismiss', 'beaver-ai-chat' ),
 				'message'   => __( 'Message', 'beaver-ai-chat' ),
 				'whatsapp'  => __( 'WhatsApp', 'beaver-ai-chat' ),
@@ -254,29 +284,50 @@ class BAC_Widget {
 	private static function inline_css( $s ) {
 		$accent    = $s['accent'];
 		$secondary = $s['secondary'];
+		$surface   = $s['surface'];
 		$side      = ( 'left' === $s['position'] ) ? 'left' : 'right';
 		$corner    = BAC_Settings::corners( $s );
 		$bubble    = BAC_Settings::bubbles( $s );
 
+		// The assistant's messages sit in a borderless tint of the window
+		// background: a soft grey on white, a deeper cream on cream. The message
+		// box stays white on anything but a white window, where it matches.
+		$bot_bubble = self::shade( $surface, -0.05 );
+		$field      = self::luminance( $surface ) >= 0.97 ? $surface : '#ffffff';
+
+		// Links in replies use the main colour when it reads well on white, and
+		// a darker shade of it when it does not (a yellow brand, say).
+		$link = self::contrast( $accent, '#ffffff' ) >= 4.5 ? $accent : self::shade( $accent, -0.5 );
+
 		$css = '#bac-root{'
 			. '--bac-accent:' . $accent . ';'
-			. '--bac-accent-dark:' . self::shade( $accent, -0.34 ) . ';'
-			. '--bac-accent-deep:' . self::shade( $accent, -0.62 ) . ';'
-			. '--bac-accent-light:' . self::shade( $accent, 0.2 ) . ';'
+			. '--bac-accent-hover:' . self::shade( $accent, self::luminance( $accent ) < 0.04 ? 0.14 : -0.12 ) . ';'
 			. '--bac-accent-rgb:' . self::rgb( $accent ) . ';'
+			. '--bac-on-accent:' . self::on( $accent ) . ';'
 			. '--bac-secondary:' . $secondary . ';'
 			. '--bac-secondary-rgb:' . self::rgb( $secondary ) . ';'
+			. '--bac-on-secondary:' . self::on( $secondary ) . ';'
+			. '--bac-link:' . $link . ';'
+			// A near black button vanishes against a dark footer or cookie bar,
+			// so it gets a fine ring in the highlight colour.
+			. '--bac-launch-ring:' . ( self::luminance( $accent ) < 0.03 ? 'rgba(' . self::rgb( $secondary ) . ', .85)' : 'transparent' ) . ';'
+			. '--bac-link-dark:' . self::shade( $accent, self::luminance( $accent ) < 0.2 ? 0.6 : 0.2 ) . ';'
+			. '--bac-bg:' . $surface . ';'
+			. '--bac-bubble:' . $bot_bubble . ';'
+			. '--bac-field:' . $field . ';'
+			. '--bac-line:' . self::shade( $surface, -0.09 ) . ';'
+			. '--bac-soft:' . self::shade( $surface, -0.04 ) . ';'
 			. '--bac-radius:' . $corner['panel'] . ';'
 			. '--bac-radius-bubble:' . $bubble['radius'] . ';'
 			. '--bac-radius-bubble-tail:' . $bubble['tail'] . ';'
 			. '--bac-radius-control:' . $corner['control'] . ';'
 			. '--bac-radius-button:' . $corner['button'] . ';'
 			. '--bac-radius-pill:' . $corner['pillish'] . ';'
-			/* The floating chat button stays a circle whatever the window does.
-			   A round button is what people recognise as "chat"; squaring it
-			   reads as a stray box rather than a control. */
-			. '--bac-radius-launcher:50%;'
 			. '--bac-launcher:' . (int) $s['launcher_size'] . 'px;'
+			// A plain declaration, not a custom property: "--bac-font:inherit"
+			// would inherit the custom property itself, which the page never
+			// sets, and silently fall back to the device font.
+			. ( 'site' === $s['font'] ? 'font-family:inherit;' : '' )
 			. 'z-index:' . (int) $s['z_index'] . ';'
 			. '}';
 
@@ -298,6 +349,59 @@ class BAC_Widget {
 		}
 
 		return $css;
+	}
+
+	/**
+	 * Relative luminance of a hex colour, 0 for black to 1 for white, as WCAG
+	 * defines it.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $hex Hex colour.
+	 * @return float
+	 */
+	private static function luminance( $hex ) {
+		$channels = array_map( 'intval', explode( ', ', self::rgb( $hex ) ) );
+		$linear   = array();
+
+		foreach ( $channels as $channel ) {
+			$c        = $channel / 255;
+			$linear[] = ( $c <= 0.03928 ) ? $c / 12.92 : pow( ( $c + 0.055 ) / 1.055, 2.4 );
+		}
+
+		return 0.2126 * $linear[0] + 0.7152 * $linear[1] + 0.0722 * $linear[2];
+	}
+
+	/**
+	 * WCAG contrast ratio between two colours.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $a Hex colour.
+	 * @param string $b Hex colour.
+	 * @return float
+	 */
+	private static function contrast( $a, $b ) {
+		$la = self::luminance( $a );
+		$lb = self::luminance( $b );
+
+		return ( max( $la, $lb ) + 0.05 ) / ( min( $la, $lb ) + 0.05 );
+	}
+
+	/**
+	 * Text colour for something filled with the given colour: white or near
+	 * black, whichever reads better. A gold button gets dark text, a forest
+	 * green one gets white, without the admin having to think about it.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $hex Fill colour.
+	 * @return string
+	 */
+	private static function on( $hex ) {
+		$ink = '#1d1d1b';
+
+		return self::contrast( $hex, '#ffffff' ) >= self::contrast( $hex, $ink ) ? '#ffffff' : $ink;
 	}
 
 	/**
@@ -420,12 +524,17 @@ class BAC_Widget {
 			$classes[] = 'bac-fullscreen';
 		}
 
+		if ( ! $inline && '' !== trim( (string) $s['launcher_label'] ) ) {
+			$classes[] = 'bac-has-label';
+		}
+
 		$labels = array(
 			'open'    => esc_attr__( 'Open chat', 'beaver-ai-chat' ),
 			'close'   => esc_attr__( 'Minimise chat', 'beaver-ai-chat' ),
 			'dismiss' => esc_attr__( 'Dismiss', 'beaver-ai-chat' ),
 			'send'    => esc_attr__( 'Send', 'beaver-ai-chat' ),
 			'message' => esc_attr__( 'Message', 'beaver-ai-chat' ),
+			'menu'    => esc_attr__( 'More options', 'beaver-ai-chat' ),
 			'dialog'  => esc_attr__( 'Chat assistant', 'beaver-ai-chat' ),
 		);
 		?>
@@ -438,34 +547,41 @@ class BAC_Widget {
 			<span class="bac-nudge-text" data-bac-nudge-text></span>
 		</button>
 		<button type="button" class="bac-nudge-x" data-bac-nudge-close aria-label="<?php echo $labels['dismiss']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
-			<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+			<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
 		</button>
 	</div>
 
 	<button id="bac-launch" type="button" aria-expanded="false" aria-controls="bac-panel" aria-label="<?php echo $labels['open']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
 		<span class="bac-launch-icon" aria-hidden="true">
-			<svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.6 8.6 0 0 1-3.9-.9L3 21l1.9-5.6A8.4 8.4 0 0 1 4 11.5 8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>
+			<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5 4 20.5l1-4A8 8 0 1 1 7.5 18.5z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/></svg>
 		</span>
+		<span class="bac-launch-label" data-bac-launch-label></span>
 		<span class="bac-launch-close" aria-hidden="true">
-			<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+			<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
 		</span>
-		<span class="bac-badge" aria-hidden="true"></span>
 	</button>
 	<?php endif; ?>
 
 	<div id="bac-panel" role="dialog" aria-label="<?php echo $labels['dialog']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>" <?php echo $inline ? '' : 'hidden'; ?>>
 		<header class="bac-head">
-			<span class="bac-head-glow" aria-hidden="true"></span>
 			<span class="bac-avatar" data-bac-avatar></span>
 			<span class="bac-id">
 				<span class="bac-name" data-bac-name></span>
 				<span class="bac-status" data-bac-tagline></span>
 			</span>
 			<span class="bac-actions">
-				<button type="button" class="bac-end" data-bac-end></button>
+				<span class="bac-menu-wrap">
+					<button type="button" class="bac-icon-btn" data-bac-menu aria-haspopup="true" aria-expanded="false" aria-label="<?php echo $labels['menu']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+					</button>
+					<span class="bac-menu" data-bac-menu-list hidden>
+						<button type="button" class="bac-menu-item" data-bac-new></button>
+						<button type="button" class="bac-menu-item" data-bac-end></button>
+					</span>
+				</span>
 				<?php if ( ! $inline ) : ?>
-				<button type="button" class="bac-min" data-bac-close aria-label="<?php echo $labels['close']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
-					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+				<button type="button" class="bac-icon-btn" data-bac-close aria-label="<?php echo $labels['close']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
 				</button>
 				<?php endif; ?>
 			</span>
@@ -476,7 +592,6 @@ class BAC_Widget {
 
 		<div class="bac-cta" data-bac-cta hidden>
 			<button type="button" class="bac-btn bac-btn-primary" data-bac-contact>
-				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 				<span data-bac-contact-label></span>
 			</button>
 			<a class="bac-btn bac-btn-wa" data-bac-wa href="#" target="_blank" rel="noopener nofollow" hidden>
@@ -485,15 +600,39 @@ class BAC_Widget {
 			</a>
 		</div>
 
-		<form class="bac-compose" data-bac-form>
-			<textarea data-bac-input rows="1" aria-label="<?php echo $labels['message']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>"></textarea>
-			<button type="submit" class="bac-send" aria-label="<?php echo $labels['send']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
-				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-			</button>
-		</form>
+		<div class="bac-bottom">
+			<div class="bac-notice" data-bac-notice hidden>
+				<p><span data-bac-foot></span> <span data-bac-agree></span></p>
+				<button type="button" class="bac-notice-x" data-bac-notice-close aria-label="<?php echo $labels['dismiss']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+				</button>
+			</div>
 
-		<button type="button" class="bac-restart" data-bac-restart></button>
-		<p class="bac-foot" data-bac-foot></p>
+			<form class="bac-compose" data-bac-form>
+				<div class="bac-field">
+					<textarea data-bac-input rows="1" aria-label="<?php echo $labels['message']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>"></textarea>
+					<button type="submit" class="bac-send" aria-label="<?php echo $labels['send']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+					</button>
+				</div>
+			</form>
+
+			<button type="button" class="bac-restart" data-bac-restart></button>
+
+			<?php if ( ! empty( $s['credit'] ) ) : ?>
+			<p class="bac-credit">
+				<a href="https://digitalbeavertz.com/" target="_blank" rel="noopener">
+					<svg viewBox="0 0 256 256" width="13" height="13" aria-hidden="true"><rect width="256" height="256" rx="56" fill="#ff7a3c"/><path fill="#fff" d="M86 58H170A38 38 0 0 1 208 96V138A38 38 0 0 1 170 176H114L72 208L82 175.8A38 38 0 0 1 48 138V96A38 38 0 0 1 86 58Z"/></svg>
+					<span>
+					<?php
+					/* translators: %s: Digital Beaver, the plugin's maker. */
+					printf( esc_html__( 'Powered by %s', 'beaver-ai-chat' ), '<strong>Digital Beaver</strong>' );
+					?>
+					</span>
+				</a>
+			</p>
+			<?php endif; ?>
+		</div>
 	</div>
 </div>
 		<?php

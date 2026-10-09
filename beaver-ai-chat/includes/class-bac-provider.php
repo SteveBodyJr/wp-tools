@@ -25,25 +25,77 @@ class BAC_Provider {
 	/**
 	 * Send a conversation and return the assistant's reply text.
 	 *
+	 * The main provider is tried first, then each backup the site has a key
+	 * for, in order, so a provider outage, an expired key or a timeout does
+	 * not leave a visitor unanswered. A refusal is not retried elsewhere: the
+	 * model declined the request itself, and shopping it around would only
+	 * find a model that agrees.
+	 *
+	 * @since 2.0.0 Falls back to backup providers; accepts $args.
+	 *
 	 * @param string $system   System prompt.
 	 * @param array  $messages List of array( 'role' => user|assistant, 'content' => string ).
 	 * @param array  $s        Settings (read fresh when omitted).
+	 * @param array  $args     Optional. 'provider' to use one provider only
+	 *                         (the connection tester), 'no_fallback' to skip
+	 *                         the backups.
 	 * @return string|WP_Error
 	 */
-	public static function chat( $system, $messages, $s = null ) {
-		$s   = null === $s ? BAC_Settings::get() : $s;
-		$key = BAC_Settings::api_key();
-
-		if ( '' === $key ) {
-			return self::fail( new WP_Error( 'bac_no_key', __( 'No API key is configured.', 'beaver-ai-chat' ) ), $s );
-		}
-
+	public static function chat( $system, $messages, $s = null, $args = array() ) {
+		$s        = null === $s ? BAC_Settings::get() : $s;
 		$messages = self::normalize( $messages );
+
 		if ( empty( $messages ) ) {
 			return new WP_Error( 'bac_no_messages', __( 'There is no message to send.', 'beaver-ai-chat' ) );
 		}
 
-		$cfg = BAC_Settings::provider_config( $s );
+		if ( ! empty( $args['provider'] ) ) {
+			$chain = array( (string) $args['provider'] );
+		} else {
+			$chain = array( (string) $s['provider'] );
+
+			if ( empty( $args['no_fallback'] ) ) {
+				$chain = array_merge( $chain, BAC_Settings::fallbacks( $s ) );
+			}
+		}
+
+		$first = null;
+
+		foreach ( $chain as $position => $id ) {
+			$result = self::attempt( $id, $system, $messages, $s );
+
+			if ( ! is_wp_error( $result ) ) {
+				return ( 0 === $position ) ? self::succeed( $result ) : self::rescued( $result, $id );
+			}
+
+			$first = $first ? $first : $result;
+
+			if ( 'bac_refusal' === $result->get_error_code() ) {
+				break;
+			}
+		}
+
+		return $first;
+	}
+
+	/**
+	 * One call to one provider.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $id       Provider id.
+	 * @param string $system   System prompt.
+	 * @param array  $messages Normalised conversation.
+	 * @param array  $s        Settings.
+	 * @return string|WP_Error
+	 */
+	private static function attempt( $id, $system, $messages, $s ) {
+		$cfg = BAC_Settings::provider_config( $s, $id );
+		$key = BAC_Settings::api_key( $id );
+
+		if ( '' === $key ) {
+			return self::fail( new WP_Error( 'bac_no_key', __( 'No API key is configured.', 'beaver-ai-chat' ) ), $s, $cfg );
+		}
 		if ( '' === trim( (string) $cfg['url'] ) ) {
 			return self::fail( new WP_Error( 'bac_no_endpoint', __( 'No endpoint is configured for this provider.', 'beaver-ai-chat' ) ), $s, $cfg );
 		}
@@ -62,7 +114,32 @@ class BAC_Provider {
 				$result = self::call_openai( $cfg, $key, $system, $messages, $s );
 		}
 
-		return is_wp_error( $result ) ? self::fail( $result, $s, $cfg ) : self::succeed( $result );
+		return is_wp_error( $result ) ? self::fail( $result, $s, $cfg ) : $result;
+	}
+
+	/**
+	 * A backup answered after the main provider failed. The failure stays on
+	 * record, because the main provider is still broken and the admin needs
+	 * to know, and it notes who stepped in.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $reply Reply text.
+	 * @param string $id    Provider that answered.
+	 * @return string
+	 */
+	private static function rescued( $reply, $id ) {
+		$error = get_option( self::ERROR_OPTION, false );
+
+		if ( is_array( $error ) ) {
+			$providers            = BAC_Settings::providers();
+			$error['rescued_by']  = isset( $providers[ $id ]['label'] ) ? $providers[ $id ]['label'] : $id;
+			$error['rescued_at']  = time();
+
+			update_option( self::ERROR_OPTION, $error, false );
+		}
+
+		return $reply;
 	}
 
 	/**
@@ -81,7 +158,7 @@ class BAC_Provider {
 			array(
 				'code'     => $error->get_error_code(),
 				'message'  => $error->get_error_message(),
-				'provider' => isset( $s['provider'] ) ? $s['provider'] : '',
+				'provider' => $cfg && isset( $cfg['id'] ) ? $cfg['id'] : ( isset( $s['provider'] ) ? $s['provider'] : '' ),
 				'model'    => $cfg && isset( $cfg['model'] ) ? $cfg['model'] : '',
 				'time'     => time(),
 			),
@@ -346,8 +423,16 @@ class BAC_Provider {
 		list( $in, $out ) = BAC_Usage::read( $data, $cfg['api'] );
 
 		// Providers echo the model they actually served, which can differ from
-		// the alias that was asked for. Price what ran.
+		// the alias that was asked for. Price what ran when its price is
+		// known, and otherwise what was asked for: DeepSeek answers requests
+		// for deepseek-chat as "deepseek-flash", a name in no price table, and
+		// recording that as free left the spend at $0.00 and the monthly cap
+		// unable to ever trigger.
 		$model = isset( $data['model'] ) && is_string( $data['model'] ) ? $data['model'] : $cfg['model'];
+
+		if ( null === BAC_Usage::rate( $model ) && null !== BAC_Usage::rate( $cfg['model'] ) ) {
+			$model = $cfg['model'];
+		}
 
 		BAC_Usage::record( $model, $in, $out );
 	}

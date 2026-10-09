@@ -40,7 +40,7 @@ class BAC_Admin {
 			'manage_options',
 			self::PAGE,
 			array( __CLASS__, 'render' ),
-			'dashicons-format-chat',
+			self::menu_icon(),
 			58
 		);
 
@@ -52,6 +52,27 @@ class BAC_Admin {
 			self::PAGE,
 			array( __CLASS__, 'render' )
 		);
+	}
+
+	/**
+	 * The plugin's own mark for the admin menu: the speech bubble and AI
+	 * sparkle from assets/icon.svg, as a single shape with the sparkle cut out.
+	 *
+	 * Drawn in one flat colour on purpose. WordPress repaints a data URI menu
+	 * icon to match the admin colour scheme and its hover and current states,
+	 * exactly as it does a dashicon, but only when the SVG is a plain fill.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return string
+	 */
+	private static function menu_icon() {
+		$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">'
+			. '<path fill="black" fill-rule="evenodd" d="M5.5 3h9A3.5 3.5 0 0 1 18 6.5v4a3.5 3.5 0 0 1-3.5 3.5H9.2L5 17.2l.8-3.2A3.5 3.5 0 0 1 2 10.5v-4A3.5 3.5 0 0 1 5.5 3z'
+			. 'M9.6 5.2c.3 2.2 1.1 3 3.3 3.3-2.2.3-3 1.1-3.3 3.3-.3-2.2-1.1-3-3.3-3.3 2.2-.3 3-1.1 3.3-3.3z"/>'
+			. '</svg>';
+
+		return 'data:image/svg+xml;base64,' . base64_encode( $svg ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- WordPress requires a base64 data URI for SVG menu icons.
 	}
 
 	/** Register the option with its sanitiser. */
@@ -76,8 +97,8 @@ class BAC_Admin {
 			return;
 		}
 
-		wp_enqueue_style( 'bac-admin', BAC_URL . 'assets/css/admin.css', array(), BAC_VERSION );
-		wp_enqueue_script( 'bac-admin', BAC_URL . 'assets/js/admin.js', array(), BAC_VERSION, true );
+		wp_enqueue_style( 'bac-admin', BAC_URL . 'assets/css/admin.css', array(), BAC_VERSION . '.' . (int) @filemtime( BAC_PATH . 'assets/css/admin.css' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		wp_enqueue_script( 'bac-admin', BAC_URL . 'assets/js/admin.js', array(), BAC_VERSION . '.' . (int) @filemtime( BAC_PATH . 'assets/js/admin.js' ), true ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		wp_localize_script(
 			'bac-admin',
@@ -87,6 +108,8 @@ class BAC_Admin {
 				'nonce'      => wp_create_nonce( 'bac_test' ),
 				'emailNonce' => wp_create_nonce( 'bac_test_email' ),
 				'providers'  => self::provider_hints(),
+				'corners'    => BAC_Settings::corner_styles(),
+				'bubbles'    => BAC_Settings::bubble_styles(),
 				'i18n'       => array(
 					'testing' => __( 'Testing…', 'beaver-ai-chat' ),
 					'ok'      => __( 'Connected. The model replied:', 'beaver-ai-chat' ),
@@ -141,16 +164,11 @@ class BAC_Admin {
 		);
 		?>
 		<div class="wrap bac-admin">
-			<h1 class="bac-title">
-				<span class="dashicons dashicons-format-chat"></span>
-				<?php esc_html_e( 'Beaver AI Chat', 'beaver-ai-chat' ); ?>
-			</h1>
-
-			<p class="description bac-lede">
-				<?php esc_html_e( 'A 24/7 assistant that answers visitor questions using your own site content, captures leads and hands off to your team. Your API key is stored on your server and is never exposed to visitors: the chat only ever talks to this website.', 'beaver-ai-chat' ); ?>
-			</p>
+			<?php self::hero( $s ); ?>
 
 			<?php settings_errors(); ?>
+
+			<?php self::overview( $s ); ?>
 
 			<h2 class="nav-tab-wrapper bac-tabs">
 				<?php foreach ( $tabs as $id => $label ) : ?>
@@ -181,6 +199,230 @@ class BAC_Admin {
 			?>
 
 			<?php self::tab_tools(); ?>
+
+			<?php self::render_credit(); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * The page header: the plugin's mark, what it does, and whether it is
+	 * live. The hr after it is where WordPress moves admin notices, so other
+	 * plugins' messages land under the header rather than above it.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $s Settings.
+	 */
+	private static function hero( $s ) {
+		if ( empty( $s['enabled'] ) ) {
+			$state = array( 'is-off', __( 'Hidden from visitors', 'beaver-ai-chat' ) );
+		} elseif ( ! BAC_Settings::can_answer( $s ) ) {
+			$state = array( 'is-warn', __( 'Needs an API key', 'beaver-ai-chat' ) );
+		} else {
+			$state = array( 'is-live', __( 'Live on your site', 'beaver-ai-chat' ) );
+		}
+		?>
+		<div class="bac-hero">
+			<img class="bac-hero__icon" src="<?php echo esc_url( BAC_URL . 'assets/icon.svg' ); ?>" width="48" height="48" alt="" />
+			<div class="bac-hero__text">
+				<h1><?php esc_html_e( 'AI Chat', 'beaver-ai-chat' ); ?></h1>
+				<p><?php esc_html_e( 'Answers visitors from your own site content, captures leads and hands off to your team.', 'beaver-ai-chat' ); ?></p>
+			</div>
+			<div class="bac-hero__side">
+				<span class="bac-state <?php echo esc_attr( $state[0] ); ?>"><span class="bac-state__dot"></span><?php echo esc_html( $state[1] ); ?></span>
+				<a class="button" href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View site', 'beaver-ai-chat' ); ?> <span aria-hidden="true">&#8599;</span></a>
+			</div>
+		</div>
+		<hr class="wp-header-end">
+		<?php
+	}
+
+	/**
+	 * Five figures across the top: which AI is answering, conversations, this
+	 * month's spend, unanswered questions and how much of the site it knows.
+	 * Each one opens the place to act on it.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $s Settings.
+	 */
+	private static function overview( $s ) {
+		$cfg     = BAC_Settings::provider_config( $s );
+		$backups = count( BAC_Settings::fallbacks( $s ) );
+		$total   = (int) wp_count_posts( BAC_LEAD_CPT )->publish;
+		$new     = BAC_Workflow::count( 'new' );
+		$spend   = BAC_Usage::month_spend();
+		$cap     = (float) $s['monthly_cap'];
+		$gaps    = count( BAC_Gaps::report() );
+		$known   = 0;
+
+		if ( ! empty( $s['kb_enabled'] ) ) {
+			$index = BAC_Knowledge::index( $s );
+			$known = isset( $index['items'] ) ? count( $index['items'] ) : 0;
+		}
+
+		$cards = array(
+			array(
+				'label' => __( 'Main AI', 'beaver-ai-chat' ),
+				'value' => preg_replace( '/\s*\(.*\)$/', '', $cfg['label'] ),
+				/* translators: 1: model name, 2: number of backup AIs. */
+				'sub'   => sprintf( _n( '%1$s · %2$d backup', '%1$s · %2$d backups', $backups, 'beaver-ai-chat' ), $cfg['model'], $backups ),
+				'goto'  => 'connection',
+			),
+			array(
+				'label' => __( 'Conversations', 'beaver-ai-chat' ),
+				'value' => number_format_i18n( $total ),
+				/* translators: %d: number of new conversations. */
+				'sub'   => $new ? sprintf( _n( '%d new', '%d new', $new, 'beaver-ai-chat' ), $new ) : __( 'all caught up', 'beaver-ai-chat' ),
+				'href'  => admin_url( 'edit.php?post_type=' . BAC_LEAD_CPT ),
+				'flag'  => $new > 0,
+			),
+			array(
+				'label' => __( 'Spend this month', 'beaver-ai-chat' ),
+				'value' => BAC_Usage::money( $spend ),
+				/* translators: %s: monthly spending cap. */
+				'sub'   => $cap > 0 ? sprintf( __( 'of %s cap', 'beaver-ai-chat' ), BAC_Usage::money( $cap ) ) : __( 'no cap set', 'beaver-ai-chat' ),
+				'goto'  => 'connection',
+				'meter' => $cap > 0 ? min( 100, round( $spend / $cap * 100 ) ) : null,
+			),
+			array(
+				'label' => __( 'Answer gaps', 'beaver-ai-chat' ),
+				'value' => number_format_i18n( $gaps ),
+				'sub'   => __( 'questions it could not answer', 'beaver-ai-chat' ),
+				'href'  => admin_url( 'admin.php?page=' . BAC_Gaps::PAGE ),
+			),
+			array(
+				'label' => __( 'Knowledge', 'beaver-ai-chat' ),
+				'value' => number_format_i18n( $known ),
+				'sub'   => ! empty( $s['kb_enabled'] ) ? __( 'pages and items it reads', 'beaver-ai-chat' ) : __( 'site knowledge is off', 'beaver-ai-chat' ),
+				'goto'  => 'knowledge',
+			),
+		);
+		?>
+		<div class="bac-stats">
+			<?php foreach ( $cards as $card ) : ?>
+				<a class="bac-stat<?php echo ! empty( $card['flag'] ) ? ' is-flagged' : ''; ?>"
+					href="<?php echo esc_url( isset( $card['href'] ) ? $card['href'] : '#' . $card['goto'] ); ?>"
+					<?php echo isset( $card['goto'] ) ? 'data-bac-goto="' . esc_attr( $card['goto'] ) . '"' : ''; ?>>
+					<span class="bac-stat__label"><?php echo esc_html( $card['label'] ); ?></span>
+					<span class="bac-stat__value"><?php echo esc_html( $card['value'] ); ?></span>
+					<span class="bac-stat__sub"><?php echo esc_html( $card['sub'] ); ?></span>
+					<?php if ( isset( $card['meter'] ) && null !== $card['meter'] ) : ?>
+						<span class="bac-stat__meter"><span style="width:<?php echo (int) $card['meter']; ?>%"></span></span>
+					<?php endif; ?>
+				</a>
+			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * One provider's key: its status, and the controls to add, change, test or
+	 * remove it.
+	 *
+	 * The input starts DISABLED and stays out of the form until the admin
+	 * deliberately presses Add or Change. Browsers and password managers
+	 * autofill password inputs whatever autocomplete says; a disabled field is
+	 * neither autofilled nor submitted, so saving any other setting can never
+	 * overwrite a working key with an autofilled password.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $id Provider id.
+	 * @param array  $p  Provider definition.
+	 */
+	private static function key_slot( $id, $p ) {
+		$key      = BAC_Settings::api_key( $id );
+		$constant = BAC_Settings::key_is_constant( $id );
+		$field    = BAC_OPTION . '[api_keys][' . $id . ']';
+		?>
+		<div class="bac-keyslot<?php echo '' !== $key ? ' has-key' : ''; ?>" data-bac-keyslot="<?php echo esc_attr( $id ); ?>">
+			<div class="bac-keyslot__row">
+				<span class="bac-keyslot__name">
+					<?php echo esc_html( $p['label'] ); ?>
+					<span class="bac-badge-main" data-bac-main-badge hidden><?php esc_html_e( 'Main', 'beaver-ai-chat' ); ?></span>
+				</span>
+
+				<span class="bac-keyslot__status" data-bac-key-status>
+					<?php if ( $constant ) : ?>
+						<span class="bac-chip-ok"><span class="dashicons dashicons-lock"></span> <?php esc_html_e( 'Set in wp-config.php', 'beaver-ai-chat' ); ?></span>
+					<?php elseif ( '' !== $key ) : ?>
+						<span class="bac-chip-ok"><span class="dashicons dashicons-yes"></span>
+							<?php
+							printf(
+								/* translators: %d: number of characters in the saved key. */
+								esc_html__( 'Saved · %d characters', 'beaver-ai-chat' ),
+								(int) strlen( $key )
+							);
+							?>
+						</span>
+					<?php else : ?>
+						<span class="bac-chip-off"><?php esc_html_e( 'No key', 'beaver-ai-chat' ); ?></span>
+					<?php endif; ?>
+				</span>
+
+				<span class="bac-keyslot__actions">
+					<?php if ( ! $constant ) : ?>
+						<?php if ( '' !== $key ) : ?>
+							<button type="button" class="button" data-bac-key-test><?php esc_html_e( 'Test', 'beaver-ai-chat' ); ?></button>
+							<button type="button" class="button" data-bac-key-change><?php esc_html_e( 'Change', 'beaver-ai-chat' ); ?></button>
+							<button type="button" class="button-link bac-link-danger" data-bac-key-remove><?php esc_html_e( 'Remove', 'beaver-ai-chat' ); ?></button>
+						<?php else : ?>
+							<button type="button" class="button" data-bac-key-change><?php esc_html_e( 'Add key', 'beaver-ai-chat' ); ?></button>
+						<?php endif; ?>
+					<?php else : ?>
+						<button type="button" class="button" data-bac-key-test><?php esc_html_e( 'Test', 'beaver-ai-chat' ); ?></button>
+					<?php endif; ?>
+				</span>
+			</div>
+
+			<?php if ( ! $constant ) : ?>
+				<div class="bac-keyslot__edit" data-bac-key-edit hidden>
+					<input type="password"
+						name="<?php echo esc_attr( $field ); ?>"
+						value=""
+						class="regular-text"
+						autocomplete="new-password"
+						spellcheck="false"
+						disabled
+						data-lpignore="true"
+						data-1p-ignore
+						data-bwignore
+						aria-label="<?php echo esc_attr( sprintf( /* translators: %s: provider name. */ __( '%s API key', 'beaver-ai-chat' ), $p['label'] ) ); ?>"
+						placeholder="<?php echo esc_attr( '' !== $p['prefix'] ? sprintf( /* translators: %s: what the key starts with. */ __( 'Paste the key, it starts %s', 'beaver-ai-chat' ), $p['prefix'] ) : __( 'Paste the key', 'beaver-ai-chat' ) ); ?>" />
+					<button type="button" class="button-link" data-bac-key-cancel><?php esc_html_e( 'Cancel', 'beaver-ai-chat' ); ?></button>
+					<span class="description"><?php echo wp_kses_post( sprintf( /* translators: %s: where to get a key. */ __( 'Get one at %s', 'beaver-ai-chat' ), '<strong>' . $p['keys_at'] . '</strong>' ) ); ?></span>
+				</div>
+
+				<input type="hidden" name="<?php echo esc_attr( BAC_OPTION . '[api_keys_remove][' . $id . ']' ); ?>" value="1" disabled data-bac-key-remove-flag />
+				<p class="bac-keyslot__removing" data-bac-key-removing hidden>
+					<?php esc_html_e( 'This key will be removed when you save.', 'beaver-ai-chat' ); ?>
+					<button type="button" class="button-link" data-bac-key-undo><?php esc_html_e( 'Undo', 'beaver-ai-chat' ); ?></button>
+				</p>
+			<?php endif; ?>
+
+			<span class="bac-test-out" data-bac-key-test-out></span>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the maker's mark.
+	 *
+	 * @since 2.0.0
+	 */
+	private static function render_credit() {
+		?>
+		<div class="bac-credit">
+			<img class="bac-credit__logo" width="300" height="152"
+			     src="<?php echo esc_url( BAC_URL . 'assets/digital-beaver-logo.png' ); ?>"
+			     alt="<?php esc_attr_e( 'Digital Beaver', 'beaver-ai-chat' ); ?>" />
+			<div class="bac-credit__text">
+				<strong><?php esc_html_e( 'Designed & built by Digital Beaver', 'beaver-ai-chat' ); ?></strong>
+				<?php esc_html_e( 'Need a change, a new feature, or an assistant trained on more of your business?', 'beaver-ai-chat' ); ?>
+				<a href="https://digitalbeavertz.com/" target="_blank" rel="noopener noreferrer">digitalbeavertz.com</a>
+			</div>
 		</div>
 		<?php
 	}
@@ -208,7 +450,7 @@ class BAC_Admin {
 				</tr>
 
 				<tr>
-					<th scope="row"><label for="bac-provider"><?php esc_html_e( 'AI provider', 'beaver-ai-chat' ); ?></label></th>
+					<th scope="row"><label for="bac-provider"><?php esc_html_e( 'Main AI', 'beaver-ai-chat' ); ?></label></th>
 					<td>
 						<select name="<?php echo esc_attr( BAC_OPTION ); ?>[provider]" id="bac-provider">
 							<?php foreach ( BAC_Settings::providers() as $id => $p ) : ?>
@@ -230,94 +472,49 @@ class BAC_Admin {
 				</tr>
 
 				<tr>
-					<th scope="row"><label for="bac-api-key"><?php esc_html_e( 'API key', 'beaver-ai-chat' ); ?></label></th>
+					<th scope="row"><?php esc_html_e( 'API keys', 'beaver-ai-chat' ); ?></th>
 					<td>
-						<?php if ( $constant ) : ?>
-							<p class="bac-ok">
-								<span class="dashicons dashicons-lock"></span>
-								<?php esc_html_e( 'The key is set in wp-config.php, which overrides this field.', 'beaver-ai-chat' ); ?>
-							</p>
-						<?php elseif ( $has_key ) : ?>
+						<div class="bac-keys">
 							<?php
-							/*
-							 * A key is already saved, so the input starts DISABLED and stays
-							 * out of the form until the admin deliberately asks to change it.
-							 * Browsers and password managers autofill password inputs whatever
-							 * autocomplete says; a disabled field is neither autofilled nor
-							 * submitted, so saving any other setting can no longer overwrite a
-							 * working key with an autofilled password.
-							 */
+							foreach ( BAC_Settings::providers() as $id => $p ) {
+								self::key_slot( $id, $p );
+							}
 							?>
-							<div class="bac-key" data-bac-key-view>
-								<span class="bac-ok"><span class="dashicons dashicons-yes-alt"></span> <?php esc_html_e( 'A key is saved', 'beaver-ai-chat' ); ?></span>
-								<code class="bac-key-mask">
-									<?php
-									printf(
-										/* translators: %d: number of characters in the saved key. */
-										esc_html__( '%d characters', 'beaver-ai-chat' ),
-										(int) strlen( BAC_Settings::api_key() )
-									);
-									?>
-								</code>
-								<button type="button" class="button button-secondary" data-bac-key-change>
-									<?php esc_html_e( 'Change key', 'beaver-ai-chat' ); ?>
-								</button>
-							</div>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Add a key for every AI you have an account with. Keys are stored on your server only, never sent to the browser, and left out of settings exports. A saved key cannot be changed by accident: press Change first, and leaving the box empty keeps it.', 'beaver-ai-chat' ); ?>
+							<br>
+							<?php
+							printf(
+								/* translators: 1: PHP constant example, 2: example constant name for one provider. */
+								esc_html__( 'To keep a key out of the database entirely, add %1$s to wp-config.php, or one per AI such as %2$s.', 'beaver-ai-chat' ),
+								'<code>define( \'BAC_API_KEY\', \'your-key\' );</code>',
+								'<code>BAC_API_KEY_GEMINI</code>'
+							);
+							?>
+						</p>
+					</td>
+				</tr>
 
-							<div class="bac-key" data-bac-key-edit hidden>
-								<input type="password"
-									name="<?php echo esc_attr( BAC_OPTION ); ?>[api_key]"
-									id="bac-api-key"
-									value=""
-									class="regular-text"
-									autocomplete="new-password"
-									spellcheck="false"
-									disabled
-									data-lpignore="true"
-									data-1p-ignore
-									data-bwignore
-									placeholder="<?php esc_attr_e( 'Paste the new API key', 'beaver-ai-chat' ); ?>" />
-								<button type="button" class="button button-link" data-bac-key-cancel>
-									<?php esc_html_e( 'Cancel', 'beaver-ai-chat' ); ?>
-								</button>
-							</div>
-
-							<p class="description">
-								<?php esc_html_e( 'Your key is stored on your server only and is never sent to the browser. It cannot be changed by accident: press "Change key" first, and leaving the box blank keeps the current key.', 'beaver-ai-chat' ); ?>
-								<br>
-								<?php
-								printf(
-									/* translators: %s: PHP constant example. */
-									esc_html__( 'To keep the key out of the database entirely, add %s to wp-config.php.', 'beaver-ai-chat' ),
-									'<code>define( \'BAC_API_KEY\', \'your-key\' );</code>'
-								);
-								?>
-							</p>
-						<?php else : ?>
-							<input type="password"
-								name="<?php echo esc_attr( BAC_OPTION ); ?>[api_key]"
-								id="bac-api-key"
-								value=""
-								class="regular-text"
-								autocomplete="new-password"
-								spellcheck="false"
-								data-lpignore="true"
-								data-1p-ignore
-								data-bwignore
-								placeholder="<?php esc_attr_e( 'Paste your API key', 'beaver-ai-chat' ); ?>" />
-
-							<p class="description">
-								<?php esc_html_e( 'Stored on your server only, and never sent to the browser.', 'beaver-ai-chat' ); ?>
-								<br>
-								<?php
-								printf(
-									/* translators: %s: PHP constant example. */
-									esc_html__( 'To keep the key out of the database entirely, add %s to wp-config.php.', 'beaver-ai-chat' ),
-									'<code>define( \'BAC_API_KEY\', \'your-key\' );</code>'
-								);
-								?>
-							</p>
-						<?php endif; ?>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Backup AIs', 'beaver-ai-chat' ); ?></th>
+					<td>
+						<fieldset class="bac-fallbacks">
+							<?php foreach ( BAC_Settings::providers() as $id => $p ) : ?>
+								<label data-bac-fallback="<?php echo esc_attr( $id ); ?>">
+									<input type="checkbox" name="<?php echo esc_attr( BAC_OPTION ); ?>[fallback][]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( $id, (array) $s['fallback'], true ) ); ?> />
+									<span><?php echo esc_html( $p['label'] ); ?></span>
+									<em class="bac-fallback-note" data-bac-fallback-note>
+										<?php
+										if ( '' === BAC_Settings::api_key( $id ) ) {
+											esc_html_e( 'needs a key', 'beaver-ai-chat' );
+										}
+										?>
+									</em>
+								</label>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'If the main AI fails or times out, the chat quietly tries these, in this order, so visitors still get an answer. Each backup runs on its recommended model. The failure is still recorded below, so you know the main AI needs attention.', 'beaver-ai-chat' ); ?></p>
 					</td>
 				</tr>
 
@@ -605,15 +802,28 @@ class BAC_Admin {
 		$blocked = defined( 'WP_HTTP_BLOCK_EXTERNAL' ) && WP_HTTP_BLOCK_EXTERNAL;
 
 		if ( $last ) {
-			$when = human_time_diff( (int) $last['time'] );
+			$when      = human_time_diff( (int) $last['time'] );
+			$providers = BAC_Settings::providers();
+			$who       = ( ! empty( $last['provider'] ) && isset( $providers[ $last['provider'] ] ) ) ? $providers[ $last['provider'] ]['label'] : __( 'Your provider', 'beaver-ai-chat' );
 
 			echo '<div class="bac-diag bac-diag--bad"><p><strong>';
 			printf(
-				/* translators: %s: how long ago, for example "5 mins". */
-				esc_html__( 'The last attempt failed, %s ago. Your provider said:', 'beaver-ai-chat' ),
-				esc_html( $when )
+				/* translators: 1: how long ago, for example "5 mins", 2: provider name. */
+				esc_html__( 'The last attempt failed, %1$s ago. %2$s said:', 'beaver-ai-chat' ),
+				esc_html( $when ),
+				esc_html( $who )
 			);
 			echo '</strong></p><p class="bac-diag-msg">' . esc_html( $last['message'] ) . '</p>';
+
+			if ( ! empty( $last['rescued_by'] ) ) {
+				echo '<p class="bac-diag-hint">';
+				printf(
+					/* translators: %s: backup provider name. */
+					esc_html__( 'Visitors were still answered: %s stepped in as the backup.', 'beaver-ai-chat' ),
+					'<strong>' . esc_html( $last['rescued_by'] ) . '</strong>'
+				);
+				echo '</p>';
+			}
 
 			$hint = self::error_hint( $last );
 			if ( '' !== $hint ) {
@@ -654,6 +864,17 @@ class BAC_Admin {
 			'<tr><th>%s</th><td><code>%s</code></td></tr>',
 			esc_html__( 'Endpoint', 'beaver-ai-chat' ),
 			esc_html( '' !== $cfg['url'] ? $cfg['url'] : '—' )
+		);
+
+		$backups = array();
+		foreach ( BAC_Settings::fallbacks( $s ) as $id ) {
+			$backups[] = BAC_Settings::providers()[ $id ]['label'];
+		}
+
+		printf(
+			'<tr><th>%s</th><td>%s</td></tr>',
+			esc_html__( 'Backups', 'beaver-ai-chat' ),
+			$backups ? esc_html( implode( ', ', $backups ) ) : esc_html__( 'none', 'beaver-ai-chat' )
 		);
 
 		printf(
@@ -1346,7 +1567,8 @@ class BAC_Admin {
 	 */
 	private static function tab_appearance( $s ) {
 		?>
-		<div class="bac-panel" data-bac-panel="appearance">
+		<div class="bac-panel bac-panel--split" data-bac-panel="appearance">
+			<div class="bac-split__main">
 			<table class="form-table" role="presentation">
 
 				<tr>
@@ -1362,7 +1584,29 @@ class BAC_Admin {
 								<input type="color" name="<?php echo esc_attr( BAC_OPTION ); ?>[secondary]" value="<?php echo esc_attr( $s['secondary'] ); ?>" />
 							</label>
 						</p>
-						<p class="description"><?php esc_html_e( 'Lighter and darker shades are worked out automatically.', 'beaver-ai-chat' ); ?></p>
+						<p>
+							<label><?php esc_html_e( 'Window background', 'beaver-ai-chat' ); ?>
+								<input type="color" name="<?php echo esc_attr( BAC_OPTION ); ?>[surface]" value="<?php echo esc_attr( $s['surface'] ); ?>" />
+							</label>
+						</p>
+						<p class="description"><?php esc_html_e( 'The main colour fills the header, the visitor\'s messages and the buttons; the highlight colour marks the quote button, list bullets and focus rings. Use your site\'s own colours, and match the window background to your page background so the chat looks like part of the site. Text on each colour switches between light and dark automatically so it stays readable.', 'beaver-ai-chat' ); ?></p>
+					</td>
+				</tr>
+
+				<tr>
+					<th scope="row"><label for="bac-font"><?php esc_html_e( 'Font', 'beaver-ai-chat' ); ?></label></th>
+					<td>
+						<?php
+						self::select(
+							'font',
+							$s,
+							array(
+								'site'   => __( 'Use the site\'s font (recommended)', 'beaver-ai-chat' ),
+								'system' => __( 'Device font', 'beaver-ai-chat' ),
+							)
+						);
+						?>
+						<p class="description"><?php esc_html_e( 'The site\'s font makes the chat read as part of your website rather than an add-on.', 'beaver-ai-chat' ); ?></p>
 					</td>
 				</tr>
 
@@ -1431,8 +1675,17 @@ class BAC_Admin {
 					<th scope="row"><?php esc_html_e( 'Size and layering', 'beaver-ai-chat' ); ?></th>
 					<td>
 						<p><label><?php esc_html_e( 'Chat button size (px)', 'beaver-ai-chat' ); ?> <?php self::number( 'launcher_size', $s, 44, 96 ); ?></label></p>
+						<p><label><?php esc_html_e( 'Chat button label', 'beaver-ai-chat' ); ?> <?php self::text( 'launcher_label', $s, __( 'For example: Ask {assistant}', 'beaver-ai-chat' ) ); ?></label></p>
+						<p class="description"><?php esc_html_e( 'Optional. On larger screens the chat button widens to show this text beside the icon, which gets noticeably more clicks than an icon alone. Phones always show the round button.', 'beaver-ai-chat' ); ?></p>
 						<p><label><?php esc_html_e( 'Stacking order (z-index)', 'beaver-ai-chat' ); ?> <?php self::number( 'z_index', $s, 1, 2147483000 ); ?></label></p>
 						<p class="description"><?php esc_html_e( 'Raise the stacking order if another floating element covers the chat.', 'beaver-ai-chat' ); ?></p>
+					</td>
+				</tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Credit', 'beaver-ai-chat' ); ?></th>
+					<td>
+						<?php self::checkbox( 'credit', $s, __( 'Show "Powered by Digital Beaver" under the message box on phones', 'beaver-ai-chat' ) ); ?>
 					</td>
 				</tr>
 
@@ -1499,7 +1752,68 @@ class BAC_Admin {
 				</tr>
 
 			</table>
+			</div>
+
+			<?php self::preview( $s ); ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * A live preview of the chat window beside the Appearance settings. It is
+	 * a drawing, not the real widget: admin.js repaints it from the colour,
+	 * corner and label fields as they change, before anything is saved.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $s Settings.
+	 */
+	private static function preview( $s ) {
+		$chips    = array_values( array_filter( array_map( 'trim', preg_split( '/[\r\n]+/', (string) $s['chips'] ) ), 'strlen' ) );
+		$greeting = wp_html_excerpt( BAC_Prompt::tokens( $s['greeting'], $s ), 120, '…' );
+		$name     = BAC_Prompt::tokens( $s['assistant'], $s );
+		?>
+		<aside class="bac-preview" aria-label="<?php esc_attr_e( 'Preview', 'beaver-ai-chat' ); ?>">
+			<p class="bac-preview__label"><?php esc_html_e( 'Live preview', 'beaver-ai-chat' ); ?></p>
+
+			<div class="bac-pv" data-bac-pv>
+				<div class="bac-pv__head">
+					<span class="bac-pv__av" data-bac-pv-av><?php echo esc_html( mb_strtoupper( mb_substr( $name, 0, 1 ) ) ); ?></span>
+					<span class="bac-pv__name" data-bac-pv-name><?php echo esc_html( $name ); ?></span>
+					<span class="bac-pv__icons" aria-hidden="true">&middot;&middot;&middot;&nbsp;&nbsp;&times;</span>
+				</div>
+				<div class="bac-pv__log">
+					<div class="bac-pv__bot"><?php echo esc_html( $greeting ); ?></div>
+					<div class="bac-pv__me"><?php echo esc_html( isset( $chips[0] ) ? $chips[0] : __( 'When is the best time to visit?', 'beaver-ai-chat' ) ); ?></div>
+					<div class="bac-pv__bot">
+						<?php esc_html_e( 'It depends on what you want to see. Our', 'beaver-ai-chat' ); ?>
+						<a><?php esc_html_e( 'travel guide', 'beaver-ai-chat' ); ?></a>
+						<?php esc_html_e( 'has the detail, month by month.', 'beaver-ai-chat' ); ?>
+					</div>
+				</div>
+				<div class="bac-pv__chips">
+					<?php foreach ( array_slice( $chips, 1, 2 ) as $chip ) : ?>
+						<span class="bac-pv__chip"><?php echo esc_html( $chip ); ?></span>
+					<?php endforeach; ?>
+					<?php if ( '' !== trim( (string) $s['cta_label'] ) ) : ?>
+						<span class="bac-pv__cta"><?php echo esc_html( BAC_Prompt::tokens( $s['cta_label'], $s ) ); ?></span>
+					<?php endif; ?>
+				</div>
+				<div class="bac-pv__field">
+					<span><?php echo esc_html( $s['placeholder'] ); ?></span>
+					<i aria-hidden="true">&uarr;</i>
+				</div>
+			</div>
+
+			<div class="bac-pv__launcher" data-bac-pv-launcher>
+				<span class="bac-pv__launch-icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5 4 20.5l1-4A8 8 0 1 1 7.5 18.5z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/></svg>
+				</span>
+				<span data-bac-pv-label><?php echo esc_html( BAC_Prompt::tokens( $s['launcher_label'], $s ) ); ?></span>
+			</div>
+
+			<p class="description"><?php esc_html_e( 'Updates as you change the settings. The real chat uses your site\'s font; save and open the site to see it in place.', 'beaver-ai-chat' ); ?></p>
+		</aside>
 		<?php
 	}
 
@@ -1560,7 +1874,12 @@ class BAC_Admin {
 			wp_send_json_error( array( 'message' => __( 'Not allowed.', 'beaver-ai-chat' ) ) );
 		}
 
-		if ( '' === BAC_Settings::api_key() ) {
+		// One provider, never the backups: a test that quietly succeeded on a
+		// backup would report a broken key as working.
+		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified above.
+		$provider = array_key_exists( $provider, BAC_Settings::providers() ) ? $provider : (string) BAC_Settings::get( 'provider' );
+
+		if ( '' === BAC_Settings::api_key( $provider ) ) {
 			wp_send_json_error( array( 'message' => __( 'Save an API key first.', 'beaver-ai-chat' ) ) );
 		}
 
@@ -1571,7 +1890,9 @@ class BAC_Admin {
 					'role'    => 'user',
 					'content' => 'Say OK',
 				),
-			)
+			),
+			null,
+			array( 'provider' => $provider )
 		);
 
 		if ( is_wp_error( $result ) ) {

@@ -14,7 +14,7 @@ already bundles, and nothing that assumes a persistent object cache.
 
 | Plugin | Version | What it does |
 |---|---|---|
-| [beaver-ai-chat](beaver-ai-chat/README.md) | 1.6.2 | AI chat assistant that answers from your own content, captures leads, hands off to your team. |
+| [beaver-ai-chat](beaver-ai-chat/README.md) | 2.0.0 | AI chat assistant that answers from your own content, captures leads, hands off to your team. Works with Claude, ChatGPT, Gemini and more, with backups. |
 | [beaver-access](beaver-access/README.md) | 1.0.2 | Temporary login links. Time-limited access at a chosen role, no password shared. |
 | [beaver-alt-text](beaver-alt-text/README.md) | 1.2.0 | Writes alt text for images that have none, using a vision model. Reviewed before publishing. |
 | [beaver-appbar](beaver-appbar/README.md) | 1.0.0 | Gives a site the bottom tab bar of a phone app. Any theme, no external request. |

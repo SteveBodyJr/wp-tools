@@ -19,10 +19,16 @@ Nothing in this plugin is tied to a particular business, theme or post type, and
 
 **Connection tab**
 
-1. Pick a provider and paste that provider's API key.
-2. Leave **Model** blank to use the recommended default, or type your own.
-3. Click **Send a test message**. You should see `✓ Connected`.
-4. Tick **Show the assistant on the site** and save.
+1. Under **API keys**, press **Add key** beside each AI you have an account
+   with (Claude, ChatGPT, Gemini, DeepSeek, Groq, OpenRouter or your own
+   OpenAI-compatible endpoint) and paste its key. Each AI keeps its own key.
+2. Pick the **Main AI**. Leave **Model** blank to use its recommended default,
+   or type your own.
+3. Optionally tick **Backup AIs**: if the main AI fails or times out, the chat
+   tries these in order, so visitors still get an answer.
+4. Click **Test** beside a key, or **Send a test message**. You should see
+   `✓ Connected`.
+5. Tick **Show the assistant on the site** and save.
 
 **Assistant tab** — name it, set the greeting and the suggested questions, and
 describe your business in a sentence or two. That description does most of the
@@ -43,16 +49,24 @@ stays rounded. **Message bubbles** shapes the messages inside the window and sta
 rounded by default; set it to *Match the chat window* if you want those squared
 off too.
 
-## Keeping the key out of the database
+## Keeping keys out of the database
 
-Add this to `wp-config.php` and the settings field is bypassed entirely:
+Add constants to `wp-config.php` and the key fields are bypassed entirely:
 
 ```php
-define( 'BAC_API_KEY', 'your-key-here' );
+define( 'BAC_API_KEY', 'your-key-here' );          // the main AI, whichever it is
+define( 'BAC_API_KEY_CLAUDE', 'sk-ant-…' );        // or one per AI:
+define( 'BAC_API_KEY_OPENAI', 'sk-…' );            //   CLAUDE, OPENAI, DEEPSEEK,
+define( 'BAC_API_KEY_GEMINI', 'AIza…' );           //   GEMINI, GROQ, OPENROUTER, CUSTOM
 ```
 
-The key is then never written to the database and never appears in a settings
-export. Useful when the site is in version control or shared with a client.
+A per-AI constant wins over everything for that AI; `BAC_API_KEY` applies to
+whichever AI is the main one. Keys set this way are never written to the
+database. Keys saved on the settings screen never appear in a settings export
+either. Useful when the site is in version control or shared with a client.
+
+Sites upgrading from 1.x keep working untouched: the single key they saved
+becomes the key of the provider it was saved for.
 
 ## Coming from the older theme "AI Trip Concierge"
 

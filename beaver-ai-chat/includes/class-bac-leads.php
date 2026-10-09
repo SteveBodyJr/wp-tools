@@ -55,6 +55,9 @@ class BAC_Leads {
 				'show_ui'             => true,
 				'show_in_menu'        => 'beaver-ai-chat',
 				'capability_type'     => 'post',
+				// Conversations are written by the chat, never by hand, so
+				// the list has no "Add" button.
+				'capabilities'        => array( 'create_posts' => 'do_not_allow' ),
 				'map_meta_cap'        => true,
 				'supports'            => array( 'title' ),
 				'exclude_from_search' => true,
@@ -631,7 +634,7 @@ class BAC_Leads {
 		}
 
 		$s = BAC_Settings::get();
-		if ( '' === BAC_Settings::api_key() || empty( $s['lead_ai_summary'] ) ) {
+		if ( ! BAC_Settings::can_answer( $s ) || empty( $s['lead_ai_summary'] ) ) {
 			return;
 		}
 

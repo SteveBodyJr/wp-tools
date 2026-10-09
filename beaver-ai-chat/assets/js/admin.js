@@ -128,59 +128,107 @@
 		refreshProvider();
 	}
 
-	/* ------------------------------------------------------------- API key */
+	/* ------------------------------------------------------------ API keys */
 
 	/*
-	 * The key input is disabled until "Change key" is pressed, so a browser or
-	 * password manager cannot autofill it and saving another setting cannot
-	 * overwrite a working key. Enabling it is the only way it joins the form.
+	 * One slot per provider. Each key input is disabled until Add or Change is
+	 * pressed, so a browser or password manager cannot autofill it and saving
+	 * another setting cannot overwrite a working key. Enabling it is the only
+	 * way it joins the form.
 	 */
-	var keyView = document.querySelector( '[data-bac-key-view]' );
-	var keyEdit = document.querySelector( '[data-bac-key-edit]' );
-	var keyInput = document.getElementById( 'bac-api-key' );
+	Array.prototype.forEach.call( document.querySelectorAll( '[data-bac-keyslot]' ), function ( slot ) {
+		var edit = slot.querySelector( '[data-bac-key-edit]' );
+		var input = edit ? edit.querySelector( 'input' ) : null;
+		var actions = slot.querySelector( '.bac-keyslot__actions' );
+		var removeFlag = slot.querySelector( '[data-bac-key-remove-flag]' );
+		var removing = slot.querySelector( '[data-bac-key-removing]' );
 
-	function showKeyEditor( show ) {
-		if ( ! keyView || ! keyEdit || ! keyInput ) {
-			return;
+		function editing( on ) {
+			if ( ! edit || ! input ) {
+				return;
+			}
+			edit.hidden = ! on;
+			input.disabled = ! on;
+			actions.hidden = on;
+			if ( on ) {
+				input.value = '';
+				input.focus();
+				guardAutofill( input );
+			}
 		}
 
-		keyView.hidden = show;
-		keyEdit.hidden = ! show;
-		keyInput.disabled = ! show;
+		function markRemoved( on ) {
+			if ( ! removeFlag ) {
+				return;
+			}
+			removeFlag.disabled = ! on;
+			removing.hidden = ! on;
+			actions.hidden = on;
+			slot.classList.toggle( 'is-removing', on );
+		}
 
-		if ( show ) {
-			keyInput.value = '';
-			keyInput.focus();
+		on( slot, '[data-bac-key-change]', function () { editing( true ); } );
+		on( slot, '[data-bac-key-cancel]', function () { editing( false ); } );
+		on( slot, '[data-bac-key-remove]', function () { markRemoved( true ); } );
+		on( slot, '[data-bac-key-undo]', function () { markRemoved( false ); } );
+		on( slot, '[data-bac-key-test]', function ( btn ) {
+			runTest( btn, slot.querySelector( '[data-bac-key-test-out]' ), 'bac_test', A.nonce, T.testing || 'Testing…', T.ok || 'Connected.', {
+				provider: slot.getAttribute( 'data-bac-keyslot' )
+			} );
+		} );
+	} );
+
+	function on( scope, selector, fn ) {
+		var el = scope.querySelector( selector );
+		if ( el ) {
+			el.addEventListener( 'click', function () {
+				fn( el );
+			} );
 		}
 	}
 
-	var keyChange = document.querySelector( '[data-bac-key-change]' );
-	if ( keyChange ) {
-		keyChange.addEventListener( 'click', function () {
-			showKeyEditor( true );
-		} );
-	}
-
-	var keyCancel = document.querySelector( '[data-bac-key-cancel]' );
-	if ( keyCancel ) {
-		keyCancel.addEventListener( 'click', function () {
-			showKeyEditor( false );
-		} );
-	}
-
-	// A password manager can still fill the box the moment it is revealed.
+	// A password manager can still fill a box the moment it is revealed.
 	// Clear anything that appears without a keystroke, so nothing is saved
 	// that the person did not actually type or paste.
-	if ( keyInput ) {
+	function guardAutofill( input ) {
 		var typed = false;
-		keyInput.addEventListener( 'keydown', function () { typed = true; } );
-		keyInput.addEventListener( 'paste', function () { typed = true; } );
+		input.addEventListener( 'keydown', function () { typed = true; } );
+		input.addEventListener( 'paste', function () { typed = true; } );
 
 		window.setTimeout( function () {
-			if ( ! typed && ! keyInput.disabled && keyInput.value !== '' ) {
-				keyInput.value = '';
+			if ( ! typed && ! input.disabled && input.value !== '' ) {
+				input.value = '';
 			}
 		}, 600 );
+	}
+
+	/*
+	 * Mark the main provider's key slot, and take it out of the backup list:
+	 * the main AI cannot be its own backup.
+	 */
+	function refreshMain() {
+		var main = provider ? provider.value : '';
+
+		Array.prototype.forEach.call( document.querySelectorAll( '[data-bac-keyslot]' ), function ( slot ) {
+			var badge = slot.querySelector( '[data-bac-main-badge]' );
+			var isMain = slot.getAttribute( 'data-bac-keyslot' ) === main;
+			slot.classList.toggle( 'is-main', isMain );
+			if ( badge ) {
+				badge.hidden = ! isMain;
+			}
+		} );
+
+		Array.prototype.forEach.call( document.querySelectorAll( '[data-bac-fallback]' ), function ( label ) {
+			var box = label.querySelector( 'input' );
+			var isMain = label.getAttribute( 'data-bac-fallback' ) === main;
+			box.disabled = isMain;
+			label.classList.toggle( 'is-main', isMain );
+		} );
+	}
+
+	if ( provider ) {
+		provider.addEventListener( 'change', refreshMain );
+		refreshMain();
 	}
 
 	/* ------------------------------------------------------------- testers */
@@ -198,39 +246,50 @@
 		}
 
 		btn.addEventListener( 'click', function () {
-			out.className = 'bac-test-out is-busy';
-			out.textContent = busyText;
-			btn.disabled = true;
-
-			var data = new window.FormData();
-			data.append( 'action', action );
-			data.append( '_ajax_nonce', nonce );
-
-			window.fetch( A.ajaxUrl, {
-				method: 'POST',
-				body: data,
-				credentials: 'same-origin'
-			} )
-				.then( function ( r ) {
-					return r.json();
-				} )
-				.then( function ( j ) {
-					btn.disabled = false;
-
-					if ( j && j.success ) {
-						out.className = 'bac-test-out is-ok';
-						out.textContent = '✓ ' + ( okPrefix ? okPrefix + ' ' : '' ) + ( ( j.data && j.data.message ) || '' );
-					} else {
-						out.className = 'bac-test-out is-bad';
-						out.textContent = '✗ ' + ( ( j && j.data && j.data.message ) || T.failed || 'Failed' );
-					}
-				} )
-				.catch( function () {
-					btn.disabled = false;
-					out.className = 'bac-test-out is-bad';
-					out.textContent = '✗ ' + ( T.network || 'Network error' );
-				} );
+			runTest( btn, out, action, nonce, busyText, okPrefix, {} );
 		} );
+	}
+
+	function runTest( btn, out, action, nonce, busyText, okPrefix, extra ) {
+		if ( ! btn || ! out ) {
+			return;
+		}
+
+		out.className = 'bac-test-out is-busy';
+		out.textContent = busyText;
+		btn.disabled = true;
+
+		var data = new window.FormData();
+		data.append( 'action', action );
+		data.append( '_ajax_nonce', nonce );
+		Object.keys( extra || {} ).forEach( function ( k ) {
+			data.append( k, extra[ k ] );
+		} );
+
+		window.fetch( A.ajaxUrl, {
+			method: 'POST',
+			body: data,
+			credentials: 'same-origin'
+		} )
+			.then( function ( r ) {
+				return r.json();
+			} )
+			.then( function ( j ) {
+				btn.disabled = false;
+
+				if ( j && j.success ) {
+					out.className = 'bac-test-out is-ok';
+					out.textContent = '✓ ' + ( okPrefix ? okPrefix + ' ' : '' ) + ( ( j.data && j.data.message ) || '' );
+				} else {
+					out.className = 'bac-test-out is-bad';
+					out.textContent = '✗ ' + ( ( j && j.data && j.data.message ) || T.failed || 'Failed' );
+				}
+			} )
+			.catch( function () {
+				btn.disabled = false;
+				out.className = 'bac-test-out is-bad';
+				out.textContent = '✗ ' + ( T.network || 'Network error' );
+			} );
 	}
 
 	wireTest( 'bac-test', 'bac-test-out', 'bac_test', A.nonce, T.testing || 'Testing…', T.ok || 'Connected.' );
@@ -278,4 +337,128 @@
 	} );
 
 	refreshAlerts();
+
+	/* ------------------------------------------------------ overview cards */
+
+	// The figures across the top open the tab where they are set.
+	Array.prototype.forEach.call( document.querySelectorAll( '[data-bac-goto]' ), function ( card ) {
+		card.addEventListener( 'click', function ( e ) {
+			e.preventDefault();
+			show( card.getAttribute( 'data-bac-goto' ) );
+			var nav = document.querySelector( '.bac-tabs' );
+			if ( nav && nav.scrollIntoView ) {
+				nav.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+			}
+		} );
+	} );
+
+	/* --------------------------------------------------------- live preview */
+
+	/*
+	 * Repaints the drawing on the Appearance tab from the fields as they
+	 * change. The colour maths mirrors BAC_Widget: text on a fill is white or
+	 * near black by WCAG contrast, and the assistant's bubble is a tint of the
+	 * window background.
+	 */
+	var pv = document.querySelector( '[data-bac-pv]' );
+
+	if ( pv ) {
+		var pvRoot = pv.parentNode;
+		var field = function ( key ) {
+			return document.querySelector( '[name="' + ( A.option || 'beaver_ai_chat_settings' ) + '[' + key + ']"]' );
+		};
+
+		var rgb = function ( hex ) {
+			hex = String( hex || '' ).replace( '#', '' );
+			if ( hex.length === 3 ) {
+				hex = hex.replace( /(.)/g, '$1$1' );
+			}
+			var n = parseInt( hex, 16 );
+			return isNaN( n ) ? [ 0, 0, 0 ] : [ ( n >> 16 ) & 255, ( n >> 8 ) & 255, n & 255 ];
+		};
+
+		var lum = function ( hex ) {
+			var c = rgb( hex ).map( function ( v ) {
+				v /= 255;
+				return v <= 0.03928 ? v / 12.92 : Math.pow( ( v + 0.055 ) / 1.055, 2.4 );
+			} );
+			return 0.2126 * c[ 0 ] + 0.7152 * c[ 1 ] + 0.0722 * c[ 2 ];
+		};
+
+		var contrast = function ( a, b ) {
+			var x = lum( a ), y = lum( b );
+			return ( Math.max( x, y ) + 0.05 ) / ( Math.min( x, y ) + 0.05 );
+		};
+
+		var onColour = function ( hex ) {
+			return contrast( hex, '#ffffff' ) >= contrast( hex, '#1d1d1b' ) ? '#ffffff' : '#1d1d1b';
+		};
+
+		var shade = function ( hex, amount ) {
+			return 'rgb(' + rgb( hex ).map( function ( v ) {
+				return Math.round( amount < 0 ? v * ( 1 + amount ) : v + ( 255 - v ) * amount );
+			} ).join( ',' ) + ')';
+		};
+
+		var paint = function () {
+			var accent = ( field( 'accent' ) || {} ).value || '#1b7f5a';
+			var second = ( field( 'secondary' ) || {} ).value || '#c9a24a';
+			var surface = ( field( 'surface' ) || {} ).value || '#ffffff';
+			var corner = ( A.corners || {} )[ ( field( 'corner_style' ) || {} ).value ] || { panel: '20px', control: '14px', pillish: '999px', bubble: '16px' };
+			var bubbleKey = ( field( 'bubble_style' ) || {} ).value;
+			var bubble = ( A.bubbles || {} )[ bubbleKey ] || { radius: '16px' };
+			var name = ( field( 'assistant' ) || {} ).value || '';
+			var label = ( ( field( 'launcher_label' ) || {} ).value || '' ).replace( /\{assistant\}/g, name );
+			var avatar = ( field( 'avatar_url' ) || {} ).value || '';
+
+			var vars = {
+				'--pv-accent': accent,
+				'--pv-on-accent': onColour( accent ),
+				'--pv-second': second,
+				'--pv-on-second': onColour( second ),
+				'--pv-bg': surface,
+				'--pv-bubble': shade( surface, -0.05 ),
+				'--pv-line': shade( surface, -0.09 ),
+				'--pv-field': lum( surface ) >= 0.97 ? surface : '#ffffff',
+				'--pv-link': contrast( accent, '#ffffff' ) >= 4.5 ? accent : shade( accent, -0.5 ),
+				'--pv-radius': corner.panel,
+				'--pv-pill': corner.pillish,
+				'--pv-bubble-radius': 'match' === bubbleKey ? corner.bubble : bubble.radius
+			};
+
+			Object.keys( vars ).forEach( function ( k ) {
+				pvRoot.style.setProperty( k, vars[ k ] );
+			} );
+
+			var nameEl = pvRoot.querySelector( '[data-bac-pv-name]' );
+			var av = pvRoot.querySelector( '[data-bac-pv-av]' );
+			var labelEl = pvRoot.querySelector( '[data-bac-pv-label]' );
+			var launcher = pvRoot.querySelector( '[data-bac-pv-launcher]' );
+
+			if ( nameEl && name ) {
+				nameEl.textContent = name;
+			}
+			if ( av ) {
+				av.style.backgroundImage = avatar ? 'url("' + avatar.replace( /"/g, '' ) + '")' : '';
+				av.classList.toggle( 'has-photo', !! avatar );
+				av.textContent = avatar ? '' : ( name.charAt( 0 ) || 'A' ).toUpperCase();
+			}
+			if ( labelEl ) {
+				labelEl.textContent = label;
+			}
+			if ( launcher ) {
+				launcher.classList.toggle( 'has-label', '' !== label.trim() );
+			}
+		};
+
+		[ 'accent', 'secondary', 'surface', 'corner_style', 'bubble_style', 'launcher_label', 'assistant', 'avatar_url' ].forEach( function ( key ) {
+			var el = field( key );
+			if ( el ) {
+				el.addEventListener( 'input', paint );
+				el.addEventListener( 'change', paint );
+			}
+		} );
+
+		paint();
+	}
 } )();

@@ -129,22 +129,22 @@ class BAC_Rest {
 		$s = BAC_Settings::get();
 
 		if ( empty( $s['enabled'] ) ) {
-			return self::reply( __( 'The assistant is offline right now. Please contact us directly and we will help.', 'beaver-ai-chat' ) );
+			return self::reply( __( 'The assistant is offline right now. Please contact us directly and we will help.', 'beaver-ai-chat' ), true );
 		}
 
 		$body = $request->get_json_params();
 		$body = is_array( $body ) ? $body : array();
 
 		if ( ! self::token_ok( isset( $body['token'] ) ? $body['token'] : '' ) ) {
-			return self::reply( __( 'Your session just refreshed. Please reload the page and ask again.', 'beaver-ai-chat' ) );
+			return self::reply( __( 'Your session just refreshed. Please reload the page and ask again.', 'beaver-ai-chat' ), true );
 		}
 
-		if ( '' === BAC_Settings::api_key() ) {
-			return self::reply( __( 'I am not fully set up yet. Please contact our team directly and they will help you right away.', 'beaver-ai-chat' ) );
+		if ( ! BAC_Settings::can_answer( $s ) ) {
+			return self::reply( __( 'I am not fully set up yet. Please contact our team directly and they will help you right away.', 'beaver-ai-chat' ), true );
 		}
 
 		if ( self::rate_limited( (int) $s['rate_limit'] ) ) {
-			return self::reply( __( 'That is a lot of messages at once. Give me a moment, or contact our team directly.', 'beaver-ai-chat' ) );
+			return self::reply( __( 'That is a lot of messages at once. Give me a moment, or contact our team directly.', 'beaver-ai-chat' ), true );
 		}
 
 		// The spend ceiling is checked before the call, not after: the point of
@@ -152,7 +152,7 @@ class BAC_Rest {
 		// instead of one more paid-for reply.
 		if ( BAC_Usage::cap_reached( $s ) ) {
 			BAC_Usage::announce_cap( $s );
-			return self::reply( self::cap_message( $s ) );
+			return self::reply( self::cap_message( $s ), true );
 		}
 
 		$history  = ( isset( $body['messages'] ) && is_array( $body['messages'] ) ) ? $body['messages'] : array();
@@ -185,7 +185,7 @@ class BAC_Rest {
 
 		if ( is_wp_error( $reply ) ) {
 			self::log( $reply->get_error_message() );
-			return self::reply( __( 'I hit a brief snag just then. Please try again in a moment, or contact our team and they will help right away.', 'beaver-ai-chat' ) );
+			return self::reply( __( 'I hit a brief snag just then. Please try again in a moment, or contact our team and they will help right away.', 'beaver-ai-chat' ), true );
 		}
 
 		// Lead capture is best effort and must never break the visitor's reply.
@@ -335,11 +335,26 @@ class BAC_Rest {
 	/**
 	 * Standard reply envelope.
 	 *
-	 * @param string $text Reply text.
+	 * A reply that is the plugin speaking rather than the assistant (offline,
+	 * rate limited, provider failed) is flagged, so the widget can offer a
+	 * retry and keep it out of the conversation it sends back next turn. Fed
+	 * back as history, "I hit a brief snag" reads to the model as something it
+	 * said, and it starts apologising for snags of its own.
+	 *
+	 * @since 2.0.0 Added $error.
+	 *
+	 * @param string $text  Reply text.
+	 * @param bool   $error Whether this is a status message, not an answer.
 	 * @return WP_REST_Response
 	 */
-	private static function reply( $text ) {
-		return new WP_REST_Response( array( 'reply' => $text ), 200 );
+	private static function reply( $text, $error = false ) {
+		$body = array( 'reply' => $text );
+
+		if ( $error ) {
+			$body['error'] = true;
+		}
+
+		return new WP_REST_Response( $body, 200 );
 	}
 
 	/**

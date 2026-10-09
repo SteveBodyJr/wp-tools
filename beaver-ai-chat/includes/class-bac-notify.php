@@ -220,7 +220,7 @@ class BAC_Notify {
 	 * @param array $s       Settings.
 	 */
 	private static function ensure_summary( $lead_id, $s ) {
-		if ( empty( $s['lead_ai_summary'] ) || '' === BAC_Settings::api_key() ) {
+		if ( empty( $s['lead_ai_summary'] ) || ! BAC_Settings::can_answer( $s ) ) {
 			return;
 		}
 

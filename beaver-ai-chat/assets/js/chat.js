@@ -45,10 +45,13 @@
 	var contactBtn = root.querySelector( '[data-bac-contact]' );
 	var contactLbl = root.querySelector( '[data-bac-contact-label]' );
 	var waBtn = root.querySelector( '[data-bac-wa]' );
+	var menuBtn = root.querySelector( '[data-bac-menu]' );
+	var menu = root.querySelector( '[data-bac-menu-list]' );
 
 	var STORE_HISTORY = 'bac_history';
 	var STORE_SID = 'bac_sid';
 	var STORE_NUDGE = 'bac_nudge_seen';
+	var STORE_NOTICE = 'bac_notice_seen';
 
 	var history = [];
 	var busy = false;
@@ -108,44 +111,92 @@
 		} );
 	}
 
+	/*
+	 * A bare "/tanzania-weather/" is written relative to the domain, which
+	 * breaks when WordPress lives in a sub folder. Prefix the site's own path
+	 * unless the link already carries it.
+	 */
+	var home = ( C.home || '/' ).replace( /\/?$/, '/' );
+
+	function sitePath( path ) {
+		if ( home === '/' || path.indexOf( home ) === 0 ) {
+			return path;
+		}
+		return home + path.replace( /^\//, '' );
+	}
+
+	/** "/tours/7-day-migration-safari/" reads as "7 Day Migration Safari". */
+	function pageTitle( path ) {
+		var slug = path.replace( /[?#].*$/, '' ).replace( /\/+$/, '' ).split( '/' ).pop() || '';
+		slug = decodeURIComponent( slug ).replace( /[-_]+/g, ' ' ).trim();
+		return slug ? slug.charAt( 0 ).toUpperCase() + slug.slice( 1 ) : path;
+	}
+
+	function isExternal( url ) {
+		return /^https?:\/\//i.test( url ) && url.indexOf( window.location.host ) === -1;
+	}
+
+	function link( url, label ) {
+		var external = isExternal( url );
+		return '<a href="' + url + '"' + ( external ? ' target="_blank" rel="noopener"' : '' ) + '>' + label + '</a>';
+	}
+
 	/** Escape, then linkify and bold. Runs on escaped text only. */
 	function inlineMarkup( s ) {
 		var h = esc( s );
-		h = h.replace( /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>' );
-		h = h.replace( /(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>' );
-		h = h.replace( /(^|[\s(])(\/[a-z0-9\-/]+\/)/gi, '$1<a href="$2">$2</a>' );
+
+		// [label](url) first, so its URL is not linked a second time below.
+		h = h.replace( /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, function ( m, label, url ) {
+			return link( url.charAt( 0 ) === '/' ? sitePath( url ) : url, label );
+		} );
+		h = h.replace( /(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,!?;:])/g, function ( m, pre, url ) {
+			return pre + link( url, isExternal( url ) ? url.replace( /^https?:\/\/(www\.)?/, '' ).replace( /\/$/, '' ) : pageTitle( url ) );
+		} );
+		h = h.replace( /(^|[\s(])(\/[a-z0-9\-/]+\/)/gi, function ( m, pre, path ) {
+			return pre + link( sitePath( path ), pageTitle( path ) );
+		} );
 		h = h.replace( /\*\*([^*]+)\*\*/g, '<strong>$1</strong>' );
+
 		return h;
 	}
 
-	/** Render prose, turning "- " lines into a styled list. */
+	/** Render prose: paragraphs, "- " bullet lists and "1. " numbered lists. */
 	function format( text ) {
 		var lines = String( text ).replace( /\r/g, '' ).split( '\n' );
 		var parts = [];
 		var list = [];
+		var listTag = 'ul';
 		var para = [];
 
 		function flushList() {
 			if ( list.length ) {
-				parts.push( '<ul>' + list.map( function ( x ) {
+				parts.push( '<' + listTag + '>' + list.map( function ( x ) {
 					return '<li>' + inlineMarkup( x ) + '</li>';
-				} ).join( '' ) + '</ul>' );
+				} ).join( '' ) + '</' + listTag + '>' );
 				list = [];
 			}
 		}
 
 		function flushPara() {
 			if ( para.length ) {
-				parts.push( para.map( inlineMarkup ).join( '<br>' ) );
+				parts.push( '<p>' + para.map( inlineMarkup ).join( '<br>' ) + '</p>' );
 				para = [];
 			}
 		}
 
 		lines.forEach( function ( line ) {
-			var bullet = line.match( /^\s*(?:[-•*])\s+(.*\S)\s*$/ );
-			if ( bullet ) {
+			var bullet = line.match( /^\s*[-•*]\s+(.*\S)\s*$/ );
+			var number = line.match( /^\s*\d{1,2}[.)]\s+(.*\S)\s*$/ );
+			var item = bullet || number;
+			var tag = number ? 'ol' : 'ul';
+
+			if ( item ) {
 				flushPara();
-				list.push( bullet[ 1 ] );
+				if ( list.length && tag !== listTag ) {
+					flushList();
+				}
+				listTag = tag;
+				list.push( item[ 1 ] );
 			} else if ( line.trim() === '' ) {
 				flushPara();
 				flushList();
@@ -164,15 +215,43 @@
 	function paintAvatar( el ) {
 		if ( C.avatar ) {
 			el.style.backgroundImage = 'url("' + C.avatar.replace( /"/g, '' ) + '")';
+			el.classList.add( 'bac-has-photo' );
 			el.textContent = '';
 		} else {
 			el.textContent = C.initial || 'A';
 		}
 	}
 
+	/*
+	 * Keep the newest message in view. Waits a frame so it measures after any
+	 * layout change made in the same tick: the action bar under the log appears
+	 * after the first reply, shrinks the log, and would otherwise push the
+	 * message just scrolled to back out of sight.
+	 */
+	function scrollToEnd( smooth ) {
+		window.requestAnimationFrame( function () {
+			if ( log.scrollTo ) {
+				log.scrollTo( { top: log.scrollHeight, behavior: smooth ? 'smooth' : 'auto' } );
+			} else {
+				log.scrollTop = log.scrollHeight;
+			}
+		} );
+	}
+
 	/* -------------------------------------------------------------- chrome */
 
-	Array.prototype.forEach.call( root.querySelectorAll( '[data-bac-avatar]' ), paintAvatar );
+	function each( selector, fn ) {
+		Array.prototype.forEach.call( root.querySelectorAll( selector ), fn );
+	}
+
+	function setText( selector, value ) {
+		var el = root.querySelector( selector );
+		if ( el ) {
+			el.textContent = value || '';
+		}
+	}
+
+	each( '[data-bac-avatar]', paintAvatar );
 
 	setText( '[data-bac-name]', C.assistant );
 	setText( '[data-bac-tagline]', C.tagline );
@@ -181,16 +260,53 @@
 	setText( '[data-bac-contact-label]', C.cta );
 	setText( '[data-bac-wa-label]', T.whatsapp );
 	setText( '[data-bac-end]', T.end );
+	setText( '[data-bac-new]', T.restart );
 	setText( '[data-bac-restart]', T.restart );
+	setText( '[data-bac-launch-label]', C.launcherLabel );
 
 	input.setAttribute( 'placeholder', C.placeholder || '' );
 
-	function setText( selector, value ) {
-		var el = root.querySelector( selector );
-		if ( el ) {
-			el.textContent = value || '';
+	/*
+	 * The notice above the message box: the AI disclosure plus, when the site
+	 * has a privacy policy, a line linking to it. Once dismissed it stays
+	 * dismissed for this visitor, on every page and future visit.
+	 */
+	var notice = root.querySelector( '[data-bac-notice]' );
+	var agree = root.querySelector( '[data-bac-agree]' );
+
+	if ( agree && C.privacy ) {
+		var parts = String( T.agree || 'By chatting, you agree to our %s.' ).split( '%s' );
+		var policy = document.createElement( 'a' );
+		policy.href = C.privacy;
+		policy.target = '_blank';
+		policy.rel = 'noopener';
+		policy.textContent = T.policy || 'privacy policy';
+		agree.appendChild( document.createTextNode( parts[ 0 ] || '' ) );
+		agree.appendChild( policy );
+		agree.appendChild( document.createTextNode( parts[ 1 ] || '' ) );
+	}
+
+	function noticeSeen() {
+		try {
+			return window.localStorage.getItem( STORE_NOTICE ) === '1';
+		} catch ( e ) {
+			return false;
 		}
 	}
+
+	if ( notice && ( C.footerNote || C.privacy ) && ! noticeSeen() ) {
+		notice.hidden = false;
+	}
+
+	each( '[data-bac-notice-close]', function ( el ) {
+		el.addEventListener( 'click', function () {
+			notice.hidden = true;
+			try {
+				window.localStorage.setItem( STORE_NOTICE, '1' );
+			} catch ( e ) {}
+			input.focus();
+		} );
+	} );
 
 	if ( waBtn && C.whatsapp ) {
 		waBtn.href = 'https://wa.me/' + C.whatsapp + '?text=' + encodeURIComponent( C.waMessage || '' );
@@ -203,33 +319,31 @@
 
 	/* --------------------------------------------------------------- render */
 
-	function bubble( who, text ) {
+	function bubble( who, text, extraClass ) {
 		var row = document.createElement( 'div' );
-		row.className = 'bac-row ' + ( who === 'me' ? 'me' : 'bot' );
-
-		if ( who !== 'me' ) {
-			var mini = document.createElement( 'span' );
-			mini.className = 'bac-mini';
-			paintAvatar( mini );
-			row.appendChild( mini );
-		}
+		row.className = 'bac-row ' + ( who === 'me' ? 'me' : 'bot' ) + ( extraClass ? ' ' + extraClass : '' );
 
 		var body = document.createElement( 'div' );
 		body.className = 'bac-bubble';
 
 		if ( text === '__typing__' ) {
-			body.innerHTML = '<span class="bac-typing"><span></span><span></span><span></span></span>';
+			body.innerHTML = '<span class="bac-typing" role="status" aria-label="' + esc( T.typing || '' ) + '"><span></span><span></span><span></span></span>';
 		} else {
 			body.innerHTML = format( text );
 		}
 
 		row.appendChild( body );
 		log.appendChild( row );
-		log.scrollTop = log.scrollHeight;
+		scrollToEnd( true );
 
 		return row;
 	}
 
+	/*
+	 * Suggested questions sit just above the message box, right aligned like
+	 * the visitor's own messages: they read as things you could say next.
+	 * They go once the conversation has started.
+	 */
 	function renderChips() {
 		chips.innerHTML = '';
 
@@ -275,7 +389,37 @@
 
 		renderChips();
 		updateCta();
+		scrollToEnd( false );
 	}
+
+	/* ----------------------------------------------------------------- menu */
+
+	function setMenu( show ) {
+		if ( ! menu || ! menuBtn ) {
+			return;
+		}
+		menu.hidden = ! show;
+		menuBtn.setAttribute( 'aria-expanded', show ? 'true' : 'false' );
+		if ( show ) {
+			var first = menu.querySelector( 'button' );
+			if ( first ) {
+				first.focus();
+			}
+		}
+	}
+
+	if ( menuBtn ) {
+		menuBtn.addEventListener( 'click', function ( e ) {
+			e.stopPropagation();
+			setMenu( menu.hidden );
+		} );
+	}
+
+	document.addEventListener( 'click', function ( e ) {
+		if ( menu && ! menu.hidden && ! menu.contains( e.target ) ) {
+			setMenu( false );
+		}
+	} );
 
 	/* ----------------------------------------------------------- open/close */
 
@@ -313,16 +457,19 @@
 		if ( ! started ) {
 			started = true;
 			replay();
+		} else {
+			scrollToEnd( false );
 		}
 
 		window.setTimeout( function () {
 			input.focus();
-		}, 280 );
+		}, 220 );
 	}
 
 	function close() {
 		root.classList.remove( 'bac-open' );
 		lockPage( false );
+		setMenu( false );
 
 		if ( launch ) {
 			launch.setAttribute( 'aria-expanded', 'false' );
@@ -354,14 +501,16 @@
 	} );
 
 	document.addEventListener( 'keydown', function ( e ) {
-		if ( e.key === 'Escape' && ! inline && root.classList.contains( 'bac-open' ) ) {
+		if ( e.key !== 'Escape' ) {
+			return;
+		}
+		if ( menu && ! menu.hidden ) {
+			setMenu( false );
+			menuBtn.focus();
+		} else if ( ! inline && root.classList.contains( 'bac-open' ) ) {
 			close();
 		}
 	} );
-
-	function each( selector, fn ) {
-		Array.prototype.forEach.call( root.querySelectorAll( selector ), fn );
-	}
 
 	/* ------------------------------------------------------- end / restart */
 
@@ -371,6 +520,8 @@
 	}
 
 	function endChat() {
+		setMenu( false );
+
 		if ( ended ) {
 			return;
 		}
@@ -382,13 +533,19 @@
 		save();
 		newSession();
 
-		chips.innerHTML = '';
+		renderChips();
 		root.classList.add( 'bac-ended' );
 		updateCta();
-		log.scrollTop = log.scrollHeight;
+		scrollToEnd( true );
 	}
 
 	function startNew() {
+		setMenu( false );
+
+		if ( ! ended && history.some( function ( m ) { return m.role === 'user'; } ) ) {
+			newSession();
+		}
+
 		ended = false;
 		requested = false;
 		root.classList.remove( 'bac-ended' );
@@ -400,7 +557,6 @@
 			contactLbl.textContent = C.cta || '';
 		}
 
-		log.innerHTML = '';
 		history = [];
 		started = true;
 		replay();
@@ -415,7 +571,7 @@
 		el.addEventListener( 'click', endChat );
 	} );
 
-	each( '[data-bac-restart]', function ( el ) {
+	each( '[data-bac-new], [data-bac-restart]', function ( el ) {
 		el.addEventListener( 'click', startNew );
 	} );
 
@@ -468,7 +624,7 @@
 				if ( contactLbl ) {
 					contactLbl.textContent = C.cta || '';
 				}
-				bubble( 'bot', T.offline || 'Could not reach the server.' );
+				bubble( 'bot', T.offline || 'Could not reach the server.', 'bac-error' );
 			} );
 	}
 
@@ -477,6 +633,73 @@
 	}
 
 	/* ------------------------------------------------------------- sending */
+
+	/*
+	 * A failed turn is shown with a retry, and never stored: the visitor's
+	 * message stays the last thing in the history, so retrying simply asks
+	 * again, and the failure text is never sent back to the model as if the
+	 * assistant had said it.
+	 */
+	function failed( text ) {
+		var row = bubble( 'bot', text, 'bac-error' );
+		var retry = document.createElement( 'button' );
+
+		retry.type = 'button';
+		retry.className = 'bac-retry';
+		retry.textContent = T.retry || 'Try again';
+		retry.addEventListener( 'click', function () {
+			if ( busy ) {
+				return;
+			}
+			row.parentNode.removeChild( row );
+			ask();
+		} );
+
+		row.querySelector( '.bac-bubble' ).appendChild( retry );
+	}
+
+	function ask() {
+		busy = true;
+		sendBtn.disabled = true;
+		var typing = bubble( 'bot', '__typing__', 'bac-pending' );
+
+		window.fetch( C.rest, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify( {
+				token: C.token,
+				sid: sid,
+				page: window.location.href,
+				messages: history.slice( -1 * ( C.historyTurns || 14 ) )
+			} )
+		} )
+			.then( function ( r ) {
+				return r.json();
+			} )
+			.then( function ( j ) {
+				removeNode( typing );
+
+				if ( ! j || ! j.reply || j.error ) {
+					failed( ( j && j.reply ) || T.failed );
+					return;
+				}
+
+				bubble( 'bot', j.reply );
+				history.push( { role: 'assistant', content: j.reply } );
+				save();
+				updateCta();
+				scrollToEnd( true );
+			} )
+			.catch( function () {
+				removeNode( typing );
+				failed( T.offline || 'Could not reach the server.' );
+			} )
+			.then( function () {
+				busy = false;
+				sendBtn.disabled = false;
+				input.focus();
+			} );
+	}
 
 	function submit() {
 		var text = ( input.value || '' ).trim();
@@ -493,43 +716,12 @@
 		save();
 		renderChips();
 		updateCta();
+		scrollToEnd( true );
 
-		busy = true;
-		sendBtn.disabled = true;
-		var typing = bubble( 'bot', '__typing__' );
-
-		window.fetch( C.rest, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify( {
-				token: C.token,
-				sid: sid,
-				page: window.location.href,
-				messages: history.slice( -1 * ( C.historyTurns || 14 ) )
-			} )
-		} )
-			.then( function ( r ) {
-				return r.json();
-			} )
-			.then( function ( j ) {
-				removeTyping( typing );
-				var reply = ( j && ( j.reply || j.message ) ) || T.failed;
-				bubble( 'bot', reply );
-				history.push( { role: 'assistant', content: reply } );
-				save();
-			} )
-			.catch( function () {
-				removeTyping( typing );
-				bubble( 'bot', T.offline || 'Could not reach the server.' );
-			} )
-			.then( function () {
-				busy = false;
-				sendBtn.disabled = false;
-				input.focus();
-			} );
+		ask();
 	}
 
-	function removeTyping( node ) {
+	function removeNode( node ) {
 		if ( node && node.parentNode ) {
 			node.parentNode.removeChild( node );
 		}

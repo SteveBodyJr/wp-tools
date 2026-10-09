@@ -1,21 +1,32 @@
 /**
  * Beaver AI Chat - front end widget.
  *
- * Scoped entirely under #bac-root. Colours, corner treatment, size and side all
- * come from CSS variables the plugin writes inline from the settings, so a
- * square, brand-coloured build needs no stylesheet edits. Light and dark are
- * both first class.
+ * Scoped entirely under #bac-root, and every rule carries the #bac-root (or
+ * #bac-panel) id so a theme's own button, link and form styles cannot leak in.
+ *
+ * The look is deliberately quiet: solid colours, one soft shadow, the site's
+ * own font, and colours taken from the site rather than imposed on it. The
+ * plugin writes the brand tokens inline from the settings (main colour,
+ * highlight, window background, corners), including readable text colours for
+ * each fill, so a site only ever picks colours, never edits this file.
  */
 
 #bac-root {
 	/* Overwritten inline from the settings screen. */
 	--bac-accent: #1b7f5a;
-	--bac-accent-dark: #12563d;
-	--bac-accent-deep: #0a3325;
-	--bac-accent-light: #2f9a70;
+	--bac-accent-hover: #176f4f;
 	--bac-accent-rgb: 27, 127, 90;
+	--bac-on-accent: #ffffff;
 	--bac-secondary: #c9a24a;
 	--bac-secondary-rgb: 201, 162, 74;
+	--bac-on-secondary: #1d1d1b;
+	--bac-link: #1b7f5a;
+	--bac-link-dark: #8fd3b6;
+	--bac-bg: #ffffff;
+	--bac-bubble: #f4f4f3;
+	--bac-field: #ffffff;
+	--bac-line: #e4e4e2;
+	--bac-soft: #f4f4f3;
 
 	--bac-radius: 20px;
 	--bac-radius-bubble: 16px;
@@ -23,40 +34,36 @@
 	--bac-radius-control: 14px;
 	--bac-radius-button: 13px;
 	--bac-radius-pill: 999px;
-	--bac-radius-launcher: 50%;
-	--bac-launcher: 64px;
+	--bac-launcher: 60px;
 
-	/* Light palette. */
-	--bac-ink: #16211c;
-	--bac-ink-soft: #46564e;
-	--bac-muted: #7a8b83;
-	--bac-bg: #ffffff;
-	--bac-surface: #fbfcfb;
-	--bac-bubble: #f2f5f3;
-	--bac-soft: #f6f8f7;
-	--bac-line: #e6ebe8;
-	--bac-hairline: rgba(22, 33, 28, .07);
+	/* Neutral, warm-leaning greys that sit with any brand colour. */
+	--bac-ink: #1d1d1b;
+	--bac-ink-soft: #46463f;
+	--bac-muted: #75756d;
+	--bac-raised: #ffffff;
 
-	/* Layered shadows read as depth rather than a grey halo. */
 	--bac-shadow-panel:
-		0 1px 1px rgba(16, 32, 24, .04),
-		0 8px 16px -8px rgba(16, 32, 24, .12),
-		0 28px 56px -20px rgba(16, 32, 24, .28);
+		0 0 0 1px rgba(20, 20, 18, .06),
+		0 12px 32px -8px rgba(20, 20, 18, .22),
+		0 2px 6px rgba(20, 20, 18, .06);
 	--bac-shadow-float:
-		0 2px 6px -2px rgba(16, 32, 24, .16),
-		0 12px 28px -10px rgba(var(--bac-accent-rgb), .42);
-	--bac-shadow-raised:
-		0 1px 2px rgba(16, 32, 24, .05),
-		0 6px 14px -8px rgba(16, 32, 24, .18);
+		0 8px 22px -6px rgba(20, 20, 18, .34),
+		0 2px 6px rgba(20, 20, 18, .12);
+	--bac-shadow-menu:
+		0 0 0 1px rgba(20, 20, 18, .07),
+		0 10px 24px -8px rgba(20, 20, 18, .24);
 
-	--bac-ease: cubic-bezier(.22, 1, .36, 1);
-	--bac-spring: cubic-bezier(.2, .9, .3, 1.25);
+	--bac-ease: cubic-bezier(.2, .8, .2, 1);
 
 	position: fixed;
 	right: 24px;
 	bottom: 24px;
 	z-index: 99997;
 	font-family: var(--bac-font, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+	font-size: 16px;
+	line-height: 1.5;
+	color: var(--bac-ink);
+	text-align: left;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
@@ -67,136 +74,130 @@
 	box-sizing: border-box;
 }
 
-#bac-root button {
-	font-family: inherit;
+/* Themes style bare buttons heavily (uppercase, letter spacing, min heights,
+   coloured hovers). Neutralise that here; each control below restyles itself
+   with a more specific selector. */
+#bac-root button,
+#bac-root textarea {
+	margin: 0;
+	font: inherit;
+	letter-spacing: normal;
+	text-transform: none;
+	text-shadow: none;
+	min-height: 0;
+	min-width: 0;
+	line-height: inherit;
+}
+
+#bac-root [hidden] {
+	display: none !important;
 }
 
 /* ---------------------------------------------------------------- Launcher */
 
-#bac-launch {
+#bac-root #bac-launch {
 	position: relative;
-	width: var(--bac-launcher);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
 	height: var(--bac-launcher);
-	border: 0;
+	min-width: var(--bac-launcher);
 	padding: 0;
-	border-radius: var(--bac-radius-launcher);
+	border: 0;
+	border-radius: 999px;
 	cursor: pointer;
-	color: #fff;
-	background:
-		radial-gradient(130% 130% at 28% 18%, rgba(255, 255, 255, .28), rgba(255, 255, 255, 0) 46%),
-		linear-gradient(155deg, var(--bac-accent-light) 0%, var(--bac-accent) 52%, var(--bac-accent-dark) 100%);
-	box-shadow:
-		var(--bac-shadow-float),
-		inset 0 1px 0 rgba(255, 255, 255, .3),
-		inset 0 -1px 0 rgba(0, 0, 0, .16);
-	display: grid;
-	place-items: center;
-	transition: transform .4s var(--bac-spring), box-shadow .4s var(--bac-ease), filter .3s;
+	color: var(--bac-on-accent);
+	background: var(--bac-accent);
+	box-shadow: inset 0 0 0 1.5px var(--bac-launch-ring, transparent), var(--bac-shadow-float);
+	transition: transform .2s var(--bac-ease), background-color .2s, box-shadow .2s;
 }
 
-#bac-launch:hover {
-	transform: translateY(-2px) scale(1.04);
-	filter: brightness(1.05);
-	box-shadow:
-		0 4px 10px -4px rgba(16, 32, 24, .2),
-		0 20px 40px -12px rgba(var(--bac-accent-rgb), .55),
-		inset 0 1px 0 rgba(255, 255, 255, .34);
+#bac-root #bac-launch:hover {
+	background: var(--bac-accent-hover);
+	transform: translateY(-1px);
 }
 
-#bac-launch:active {
-	transform: translateY(0) scale(.98);
+#bac-root #bac-launch:active {
+	transform: translateY(0);
 }
 
-#bac-launch:focus-visible {
-	outline: 2px solid var(--bac-secondary);
-	outline-offset: 4px;
+#bac-root #bac-launch:focus-visible {
+	outline: 2px solid var(--bac-accent);
+	outline-offset: 3px;
 }
 
-/* A single, slow halo. Restrained rather than a pulsing beacon. */
-#bac-launch::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	border-radius: inherit;
-	border: 1.5px solid rgba(var(--bac-accent-rgb), .55);
-	opacity: 0;
-	animation: bac-halo 4.5s var(--bac-ease) infinite;
-	pointer-events: none;
+#bac-root .bac-launch-icon,
+#bac-root .bac-launch-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
-@keyframes bac-halo {
-	0% { transform: scale(1); opacity: .5; }
-	70%, 100% { transform: scale(1.5); opacity: 0; }
+#bac-root .bac-launch-close,
+#bac-root .bac-launch-label {
+	display: none;
 }
 
-.bac-launch-icon,
-.bac-launch-close {
-	position: absolute;
-	display: grid;
-	place-items: center;
-	transition: transform .4s var(--bac-spring), opacity .25s var(--bac-ease);
+#bac-root.bac-open .bac-launch-icon {
+	display: none;
 }
 
-.bac-launch-close {
-	opacity: 0;
-	transform: rotate(-90deg) scale(.5);
+#bac-root.bac-open .bac-launch-close {
+	display: flex;
 }
 
-.bac-badge {
-	position: absolute;
-	top: 8px;
-	right: 9px;
-	width: 11px;
-	height: 11px;
-	border-radius: 50%;
-	background: var(--bac-secondary);
-	box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 10px rgba(var(--bac-secondary-rgb), .8);
-	animation: bac-pulse 2.6s var(--bac-ease) infinite;
-}
+/* With a label, the button reads "Ask Ollie" on larger screens. Opening the
+   chat shrinks it back to a round close button. */
+@media (min-width: 601px) {
+	#bac-root.bac-has-label #bac-launch {
+		padding: 0 22px 0 18px;
+	}
 
-@keyframes bac-pulse {
-	0% { box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 0 0 rgba(var(--bac-secondary-rgb), .55); }
-	70% { box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 0 8px rgba(var(--bac-secondary-rgb), 0); }
-	100% { box-shadow: 0 0 0 2.5px var(--bac-accent-dark), 0 0 0 0 rgba(var(--bac-secondary-rgb), 0); }
-}
+	#bac-root.bac-has-label .bac-launch-label {
+		display: block;
+		font-size: 15px;
+		font-weight: 600;
+		white-space: nowrap;
+	}
 
-#bac-root.bac-open .bac-launch-icon { opacity: 0; transform: rotate(90deg) scale(.5); }
-#bac-root.bac-open .bac-launch-close { opacity: 1; transform: rotate(0) scale(1); }
-#bac-root.bac-open .bac-badge,
-#bac-root.bac-open #bac-launch::before { display: none; }
+	#bac-root.bac-has-label.bac-open #bac-launch {
+		padding: 0;
+	}
+
+	#bac-root.bac-has-label.bac-open .bac-launch-label {
+		display: none;
+	}
+}
 
 /* ------------------------------------------------------------------- Nudge */
 
-.bac-nudge {
+#bac-root .bac-nudge {
 	position: absolute;
-	right: 2px;
-	bottom: calc(var(--bac-launcher) + 18px);
-	width: 256px;
-	max-width: calc(100vw - 44px);
-	background: var(--bac-bg);
+	right: 0;
+	bottom: calc(var(--bac-launcher) + 14px);
+	width: 260px;
+	max-width: calc(100vw - 40px);
+	background: var(--bac-raised);
 	color: var(--bac-ink);
-	border: 1px solid var(--bac-line);
-	border-radius: var(--bac-radius-bubble);
+	border-radius: 14px;
 	box-shadow: var(--bac-shadow-panel);
-	transform-origin: bottom right;
-	animation: bac-nudge-in .5s var(--bac-spring) both;
+	animation: bac-rise .3s var(--bac-ease) both;
 }
 
-.bac-nudge[hidden] { display: none; }
-
-@keyframes bac-nudge-in {
-	from { opacity: 0; transform: translateY(10px) scale(.9); }
+@keyframes bac-rise {
+	from { opacity: 0; transform: translateY(6px); }
 	to { opacity: 1; transform: none; }
 }
 
 /* The open target and the dismiss control are siblings, never nested, so the
    markup stays valid and both are reachable by keyboard. */
-.bac-nudge-open {
+#bac-root .bac-nudge-open {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 11px;
 	width: 100%;
-	padding: 14px 38px 14px 14px;
+	padding: 13px 36px 13px 13px;
 	border: 0;
 	background: none;
 	color: inherit;
@@ -205,58 +206,53 @@
 	border-radius: inherit;
 }
 
-.bac-nudge-open:focus-visible,
-.bac-nudge-x:focus-visible {
+#bac-root .bac-nudge-open:focus-visible,
+#bac-root .bac-nudge-x:focus-visible {
 	outline: 2px solid var(--bac-accent);
 	outline-offset: 2px;
 }
 
-.bac-nudge-av {
+#bac-root .bac-nudge-av {
 	width: 32px;
 	height: 32px;
 	flex: 0 0 auto;
-	border-radius: var(--bac-radius-launcher);
+	border-radius: 50%;
 	display: grid;
 	place-items: center;
-	color: #fff;
-	font-weight: 600;
-	font-size: .82rem;
-	letter-spacing: .02em;
-	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent-dark));
+	color: var(--bac-on-accent);
+	background-color: var(--bac-accent);
 	background-size: cover;
 	background-position: center;
-	overflow: hidden;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+	font-weight: 600;
+	font-size: 14px;
 }
 
-.bac-nudge-text {
+#bac-root .bac-nudge-text {
 	flex: 1 1 auto;
-	font-size: .845rem;
+	font-size: 14px;
 	line-height: 1.45;
-	font-weight: 450;
 	color: var(--bac-ink-soft);
 }
 
-.bac-nudge-x {
+#bac-root .bac-nudge-x {
 	position: absolute;
-	top: 7px;
+	top: 8px;
 	right: 8px;
-	width: 20px;
-	height: 20px;
+	width: 22px;
+	height: 22px;
 	padding: 0;
 	border: 0;
 	border-radius: 50%;
 	display: grid;
 	place-items: center;
 	color: var(--bac-muted);
-	background: var(--bac-soft);
+	background: transparent;
 	cursor: pointer;
-	transition: color .18s, background .18s;
 }
 
-.bac-nudge-x:hover {
+#bac-root .bac-nudge-x:hover {
 	color: var(--bac-ink);
-	background: var(--bac-bubble);
+	background: var(--bac-soft);
 }
 
 /* ------------------------------------------------------------------- Panel */
@@ -264,560 +260,604 @@
 #bac-panel {
 	position: absolute;
 	right: 0;
-	bottom: calc(var(--bac-launcher) + 20px);
-	width: 390px;
+	bottom: calc(var(--bac-launcher) + 16px);
+	width: 384px;
 	max-width: calc(100vw - 32px);
-	height: 592px;
-	max-height: calc(100vh - 130px);
-	background: var(--bac-bg);
-	border-radius: var(--bac-radius);
-	overflow: hidden;
+	height: 620px;
+	max-height: calc(100vh - 120px);
 	display: flex;
 	flex-direction: column;
-	border: 1px solid var(--bac-hairline);
+	overflow: hidden;
+	background: var(--bac-bg);
+	border-radius: var(--bac-radius);
 	box-shadow: var(--bac-shadow-panel);
 	transform-origin: bottom right;
-	transform: translateY(14px) scale(.96);
+	transform: translateY(8px);
 	opacity: 0;
 	pointer-events: none;
 	/* visibility keeps the closed panel out of the tab order, so keyboard users
 	   do not land inside an invisible dialog. */
 	visibility: hidden;
 	transition:
-		transform .42s var(--bac-spring),
-		opacity .28s var(--bac-ease),
-		visibility 0s linear .28s;
+		transform .22s var(--bac-ease),
+		opacity .18s var(--bac-ease),
+		visibility 0s linear .22s;
 }
 
-#bac-panel[hidden] { display: flex; }
+#bac-panel[hidden] {
+	display: flex !important;
+}
 
 #bac-root.bac-open #bac-panel {
-	transform: translateY(0) scale(1);
+	transform: none;
 	opacity: 1;
 	pointer-events: auto;
 	visibility: visible;
 	transition:
-		transform .42s var(--bac-spring),
-		opacity .28s var(--bac-ease),
+		transform .22s var(--bac-ease),
+		opacity .18s var(--bac-ease),
 		visibility 0s;
 }
 
 /* ------------------------------------------------------------------ Header */
 
-.bac-head {
+#bac-panel .bac-head {
 	position: relative;
 	z-index: 2;
+	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
-	gap: 13px;
-	padding: 17px 16px 18px;
-	color: #fff;
-	overflow: hidden;
-	background:
-		linear-gradient(158deg, var(--bac-accent-light) 0%, var(--bac-accent) 44%, var(--bac-accent-deep) 100%);
+	gap: 12px;
+	padding: 14px 10px 14px 18px;
+	color: var(--bac-on-accent);
+	background: var(--bac-accent);
 }
 
-/* A whisper of grain, so the header is not a flat block of colour. */
-.bac-head::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	background-image: repeating-radial-gradient(circle at 112% -12%, rgba(255, 255, 255, .05) 0 1px, transparent 1px 18px);
-	pointer-events: none;
-}
-
-/* A fine metallic hairline instead of a heavy border. */
-.bac-head::after {
-	content: "";
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	height: 1px;
-	background: linear-gradient(90deg,
-		rgba(var(--bac-secondary-rgb), 0) 0%,
-		rgba(var(--bac-secondary-rgb), .75) 30%,
-		rgba(var(--bac-secondary-rgb), .75) 70%,
-		rgba(var(--bac-secondary-rgb), 0) 100%);
-	pointer-events: none;
-}
-
-.bac-head-glow {
-	position: absolute;
-	top: -76%;
-	right: -14%;
-	width: 220px;
-	height: 220px;
+#bac-panel .bac-avatar {
+	width: 36px;
+	height: 36px;
+	flex: 0 0 auto;
 	border-radius: 50%;
-	background: radial-gradient(circle, rgba(var(--bac-secondary-rgb), .32), transparent 66%);
-	pointer-events: none;
-}
-
-.bac-avatar {
-	position: relative;
-	z-index: 1;
-	width: 44px;
-	height: 44px;
-	border-radius: var(--bac-radius-launcher);
 	display: grid;
 	place-items: center;
-	flex: 0 0 auto;
-	background: linear-gradient(155deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .08));
-	background-size: cover;
+	color: var(--bac-on-secondary);
+	background-color: var(--bac-secondary);
+	background-repeat: no-repeat;
 	background-position: center;
-	overflow: hidden;
-	color: #fff;
-	font-weight: 600;
-	font-size: 1.06rem;
-	letter-spacing: .01em;
-	box-shadow:
-		0 0 0 1px rgba(var(--bac-secondary-rgb), .5),
-		inset 0 1px 0 rgba(255, 255, 255, .3);
+	background-size: cover;
+	font-weight: 700;
+	font-size: 15px;
 }
 
-.bac-avatar::after {
-	content: "";
-	position: absolute;
-	right: 1px;
-	bottom: 1px;
-	width: 11px;
-	height: 11px;
-	border-radius: 50%;
-	background: #4ade80;
-	box-shadow: 0 0 0 2px var(--bac-accent), 0 0 8px rgba(74, 222, 128, .7);
+/* An uploaded image may be a logo rather than a photo, so it is shown whole,
+   on the window colour, instead of being cropped to fill the circle. */
+#bac-root .bac-has-photo {
+	background-color: var(--bac-bg);
+	background-size: 74%;
 }
 
-.bac-id {
+#bac-panel .bac-id {
 	display: flex;
 	flex-direction: column;
-	line-height: 1.25;
 	flex: 1 1 auto;
 	min-width: 0;
-	position: relative;
-	z-index: 1;
+	line-height: 1.25;
 }
 
-.bac-name {
-	font-weight: 600;
-	font-size: 1.02rem;
-	letter-spacing: .012em;
+#bac-panel .bac-name {
+	font-size: 16px;
+	font-weight: 700;
 }
 
-.bac-status {
-	font-size: .715rem;
-	font-weight: 450;
-	letter-spacing: .028em;
-	opacity: .82;
-	margin-top: 3px;
+#bac-panel .bac-status {
+	margin-top: 2px;
+	font-size: 13px;
+	opacity: .7;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.bac-actions {
+#bac-panel .bac-status:empty {
+	display: none;
+}
+
+#bac-panel .bac-actions {
 	display: flex;
 	align-items: center;
-	gap: 7px;
+	gap: 2px;
 	flex: 0 0 auto;
-	position: relative;
-	z-index: 1;
 }
 
-.bac-end {
-	background: rgba(255, 255, 255, .13);
-	border: 1px solid rgba(255, 255, 255, .2);
-	color: #fff;
-	cursor: pointer;
-	font-size: .695rem;
-	font-weight: 550;
-	letter-spacing: .035em;
-	padding: 6px 11px;
-	border-radius: var(--bac-radius-pill);
-	white-space: nowrap;
-	transition: background .2s, transform .2s var(--bac-ease);
-}
-
-.bac-end:hover { background: rgba(255, 255, 255, .24); }
-.bac-end:active { transform: scale(.96); }
-
-.bac-min {
-	background: rgba(255, 255, 255, .11);
+#bac-panel .bac-icon-btn {
+	width: 36px;
+	height: 36px;
+	padding: 0;
 	border: 0;
-	color: #fff;
-	cursor: pointer;
-	width: 31px;
-	height: 31px;
-	border-radius: var(--bac-radius-button);
+	border-radius: 50%;
 	display: grid;
 	place-items: center;
-	transition: background .2s;
+	color: inherit;
+	background: transparent;
+	cursor: pointer;
+	opacity: .8;
+	transition: background-color .15s, opacity .15s;
 }
 
-.bac-min:hover { background: rgba(255, 255, 255, .22); }
+#bac-panel .bac-icon-btn:hover,
+#bac-panel .bac-icon-btn[aria-expanded="true"] {
+	opacity: 1;
+	background: color-mix(in srgb, currentColor 14%, transparent);
+}
 
-.bac-end:focus-visible,
-.bac-min:focus-visible {
-	outline: 2px solid #fff;
-	outline-offset: 1px;
+#bac-panel .bac-icon-btn:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: -2px;
+}
+
+#bac-panel .bac-menu-wrap {
+	position: relative;
+}
+
+#bac-panel .bac-menu {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	min-width: 190px;
+	padding: 5px;
+	background: var(--bac-raised);
+	border-radius: 12px;
+	box-shadow: var(--bac-shadow-menu);
+	animation: bac-rise .16s var(--bac-ease) both;
+}
+
+#bac-panel .bac-menu-item {
+	display: block;
+	width: 100%;
+	padding: 9px 11px;
+	border: 0;
+	border-radius: 8px;
+	text-align: left;
+	font-size: 14px;
+	color: var(--bac-ink);
+	background: transparent;
+	cursor: pointer;
+}
+
+#bac-panel .bac-menu-item:hover,
+#bac-panel .bac-menu-item:focus-visible {
+	background: var(--bac-soft);
+	outline: none;
 }
 
 /* --------------------------------------------------------------------- Log */
 
-.bac-log {
+#bac-panel .bac-log {
 	flex: 1 1 auto;
-	overflow-y: auto;
-	overscroll-behavior: contain;
-	padding: 20px 16px 10px;
 	display: flex;
 	flex-direction: column;
-	gap: 13px;
-	scroll-behavior: smooth;
-	background:
-		radial-gradient(120% 40% at 100% 0, rgba(var(--bac-secondary-rgb), .05), transparent 60%),
-		linear-gradient(180deg, var(--bac-surface) 0%, var(--bac-bg) 18%);
+	gap: 6px;
+	padding: 20px 18px 12px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	background: var(--bac-bg);
+	scrollbar-width: thin;
+	scrollbar-color: var(--bac-line) transparent;
 }
 
-.bac-log::-webkit-scrollbar { width: 6px; }
-.bac-log::-webkit-scrollbar-thumb {
-	background: var(--bac-line);
-	border-radius: 999px;
-}
-.bac-log::-webkit-scrollbar-thumb:hover { background: var(--bac-muted); }
-.bac-log::-webkit-scrollbar-track { background: transparent; }
-.bac-log { scrollbar-width: thin; scrollbar-color: var(--bac-line) transparent; }
+#bac-panel .bac-log::-webkit-scrollbar { width: 6px; }
+#bac-panel .bac-log::-webkit-scrollbar-thumb { background: var(--bac-line); border-radius: 999px; }
+#bac-panel .bac-log::-webkit-scrollbar-track { background: transparent; }
 
-.bac-row {
+#bac-panel .bac-row {
 	display: flex;
-	align-items: flex-end;
-	gap: 9px;
 	max-width: 100%;
-	animation: bac-in .42s var(--bac-spring) both;
+	animation: bac-rise .22s var(--bac-ease) both;
 }
 
-@keyframes bac-in {
-	from { opacity: 0; transform: translateY(8px) scale(.985); }
-	to { opacity: 1; transform: none; }
+/* A change of speaker gets more room than two messages from the same one. */
+#bac-panel .bac-row.bot + .bac-row.me,
+#bac-panel .bac-row.me + .bac-row.bot {
+	margin-top: 10px;
 }
 
-.bac-row.me { justify-content: flex-end; }
-
-.bac-mini {
-	width: 27px;
-	height: 27px;
-	border-radius: var(--bac-radius-launcher);
-	flex: 0 0 auto;
-	display: grid;
-	place-items: center;
-	font-size: .7rem;
-	font-weight: 600;
-	color: #fff;
-	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent-dark));
-	background-size: cover;
-	background-position: center;
-	overflow: hidden;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+#bac-panel .bac-row.me {
+	justify-content: flex-end;
 }
 
-.bac-bubble {
-	padding: 11px 15px;
+#bac-panel .bac-bubble {
+	max-width: 85%;
+	padding: 11px 16px;
 	border-radius: var(--bac-radius-bubble);
-	font-size: .895rem;
-	line-height: 1.6;
-	letter-spacing: .003em;
+	font-size: 15px;
+	line-height: 1.55;
 	color: var(--bac-ink);
-	max-width: 82%;
-	word-wrap: break-word;
 	overflow-wrap: anywhere;
 }
 
-.bac-row.bot .bac-bubble {
+#bac-panel .bac-row.bot .bac-bubble {
 	background: var(--bac-bubble);
-	border: 1px solid var(--bac-hairline);
-	border-bottom-left-radius: var(--bac-radius-bubble-tail);
-	box-shadow: 0 1px 1px rgba(16, 32, 24, .03);
 }
 
-.bac-row.me .bac-bubble {
-	color: #fff;
-	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent) 55%, var(--bac-accent-dark));
-	border-bottom-right-radius: var(--bac-radius-bubble-tail);
-	box-shadow:
-		0 1px 2px rgba(16, 32, 24, .1),
-		0 8px 18px -10px rgba(var(--bac-accent-rgb), .6),
-		inset 0 1px 0 rgba(255, 255, 255, .16);
+#bac-panel .bac-row.me .bac-bubble {
+	color: var(--bac-on-accent);
+	background: var(--bac-accent);
 }
 
-.bac-bubble a {
-	color: var(--bac-accent);
+#bac-panel .bac-bubble p {
+	margin: 0;
+}
+
+#bac-panel .bac-bubble p + p,
+#bac-panel .bac-bubble p + ul,
+#bac-panel .bac-bubble p + ol,
+#bac-panel .bac-bubble ul + p,
+#bac-panel .bac-bubble ol + p,
+#bac-panel .bac-bubble ul + ol,
+#bac-panel .bac-bubble ol + ul {
+	margin-top: .65em;
+}
+
+#bac-panel .bac-bubble ul,
+#bac-panel .bac-bubble ol {
+	margin: 0;
+	padding: 0 0 0 1.25em;
+}
+
+#bac-panel .bac-bubble ul { list-style: disc; }
+#bac-panel .bac-bubble ol { list-style: decimal; }
+
+#bac-panel .bac-bubble li {
+	margin: 0;
+	padding-left: .15em;
+}
+
+#bac-panel .bac-bubble li + li {
+	margin-top: .3em;
+}
+
+#bac-panel .bac-bubble ul li::marker { color: var(--bac-secondary); }
+#bac-panel .bac-bubble ol li::marker { color: var(--bac-muted); font-weight: 600; }
+
+#bac-panel .bac-bubble strong {
+	font-weight: 600;
+}
+
+#bac-panel .bac-bubble a {
+	color: var(--bac-link);
 	font-weight: 600;
 	text-decoration: underline;
-	text-underline-offset: 2.5px;
-	text-decoration-thickness: 1.2px;
+	text-decoration-color: rgba(var(--bac-secondary-rgb), .9);
+	text-decoration-thickness: 1.5px;
+	text-underline-offset: 3px;
 }
 
-.bac-row.me .bac-bubble a { color: #fff; }
-.bac-bubble strong { font-weight: 650; }
-
-.bac-bubble ul {
-	margin: .45rem 0 .15rem;
-	padding: 0;
-	list-style: none;
-	display: flex;
-	flex-direction: column;
-	gap: .32rem;
+#bac-panel .bac-bubble a:hover {
+	text-decoration-color: currentColor;
 }
 
-.bac-bubble li {
-	position: relative;
-	padding-left: 1.1rem;
+#bac-panel .bac-row.me .bac-bubble a {
+	color: inherit;
+	text-decoration-color: currentColor;
 }
 
-.bac-bubble li::before {
-	content: "";
-	position: absolute;
-	left: 3px;
-	top: .58em;
-	width: 5px;
-	height: 5px;
-	border-radius: 50%;
-	background: var(--bac-secondary);
-}
-
-.bac-row.me .bac-bubble li::before { background: rgba(255, 255, 255, .8); }
-
-.bac-typing {
+/* Typing indicator. */
+#bac-panel .bac-typing {
 	display: inline-flex;
 	gap: 4px;
-	padding: 4px 2px;
+	padding: 6px 2px;
 }
 
-.bac-typing span {
+#bac-panel .bac-typing span {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
 	background: var(--bac-muted);
-	animation: bac-bounce 1.4s var(--bac-ease) infinite;
+	animation: bac-blink 1.2s infinite ease-in-out;
 }
 
-.bac-typing span:nth-child(2) { animation-delay: .16s; }
-.bac-typing span:nth-child(3) { animation-delay: .32s; }
+#bac-panel .bac-typing span:nth-child(2) { animation-delay: .15s; }
+#bac-panel .bac-typing span:nth-child(3) { animation-delay: .3s; }
 
-@keyframes bac-bounce {
-	0%, 60%, 100% { transform: translateY(0); opacity: .4; }
-	30% { transform: translateY(-4px); opacity: .9; }
+@keyframes bac-blink {
+	0%, 80%, 100% { opacity: .25; }
+	40% { opacity: 1; }
 }
 
-/* ------------------------------------------------------------------- Chips */
+/* A failed turn: outlined rather than filled, with a retry. */
+#bac-panel .bac-row.bac-error .bac-bubble {
+	color: var(--bac-ink-soft);
+	background: transparent;
+	box-shadow: inset 0 0 0 1px var(--bac-line);
+}
 
-.bac-chips {
+#bac-panel .bac-retry {
+	display: inline-block;
+	margin-top: 8px;
+	padding: 6px 14px;
+	border: 1px solid var(--bac-line);
+	border-radius: var(--bac-radius-pill);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--bac-ink);
+	background: var(--bac-field);
+	cursor: pointer;
+}
+
+#bac-panel .bac-retry:hover {
+	border-color: var(--bac-ink);
+}
+
+/* ------------------------------------------------- Suggestions and actions */
+
+/* Both sit right aligned above the message box, like the visitor's own
+   messages, so they read as things the visitor could say or do next. */
+#bac-panel .bac-chips,
+#bac-panel .bac-cta {
+	flex: 0 0 auto;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 7px;
-	padding: 4px 16px 14px;
-}
-
-.bac-chips:empty { display: none; }
-
-.bac-chip {
-	border: 1px solid var(--bac-line);
-	background: var(--bac-bg);
-	color: var(--bac-accent);
-	font-weight: 550;
-	font-size: .785rem;
-	letter-spacing: .008em;
-	padding: 8px 14px;
-	border-radius: var(--bac-radius-pill);
-	cursor: pointer;
-	box-shadow: 0 1px 1px rgba(16, 32, 24, .03);
-	transition: all .22s var(--bac-ease);
-}
-
-.bac-chip:hover {
-	background: var(--bac-accent);
-	color: #fff;
-	border-color: var(--bac-accent);
-	transform: translateY(-1px);
-	box-shadow: 0 6px 14px -7px rgba(var(--bac-accent-rgb), .7);
-}
-
-.bac-chip:focus-visible {
-	outline: 2px solid var(--bac-accent);
-	outline-offset: 2px;
-}
-
-/* --------------------------------------------------------------------- CTA */
-
-.bac-cta {
-	display: flex;
+	justify-content: flex-end;
 	gap: 8px;
-	padding: 2px 14px 12px;
+	padding: 4px 18px 14px;
+	background: var(--bac-bg);
 }
 
-.bac-cta[hidden] { display: none; }
-#bac-root.bac-ended .bac-cta { display: none; }
+#bac-panel .bac-chips:empty {
+	display: none;
+}
 
-.bac-btn {
+#bac-root.bac-ended .bac-cta {
+	display: none;
+}
+
+#bac-panel .bac-chip,
+#bac-panel .bac-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 7px;
-	flex: 1 1 auto;
-	padding: 11px 13px;
-	border-radius: var(--bac-radius-button);
-	cursor: pointer;
-	font-size: .81rem;
+	padding: 9px 16px;
+	border: 1px solid var(--bac-line);
+	border-radius: var(--bac-radius-pill);
+	font-size: 14px;
 	font-weight: 600;
-	letter-spacing: .012em;
+	line-height: 1.3;
+	text-align: center;
 	text-decoration: none;
-	border: 0;
-	transition: transform .22s var(--bac-ease), filter .22s, background .22s, box-shadow .22s;
+	color: var(--bac-ink);
+	background: var(--bac-field);
+	cursor: pointer;
+	transition: border-color .15s, background-color .15s, filter .15s;
 }
 
-.bac-btn svg { flex: 0 0 auto; }
+#bac-panel .bac-chip:hover,
+#bac-panel .bac-btn:hover {
+	border-color: var(--bac-ink);
+}
 
-.bac-btn:focus-visible {
+#bac-panel .bac-chip:focus-visible,
+#bac-panel .bac-btn:focus-visible {
 	outline: 2px solid var(--bac-accent);
 	outline-offset: 2px;
 }
 
-.bac-btn-primary {
-	color: #23301f;
+#bac-panel .bac-btn-primary {
+	color: var(--bac-on-secondary);
 	background: var(--bac-secondary);
-	background: linear-gradient(150deg,
-		color-mix(in srgb, var(--bac-secondary) 74%, #fff),
-		var(--bac-secondary) 60%,
-		color-mix(in srgb, var(--bac-secondary) 86%, #000));
-	box-shadow:
-		0 1px 2px rgba(16, 32, 24, .12),
-		0 8px 18px -10px rgba(var(--bac-secondary-rgb), .75),
-		inset 0 1px 0 rgba(255, 255, 255, .35);
+	border-color: var(--bac-secondary);
 }
 
-.bac-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.03); }
-.bac-btn-primary:active { transform: translateY(0); }
+#bac-panel .bac-btn-primary:hover {
+	border-color: var(--bac-secondary);
+	filter: brightness(.94);
+}
 
-.bac-btn-primary:disabled {
-	opacity: 1;
+#bac-panel .bac-btn-primary:disabled {
 	cursor: default;
-	transform: none;
-	background: var(--bac-bubble);
-	color: var(--bac-muted);
-	box-shadow: none;
 	filter: none;
-}
-
-.bac-btn-wa {
-	color: #128c4a;
+	color: var(--bac-muted);
 	background: var(--bac-soft);
-	border: 1px solid var(--bac-line);
-	flex: 0 0 auto;
-	padding: 11px 15px;
+	border-color: var(--bac-soft);
 }
 
-.bac-btn-wa:hover { background: #e9f5ed; transform: translateY(-1px); }
-.bac-btn-wa[hidden] { display: none; }
+#bac-panel .bac-btn-wa svg {
+	color: #1fa855;
+}
 
 /* ---------------------------------------------------------------- Composer */
 
-.bac-compose {
-	display: flex;
-	align-items: flex-end;
-	gap: 9px;
-	padding: 12px 14px;
-	border-top: 1px solid var(--bac-line);
+#bac-panel .bac-bottom {
+	flex: 0 0 auto;
+	padding: 0 14px 14px;
 	background: var(--bac-bg);
+}
+
+/* "Powered by" line under the message box. Phones only: on a desktop the
+   floating window is compact enough that it would only add clutter. */
+#bac-panel .bac-credit {
+	display: none;
+	margin: 8px 0 0;
+	text-align: center;
+	font-size: 11px;
+	line-height: 1.3;
+}
+
+@media (max-width: 600px) {
+	#bac-panel .bac-credit {
+		display: block;
+	}
+}
+
+#bac-panel .bac-credit a {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--bac-muted);
+	text-decoration: none;
+}
+
+#bac-panel .bac-credit strong {
+	font-weight: 600;
+}
+
+#bac-panel .bac-credit a:hover {
+	color: var(--bac-ink);
+}
+
+#bac-panel .bac-credit svg {
+	flex: 0 0 auto;
+	width: 11px;
+	height: 11px;
+	border-radius: 2px;
+}
+
+/* The notice tucks in behind the message box: its bottom edge runs under
+   the field, so the two read as one unit. */
+#bac-panel .bac-notice {
+	position: relative;
+	margin-bottom: -24px;
+	padding: 12px 40px 36px 16px;
+	border-radius: 14px 14px 0 0;
+	background: var(--bac-soft);
+	color: var(--bac-ink-soft);
+}
+
+#bac-panel .bac-notice p {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+#bac-panel .bac-notice a {
+	color: var(--bac-ink);
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+#bac-panel .bac-notice-x {
+	position: absolute;
+	top: 9px;
+	right: 9px;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	color: var(--bac-muted);
+	background: transparent;
+	cursor: pointer;
+}
+
+#bac-panel .bac-notice-x:hover {
+	color: var(--bac-ink);
+	background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+#bac-panel .bac-compose {
+	position: relative;
+	z-index: 1;
 	margin: 0;
 }
 
-.bac-compose textarea {
+#bac-panel .bac-field {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	padding: 5px 5px 5px 18px;
+	background: var(--bac-field);
+	border: 1px solid var(--bac-ink);
+	border-radius: var(--bac-radius-pill);
+	transition: box-shadow .15s;
+}
+
+#bac-panel .bac-field:focus-within {
+	box-shadow: 0 0 0 3px rgba(var(--bac-accent-rgb), .14);
+}
+
+#bac-panel .bac-compose textarea {
 	flex: 1 1 auto;
-	resize: none;
-	border: 1px solid var(--bac-line);
-	border-radius: var(--bac-radius-control);
-	padding: 11px 15px;
-	font-family: inherit;
-	font-size: .885rem;
-	line-height: 1.5;
+	min-height: 38px;
 	max-height: 120px;
+	padding: 8px 0;
+	border: 0;
+	border-radius: 0;
+	outline: none;
+	resize: none;
+	box-shadow: none;
+	background: transparent;
+	font-size: 15px;
+	line-height: 1.45;
 	color: var(--bac-ink);
 	-webkit-text-fill-color: var(--bac-ink);
 	caret-color: var(--bac-accent);
-	background: var(--bac-soft);
-	outline: none;
-	transition: border-color .22s, background .22s, box-shadow .22s;
 }
 
-.bac-compose textarea::placeholder {
+#bac-panel .bac-compose textarea::placeholder {
 	color: var(--bac-muted);
 	-webkit-text-fill-color: var(--bac-muted);
 	opacity: 1;
+	/* A long placeholder would wrap inside the one line field and be cut in
+	   half; keep it on one line and let it trail off instead. */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-.bac-compose textarea:focus {
-	border-color: var(--bac-accent);
-	background: var(--bac-bg);
-	box-shadow: 0 0 0 3px rgba(var(--bac-accent-rgb), .13);
-}
-
-.bac-send {
+#bac-panel .bac-send {
 	flex: 0 0 auto;
-	width: 42px;
-	height: 42px;
+	width: 38px;
+	height: 38px;
+	padding: 0;
 	border: 0;
-	border-radius: var(--bac-radius-button);
-	cursor: pointer;
-	color: #fff;
-	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent) 55%, var(--bac-accent-dark));
+	border-radius: max(6px, calc(var(--bac-radius-pill) - 5px));
 	display: grid;
 	place-items: center;
-	box-shadow:
-		0 1px 2px rgba(16, 32, 24, .12),
-		0 8px 16px -9px rgba(var(--bac-accent-rgb), .7),
-		inset 0 1px 0 rgba(255, 255, 255, .2);
-	transition: transform .22s var(--bac-spring), opacity .2s, filter .2s;
+	color: var(--bac-on-accent);
+	background: var(--bac-accent);
+	cursor: pointer;
+	transition: background-color .15s, opacity .15s;
 }
 
-.bac-send:hover { transform: scale(1.06); filter: brightness(1.05); }
-.bac-send:active { transform: scale(.96); }
-.bac-send:disabled { opacity: .4; cursor: default; transform: none; filter: none; }
+#bac-panel .bac-send:hover {
+	background: var(--bac-accent-hover);
+}
 
-.bac-send:focus-visible {
+#bac-panel .bac-send:disabled {
+	opacity: .35;
+	cursor: default;
+}
+
+#bac-panel .bac-send:focus-visible {
 	outline: 2px solid var(--bac-accent);
-	outline-offset: 3px;
+	outline-offset: 2px;
 }
 
-.bac-foot {
-	margin: 0;
-	padding: 0 16px 12px;
-	text-align: center;
-	font-size: .675rem;
-	line-height: 1.5;
-	letter-spacing: .015em;
-	color: var(--bac-muted);
-}
-
-.bac-foot:empty { display: none; }
-
-.bac-restart {
+#bac-panel .bac-restart {
 	display: none;
-	margin: 14px;
+	width: 100%;
 	padding: 12px 16px;
 	border: 0;
-	border-radius: var(--bac-radius-button);
-	cursor: pointer;
-	font-size: .885rem;
+	border-radius: var(--bac-radius-pill);
+	font-size: 15px;
 	font-weight: 600;
-	color: #fff;
-	background: linear-gradient(150deg, var(--bac-accent-light), var(--bac-accent) 55%, var(--bac-accent-dark));
-	box-shadow: var(--bac-shadow-raised);
-	transition: transform .22s var(--bac-ease), filter .22s;
+	color: var(--bac-on-accent);
+	background: var(--bac-accent);
+	cursor: pointer;
 }
 
-.bac-restart:hover { transform: translateY(-1px); filter: brightness(1.04); }
+#bac-panel .bac-restart:hover {
+	background: var(--bac-accent-hover);
+}
 
 #bac-root.bac-ended .bac-compose,
-#bac-root.bac-ended .bac-chips { display: none; }
-
+#bac-root.bac-ended .bac-notice { display: none; }
 #bac-root.bac-ended .bac-restart { display: block; }
 
 /* ------------------------------------------------------------ Inline embed */
@@ -839,7 +879,6 @@
 	opacity: 1;
 	pointer-events: auto;
 	visibility: visible;
-	box-shadow: var(--bac-shadow-raised);
 }
 
 .bac-embed {
@@ -850,18 +889,21 @@
 
 /* -------------------------------------------------------------- Responsive */
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
 	#bac-root { right: 14px; bottom: 14px; }
 
 	#bac-panel {
 		width: calc(100vw - 20px);
-		bottom: calc(var(--bac-launcher) + 14px);
-		height: calc(100vh - 104px);
-		height: calc(100dvh - 104px);
+		bottom: calc(var(--bac-launcher) + 12px);
+		height: calc(100vh - 100px);
+		height: calc(100dvh - 100px);
 		max-height: none;
 	}
 
-	.bac-nudge { width: 218px; }
+	/* Below 16px, iOS Safari zooms the whole page when the field is tapped. */
+	#bac-panel .bac-compose textarea {
+		font-size: 16px;
+	}
 
 	#bac-root.bac-inline #bac-panel {
 		width: 100%;
@@ -876,9 +918,6 @@
  * behind it, so the chat takes over the viewport instead. Opted out per site
  * with Appearance -> On mobile, and never applied to an embedded panel, which
  * belongs inside the page.
- *
- * The rules are deliberately specific (#id + two classes) so they win over both
- * the desktop panel and the small-screen tweaks above, wherever they land.
  */
 @media (max-width: 600px) {
 	#bac-root.bac-fullscreen.bac-open #bac-panel {
@@ -889,7 +928,6 @@
 		height: 100vh;
 		height: 100dvh;
 		max-height: none;
-		border: 0;
 		border-radius: 0;
 		box-shadow: none;
 		transform: none;
@@ -897,14 +935,13 @@
 		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
-	/* Slide up from the bottom rather than scaling from a corner. */
 	#bac-root.bac-fullscreen #bac-panel {
-		transform: translateY(2%);
+		transform: translateY(12px);
 		transform-origin: bottom center;
 	}
 
 	#bac-root.bac-fullscreen.bac-open .bac-head {
-		padding-top: calc(17px + env(safe-area-inset-top, 0px));
+		padding-top: calc(14px + env(safe-area-inset-top, 0px));
 	}
 
 	/* The header's own close button is the way out, so the launcher and its
@@ -914,14 +951,9 @@
 		display: none;
 	}
 
-	/* Give the tap targets a little more room on a touch screen. */
-	#bac-root.bac-fullscreen.bac-open .bac-min {
-		width: 38px;
-		height: 38px;
-	}
-
-	#bac-root.bac-fullscreen.bac-open .bac-log {
-		padding: 18px 14px 8px;
+	#bac-root.bac-fullscreen.bac-open .bac-icon-btn {
+		width: 40px;
+		height: 40px;
 	}
 
 	/* Stop the page behind scrolling under the chat. */
@@ -934,79 +966,44 @@
 
 /* -------------------------------------------------------------------- Dark */
 
+/*
+ * The inline brand tokens are written as #bac-root{…} after this file, so the
+ * dark palette needs a more specific selector to replace the surface colours.
+ * Brand colours (main, highlight) are kept; only the neutrals change.
+ */
 @media (prefers-color-scheme: dark) {
-	#bac-root {
-		--bac-ink: #e8eeea;
-		--bac-ink-soft: #b8c6bf;
-		--bac-muted: #8b9d95;
-		--bac-bg: #121815;
-		--bac-surface: #161d1a;
-		--bac-bubble: #1c2521;
-		--bac-soft: #171f1b;
-		--bac-line: #29332e;
-		--bac-hairline: rgba(255, 255, 255, .07);
-
-		--bac-shadow-panel:
-			0 1px 1px rgba(0, 0, 0, .3),
-			0 10px 20px -10px rgba(0, 0, 0, .5),
-			0 30px 60px -22px rgba(0, 0, 0, .68);
-		--bac-shadow-raised:
-			0 1px 2px rgba(0, 0, 0, .35),
-			0 8px 18px -10px rgba(0, 0, 0, .5);
+	#bac-root:not(.bac-force-light) {
+		--bac-ink: #ececea;
+		--bac-ink-soft: #c2c2bc;
+		--bac-muted: #93938b;
+		--bac-bg: #161715;
+		--bac-bubble: #222320;
+		--bac-field: #1d1e1b;
+		--bac-line: #32332f;
+		--bac-soft: #262724;
+		--bac-raised: #222320;
+		--bac-link: var(--bac-link-dark);
 	}
-
-	#bac-root .bac-log {
-		background:
-			radial-gradient(120% 40% at 100% 0, rgba(var(--bac-secondary-rgb), .07), transparent 60%),
-			var(--bac-bg);
-	}
-
-	#bac-root .bac-row.bot .bac-bubble { box-shadow: none; }
-	#bac-root .bac-btn-wa { color: #4fd08a; }
-	#bac-root .bac-btn-wa:hover { background: #1e2b25; }
-	#bac-root .bac-btn-primary { color: #1b2416; }
 }
 
-/* A forced theme wins over both the OS preference and a theme's own toggle. */
-:root[data-theme="dark"] #bac-root,
+:root[data-theme="dark"] #bac-root:not(.bac-force-light),
 #bac-root.bac-force-dark {
-	--bac-ink: #e8eeea;
-	--bac-ink-soft: #b8c6bf;
-	--bac-muted: #8b9d95;
-	--bac-bg: #121815;
-	--bac-surface: #161d1a;
-	--bac-bubble: #1c2521;
-	--bac-soft: #171f1b;
-	--bac-line: #29332e;
-	--bac-hairline: rgba(255, 255, 255, .07);
-}
-
-#bac-root.bac-force-dark .bac-log {
-	background:
-		radial-gradient(120% 40% at 100% 0, rgba(var(--bac-secondary-rgb), .07), transparent 60%),
-		var(--bac-bg);
-}
-
-#bac-root.bac-force-dark .bac-btn-wa { color: #4fd08a; }
-#bac-root.bac-force-dark .bac-btn-primary { color: #1b2416; }
-
-:root[data-theme="light"] #bac-root,
-#bac-root.bac-force-light {
-	--bac-ink: #16211c;
-	--bac-ink-soft: #46564e;
-	--bac-muted: #7a8b83;
-	--bac-bg: #ffffff;
-	--bac-surface: #fbfcfb;
-	--bac-bubble: #f2f5f3;
-	--bac-soft: #f6f8f7;
-	--bac-line: #e6ebe8;
-	--bac-hairline: rgba(22, 33, 28, .07);
+	--bac-ink: #ececea;
+	--bac-ink-soft: #c2c2bc;
+	--bac-muted: #93938b;
+	--bac-bg: #161715;
+	--bac-bubble: #222320;
+	--bac-field: #1d1e1b;
+	--bac-line: #32332f;
+	--bac-soft: #262724;
+	--bac-raised: #222320;
+	--bac-link: var(--bac-link-dark);
 }
 
 @media (prefers-reduced-motion: reduce) {
 	#bac-root *,
 	#bac-panel {
 		animation: none !important;
-		transition: opacity .2s !important;
+		transition: opacity .15s !important;
 	}
 }

@@ -4,7 +4,7 @@ Tags: ai, chat, chatbot, live chat, lead generation
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.6.2
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -209,6 +209,63 @@ variable. Create a template with one body variable in your Meta account, wait
 for approval, and put its name in the settings.
 
 == Changelog ==
+
+= 2.0.0 =
+* Redesigned: the widget now takes on the site's look instead of imposing its
+  own. It uses the site's font by default, a new Window background colour
+  lets it sit on a cream or stone page, and the text on every coloured fill
+  switches between light and dark automatically so it stays readable.
+* Redesigned: flat, quiet styling throughout. Gone are the gradients, the
+  grain, the glow, the pulsing ring and badge, and the green "online" dot,
+  which implied a person was standing by.
+* New: an optional chat button label ("Ask {assistant}"), shown beside the
+  icon on larger screens.
+* New layout: a solid header with the assistant's image or logo, a menu (Start
+  a new chat, End chat) and a close button; borderless message bubbles;
+  suggested questions right aligned just above the message box, where the
+  quote and WhatsApp buttons also appear once the chat is under way; and a
+  pill shaped message box with a round send button.
+* New: numbered lists, proper paragraph spacing, and links shown as readable
+  page names ("Tanzania weather") instead of raw paths.
+* New: a failed reply offers Try again, and is no longer saved into the
+  conversation, where the model read it back as something it had said.
+* New: a dismissible notice above the message box carries the footer note
+  and, when the site has one, a link to its privacy policy. The default note
+  now says the assistant is an AI and can make mistakes.
+* New: an uploaded assistant image is shown whole rather than cropped, so a
+  logo works as well as a photo.
+* New: a plugin icon, for the admin menu and the update screens.
+* New: a small "Powered by Digital Beaver" line under the message box on
+  phones, which can be switched off under Appearance, and the maker's credit on the settings
+  page, matching the other Digital Beaver plugins.
+* New: keys for several AIs at once. Claude, ChatGPT, Gemini, DeepSeek, Groq,
+  OpenRouter and a custom endpoint each keep their own key, so switching the
+  main AI never means retyping one, and each key can be tested on its own.
+  Per-AI constants (BAC_API_KEY_CLAUDE, BAC_API_KEY_GEMINI…) are honoured
+  alongside BAC_API_KEY. A key saved by an earlier version carries over.
+* New: backup AIs. When the main AI fails or times out, the chat tries the
+  ticked backups in order, so visitors still get an answer; the failure stays
+  on the Connection tab with a note of which backup stepped in.
+* New: a redesigned settings screen: a header that says whether the chat is
+  live, five figures across the top (main AI, conversations, spend, answer
+  gaps, knowledge) that open the place to act on them, settings grouped into
+  cards, and a Save bar that stays in reach.
+* New: a live preview of the chat window beside the Appearance settings,
+  repainted as colours, corners and the button label change.
+* Fixed: spend could stay at $0.00 and the monthly cap never trigger when a
+  provider reports a model name missing from the price table (DeepSeek
+  answers deepseek-chat as "deepseek-flash"). Such calls are now priced as the
+  model that was asked for.
+* Fixed: the Conversations list offered an "Add Post" button; conversations
+  only come from the chat.
+* Fixed: the newest message could sit hidden below the quote button when the
+  chat opened.
+* Fixed: on iPhone, tapping the message box zoomed the whole page.
+* Fixed: links written as "/page/" broke on sites installed in a sub folder.
+* Fixed: the chat's stylesheet and script are now versioned by file as well as
+  by release, so an updated file is never hidden behind a cached old one.
+* Fixed: a theme's own button styles (uppercase, letter spacing, coloured
+  hovers) could leak into the chat's buttons.
 
 = 1.6.2 =
 * Fixed: the assistant could refuse a visitor part way through a long

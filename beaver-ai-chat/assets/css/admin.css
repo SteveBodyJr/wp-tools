@@ -1,52 +1,811 @@
 /**
  * Beaver AI Chat - settings screen.
+ *
+ * Everything is scoped under .bac-admin so nothing leaks into the rest of
+ * wp-admin. The look follows the plugin's own mark: near black ink, Digital
+ * Beaver orange for focus and the active state, white cards on the admin grey.
  */
 
-.bac-admin .bac-title {
+.bac-admin {
+	--bac-a-ink: #1d2327;
+	--bac-a-muted: #646970;
+	--bac-a-line: #e2e4e7;
+	--bac-a-soft: #f6f7f7;
+	--bac-a-brand: #ff7a3c;
+	--bac-a-brand-ink: #c2410c;
+	--bac-a-ring: rgba(255, 122, 60, .2);
+	--bac-a-radius: 12px;
+	max-width: 1280px;
+}
+
+/* ------------------------------------------------------------------ Header */
+
+.bac-admin .bac-hero {
 	display: flex;
 	align-items: center;
-	gap: .5rem;
+	gap: 16px;
+	margin: 22px 0 20px;
 }
 
-.bac-admin .bac-title .dashicons {
-	font-size: 26px;
-	width: 26px;
-	height: 26px;
-	color: #1b7f5a;
+.bac-admin .bac-hero__icon {
+	width: 48px;
+	height: 48px;
+	flex: 0 0 auto;
+	border-radius: 12px;
+	box-shadow: 0 2px 6px rgba(255, 122, 60, .3);
 }
 
-.bac-admin .bac-lede {
-	max-width: 780px;
+.bac-admin .bac-hero__text h1 {
+	margin: 0;
+	padding: 0;
+	font-size: 23px;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--bac-a-ink);
+}
+
+.bac-admin .bac-hero__text p {
+	margin: 3px 0 0;
+	font-size: 13.5px;
+	color: var(--bac-a-muted);
+}
+
+.bac-admin .bac-hero__side {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-left: auto;
+}
+
+.bac-admin .bac-state {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	border-radius: 999px;
 	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
 }
 
-.bac-admin .bac-tabs {
-	margin-top: 18px;
+.bac-admin .bac-state__dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: currentColor;
 }
+
+.bac-admin .bac-state.is-live { color: #1a7f37; background: #e8f6ec; }
+.bac-admin .bac-state.is-live .bac-state__dot { box-shadow: 0 0 0 3px rgba(26, 127, 55, .2); }
+.bac-admin .bac-state.is-off { color: var(--bac-a-muted); background: #ececed; }
+.bac-admin .bac-state.is-warn { color: #9a6700; background: #fff4d6; }
+
+@media (max-width: 782px) {
+	.bac-admin .bac-hero { flex-wrap: wrap; }
+	.bac-admin .bac-hero__side { margin-left: 0; width: 100%; }
+}
+
+/* ------------------------------------------------------------------- Stats */
+
+.bac-admin .bac-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+	margin: 0 0 26px;
+}
+
+.bac-admin .bac-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 14px 16px;
+	background: #fff;
+	border: 1px solid var(--bac-a-line);
+	border-radius: var(--bac-a-radius);
+	color: var(--bac-a-ink);
+	text-decoration: none;
+	transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+
+.bac-admin .bac-stat:hover {
+	border-color: #c3c4c7;
+	box-shadow: 0 4px 14px -6px rgba(0, 0, 0, .16);
+	transform: translateY(-1px);
+	color: var(--bac-a-ink);
+}
+
+.bac-admin .bac-stat:focus {
+	outline: none;
+	box-shadow: 0 0 0 3px var(--bac-a-ring);
+	border-color: var(--bac-a-brand);
+}
+
+.bac-admin .bac-stat__label {
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--bac-a-muted);
+}
+
+.bac-admin .bac-stat__value {
+	font-size: 22px;
+	font-weight: 600;
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.bac-admin .bac-stat__sub {
+	font-size: 12.5px;
+	color: var(--bac-a-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.bac-admin .bac-stat.is-flagged .bac-stat__sub {
+	color: var(--bac-a-brand-ink);
+	font-weight: 600;
+}
+
+.bac-admin .bac-stat__meter {
+	display: block;
+	height: 4px;
+	margin-top: 8px;
+	border-radius: 999px;
+	background: #eef0f1;
+	overflow: hidden;
+}
+
+.bac-admin .bac-stat__meter span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: var(--bac-a-brand);
+}
+
+/* -------------------------------------------------------------------- Tabs */
+
+.bac-admin .bac-tabs.nav-tab-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	border-bottom: 1px solid var(--bac-a-line);
+}
+
+.bac-admin .bac-tabs .nav-tab {
+	margin: 0 0 -1px;
+	padding: 10px 14px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: none;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--bac-a-muted);
+	transition: color .15s, border-color .15s;
+}
+
+.bac-admin .bac-tabs .nav-tab:hover {
+	color: var(--bac-a-ink);
+	background: none;
+}
+
+.bac-admin .bac-tabs .nav-tab:focus {
+	outline: none;
+	box-shadow: none;
+	color: var(--bac-a-ink);
+}
+
+.bac-admin .bac-tabs .nav-tab:focus-visible {
+	box-shadow: inset 0 0 0 2px var(--bac-a-ring);
+	border-radius: 6px 6px 0 0;
+}
+
+.bac-admin .bac-tabs .nav-tab-active,
+.bac-admin .bac-tabs .nav-tab-active:hover {
+	color: var(--bac-a-ink);
+	font-weight: 600;
+	border-bottom-color: var(--bac-a-brand);
+}
+
+/* ------------------------------------------------------------------ Panels */
 
 .bac-admin .bac-panel {
 	display: none;
-	background: #fff;
-	border: 1px solid #dcdfe1;
-	border-top: 0;
-	padding: 4px 20px 12px;
+	padding: 20px 0 0;
 }
 
 .bac-admin .bac-panel.is-active {
 	display: block;
 }
 
+/* Each group of settings is a card. */
+.bac-admin .bac-panel .form-table {
+	margin: 0 0 18px;
+	background: #fff;
+	border: 1px solid var(--bac-a-line);
+	border-radius: var(--bac-a-radius);
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+}
+
+.bac-admin .bac-panel .form-table th {
+	width: 210px;
+	padding: 20px 12px 20px 24px;
+	font-weight: 600;
+	color: var(--bac-a-ink);
+	vertical-align: top;
+}
+
+.bac-admin .bac-panel .form-table td {
+	padding: 16px 24px 16px 12px;
+	vertical-align: top;
+}
+
+.bac-admin .bac-panel .form-table tr + tr th,
+.bac-admin .bac-panel .form-table tr + tr td {
+	border-top: 1px solid #f0f0f1;
+}
+
+.bac-admin .bac-panel .form-table td p.description,
+.bac-admin .bac-panel .form-table td .description {
+	max-width: 68ch;
+	margin-top: 6px;
+	font-size: 13px;
+	line-height: 1.55;
+	color: var(--bac-a-muted);
+}
+
+.bac-admin .bac-panel .form-table td > p:first-child {
+	margin-top: 0;
+}
+
+@media (max-width: 782px) {
+	.bac-admin .bac-panel .form-table th,
+	.bac-admin .bac-panel .form-table td {
+		display: block;
+		width: auto;
+		padding: 14px 16px 4px;
+	}
+
+	.bac-admin .bac-panel .form-table td {
+		padding: 4px 16px 16px;
+		border-top: 0 !important;
+	}
+}
+
 .bac-admin .bac-h2 {
+	margin: 28px 0 8px;
+	padding: 0;
 	font-size: 15px;
-	margin: 22px 0 2px;
-	padding-bottom: 8px;
-	border-bottom: 1px solid #eceef0;
+	font-weight: 600;
+	color: var(--bac-a-ink);
+	border: 0;
+}
+
+.bac-admin .bac-panel > .bac-h2:first-child {
+	margin-top: 0;
 }
 
 .bac-admin .bac-section-lede {
-	max-width: 780px;
-	margin: 8px 0 0;
+	max-width: 72ch;
+	margin: 0 0 12px;
+	color: var(--bac-a-muted);
 }
+
+/* ------------------------------------------------------------------ Fields */
+
+.bac-admin input[type="text"],
+.bac-admin input[type="password"],
+.bac-admin input[type="number"],
+.bac-admin input[type="email"],
+.bac-admin input[type="url"],
+.bac-admin select,
+.bac-admin textarea {
+	min-height: 38px;
+	padding: 6px 12px;
+	border: 1px solid #c9ccd1;
+	border-radius: 8px;
+	box-shadow: none;
+	color: var(--bac-a-ink);
+	transition: border-color .15s, box-shadow .15s;
+}
+
+/* Single line controls: a fixed height, so WordPress's own select padding
+   and line height cannot stack on top of these and stretch them. */
+.bac-admin input[type="text"],
+.bac-admin input[type="password"],
+.bac-admin input[type="number"],
+.bac-admin input[type="email"],
+.bac-admin input[type="url"],
+.bac-admin select {
+	height: 38px;
+	padding-top: 0;
+	padding-bottom: 0;
+	line-height: 36px;
+}
+
+.bac-admin select {
+	padding-right: 32px;
+}
+
+/* Room for five digits plus the spinner (8000 ms, 1500 characters). */
+.bac-admin input[type="number"].small-text {
+	width: 104px;
+}
+
+.bac-admin textarea {
+	padding: 8px 12px;
+	line-height: 1.5;
+}
+
+.bac-admin input[type="text"]:focus,
+.bac-admin input[type="password"]:focus,
+.bac-admin input[type="number"]:focus,
+.bac-admin input[type="email"]:focus,
+.bac-admin input[type="url"]:focus,
+.bac-admin select:focus,
+.bac-admin textarea:focus {
+	border-color: var(--bac-a-brand);
+	box-shadow: 0 0 0 3px var(--bac-a-ring);
+	outline: none;
+}
+
+.bac-admin input[type="checkbox"] {
+	border-radius: 4px;
+	border-color: #8c8f94;
+}
+
+.bac-admin input[type="checkbox"]:checked {
+	background: var(--bac-a-ink);
+	border-color: var(--bac-a-ink);
+}
+
+.bac-admin input[type="checkbox"]:checked::before {
+	content: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20d%3D%27M14.83%204.89l1.34.94-5.81%208.38H9.02L5.78%209.67l1.34-1.25%202.57%202.4z%27%20fill%3D%27%23ffffff%27%2F%3E%3C%2Fsvg%3E");
+}
+
+.bac-admin input[type="checkbox"]:focus {
+	border-color: var(--bac-a-brand);
+	box-shadow: 0 0 0 3px var(--bac-a-ring);
+}
+
+.bac-admin input[type="color"] {
+	vertical-align: middle;
+	width: 44px;
+	height: 34px;
+	padding: 3px;
+	margin-left: 8px;
+	border: 1px solid #c9ccd1;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+}
+
+.bac-admin .button {
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 8px;
+	line-height: 32px;
+	border-color: #c3c4c7;
+	color: var(--bac-a-ink);
+	background: #fff;
+}
+
+.bac-admin .button:hover {
+	border-color: #8c8f94;
+	background: var(--bac-a-soft);
+	color: var(--bac-a-ink);
+}
+
+.bac-admin .button:focus {
+	border-color: var(--bac-a-brand);
+	box-shadow: 0 0 0 3px var(--bac-a-ring);
+	color: var(--bac-a-ink);
+}
+
+.bac-admin .button-primary,
+.bac-admin .button-primary:focus {
+	color: #fff;
+	background: var(--bac-a-ink);
+	border-color: var(--bac-a-ink);
+}
+
+.bac-admin .button-primary:hover {
+	color: #fff;
+	background: #000;
+	border-color: #000;
+}
+
+.bac-admin .button-link {
+	color: var(--bac-a-ink);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.bac-admin .bac-link-danger,
+.bac-admin .bac-link-danger:hover {
+	color: #b32d2e;
+}
+
+.bac-admin code {
+	padding: 2px 6px;
+	border-radius: 5px;
+	background: #f0f0f1;
+	font-size: 12px;
+}
+
+/* A Save bar that stays in reach on long tabs. */
+.bac-admin .bac-form > .submit {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+	display: flex;
+	justify-content: flex-end;
+	margin: 6px 0 0;
+	padding: 12px 16px;
+	background: rgba(255, 255, 255, .9);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	border: 1px solid var(--bac-a-line);
+	border-radius: var(--bac-a-radius);
+	box-shadow: 0 -6px 20px -10px rgba(0, 0, 0, .18);
+}
+
+.bac-admin .bac-form > .submit .button-primary {
+	min-height: 38px;
+	padding: 0 22px;
+	font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- API keys */
+
+.bac-admin .bac-keys {
+	display: grid;
+	gap: 8px;
+	max-width: 780px;
+	margin-bottom: 4px;
+}
+
+.bac-admin .bac-keyslot {
+	padding: 10px 14px;
+	background: #fff;
+	border: 1px solid var(--bac-a-line);
+	border-radius: 10px;
+	transition: border-color .15s, box-shadow .15s;
+}
+
+.bac-admin .bac-keyslot.is-main {
+	border-color: var(--bac-a-brand);
+	box-shadow: 0 0 0 1px var(--bac-a-brand);
+}
+
+.bac-admin .bac-keyslot.is-removing {
+	background: #fcf0f1;
+	border-color: #f0b8bb;
+}
+
+.bac-admin .bac-keyslot__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.bac-admin .bac-keyslot__name {
+	flex: 1 1 200px;
+	font-weight: 600;
+	color: var(--bac-a-ink);
+}
+
+.bac-admin .bac-badge-main[hidden] {
+	display: none;
+}
+
+.bac-admin .bac-badge-main {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	color: #fff;
+	background: var(--bac-a-brand);
+	vertical-align: 1px;
+}
+
+.bac-admin .bac-chip-ok,
+.bac-admin .bac-chip-off {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 12.5px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.bac-admin .bac-chip-ok { color: #1a7f37; background: #e8f6ec; }
+.bac-admin .bac-chip-off { color: var(--bac-a-muted); background: #f0f0f1; }
+
+.bac-admin .bac-chip-ok .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.bac-admin .bac-keyslot__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.bac-admin .bac-keyslot__actions[hidden] {
+	display: none;
+}
+
+.bac-admin .bac-keyslot__edit {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin-top: 10px;
+}
+
+.bac-admin .bac-keyslot__edit[hidden],
+.bac-admin .bac-keyslot__removing[hidden] {
+	display: none;
+}
+
+.bac-admin .bac-keyslot__edit .description {
+	flex-basis: 100%;
+	margin: 0;
+}
+
+.bac-admin .bac-keyslot__removing {
+	margin: 8px 0 0;
+	color: #b32d2e;
+	font-weight: 500;
+}
+
+.bac-admin .bac-keyslot .bac-test-out {
+	display: block;
+	margin: 8px 0 0;
+	font-size: 13px;
+}
+
+.bac-admin .bac-fallbacks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	gap: 8px;
+	max-width: 780px;
+}
+
+.bac-admin .bac-fallbacks label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 12px;
+	background: #fff;
+	border: 1px solid var(--bac-a-line);
+	border-radius: 10px;
+}
+
+.bac-admin .bac-fallbacks label.is-main {
+	opacity: .45;
+}
+
+.bac-admin .bac-fallback-note {
+	margin-left: auto;
+	font-size: 12px;
+	font-style: normal;
+	color: var(--bac-a-muted);
+}
+
+/* --------------------------------------------------------- Live preview */
+
+.bac-admin .bac-panel--split.is-active {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 340px;
+	gap: 24px;
+	align-items: start;
+}
+
+@media (max-width: 1180px) {
+	.bac-admin .bac-panel--split.is-active {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.bac-admin .bac-preview {
+	position: sticky;
+	top: 52px;
+	display: flex;
+	flex-direction: column;
+}
+
+.bac-admin .bac-preview__label {
+	margin: 0 0 10px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .07em;
+	text-transform: uppercase;
+	color: var(--bac-a-muted);
+}
+
+.bac-admin .bac-pv {
+	overflow: hidden;
+	background: var(--pv-bg, #fff);
+	border-radius: var(--pv-radius, 20px);
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 14px 34px -10px rgba(0, 0, 0, .24);
+	font-size: 13.5px;
+	line-height: 1.45;
+}
+
+.bac-admin .bac-pv__head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	color: var(--pv-on-accent, #fff);
+	background: var(--pv-accent, #1b7f5a);
+}
+
+.bac-admin .bac-pv__av {
+	display: grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	flex: 0 0 auto;
+	border-radius: 50%;
+	font-weight: 700;
+	color: var(--pv-on-second, #1d1d1b);
+	background-color: var(--pv-second, #c9a24a);
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+.bac-admin .bac-pv__av.has-photo {
+	background-color: var(--pv-bg, #fff);
+	background-size: 74%;
+}
+
+.bac-admin .bac-pv__name {
+	flex: 1;
+	font-weight: 700;
+}
+
+.bac-admin .bac-pv__icons {
+	opacity: .8;
+	letter-spacing: 1px;
+}
+
+.bac-admin .bac-pv__log {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px;
+}
+
+.bac-admin .bac-pv__bot,
+.bac-admin .bac-pv__me {
+	max-width: 85%;
+	padding: 9px 12px;
+	border-radius: var(--pv-bubble-radius, 16px);
+}
+
+.bac-admin .bac-pv__bot {
+	align-self: flex-start;
+	color: #1d1d1b;
+	background: var(--pv-bubble, #f3f3f3);
+}
+
+.bac-admin .bac-pv__bot a {
+	color: var(--pv-link, #1b7f5a);
+	font-weight: 600;
+	text-decoration: underline;
+	text-decoration-color: var(--pv-second, #c9a24a);
+	text-underline-offset: 2px;
+}
+
+.bac-admin .bac-pv__me {
+	align-self: flex-end;
+	color: var(--pv-on-accent, #fff);
+	background: var(--pv-accent, #1b7f5a);
+}
+
+.bac-admin .bac-pv__chips {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 6px;
+	padding: 0 14px 12px;
+}
+
+.bac-admin .bac-pv__chip,
+.bac-admin .bac-pv__cta {
+	padding: 5px 11px;
+	border: 1px solid var(--pv-line, #e4e4e2);
+	border-radius: var(--pv-pill, 999px);
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #1d1d1b;
+	background: var(--pv-field, #fff);
+}
+
+.bac-admin .bac-pv__cta {
+	color: var(--pv-on-second, #1d1d1b);
+	background: var(--pv-second, #c9a24a);
+	border-color: var(--pv-second, #c9a24a);
+}
+
+.bac-admin .bac-pv__field {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 12px 12px;
+	padding: 4px 4px 4px 14px;
+	border: 1px solid #1d1d1b;
+	border-radius: var(--pv-pill, 999px);
+	background: var(--pv-field, #fff);
+}
+
+.bac-admin .bac-pv__field span {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #75756d;
+}
+
+.bac-admin .bac-pv__field i {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	font-style: normal;
+	font-weight: 700;
+	color: var(--pv-on-accent, #fff);
+	background: var(--pv-accent, #1b7f5a);
+}
+
+.bac-admin .bac-pv__launcher {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	align-self: flex-end;
+	height: 46px;
+	min-width: 46px;
+	margin: 14px 0 12px;
+	border-radius: 999px;
+	color: var(--pv-on-accent, #fff);
+	background: var(--pv-accent, #1b7f5a);
+	box-shadow: 0 8px 20px -6px rgba(0, 0, 0, .35);
+}
+
+.bac-admin .bac-pv__launcher.has-label {
+	padding: 0 18px 0 14px;
+	font-weight: 600;
+}
+
+.bac-admin .bac-pv__launcher:not(.has-label) [data-bac-pv-label] {
+	display: none;
+}
+
+.bac-admin .bac-preview .description {
+	margin: 0;
+	font-size: 12.5px;
+	color: var(--bac-a-muted);
+}
+
+/* -------------------------------------------------------------- Smaller bits */
 
 .bac-admin .bac-tokens code {
 	margin-right: 4px;
@@ -102,27 +861,6 @@
 .bac-admin .bac-tool-form {
 	margin: 12px 0 22px;
 	max-width: 780px;
-}
-
-.bac-admin input[type="color"] {
-	vertical-align: middle;
-	width: 60px;
-	height: 30px;
-	padding: 2px;
-	margin-left: 6px;
-	border: 1px solid #8c8f94;
-	border-radius: 4px;
-	background: #fff;
-}
-
-.bac-admin .form-table th {
-	width: 220px;
-}
-
-@media (max-width: 782px) {
-	.bac-admin .form-table th {
-		width: auto;
-	}
 }
 
 /* ------------------------------------------------- Conversations list + view */
@@ -424,4 +1162,34 @@
    inside the settings panel and reaches it through the form attribute. */
 .bac-admin .bac-hidden-form {
 	display: none;
+}
+
+/* The maker's mark, under the tools. Matches the other Digital Beaver plugins. */
+.bac-admin .bac-credit {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	max-width: 46em;
+	margin: 28px 0 0;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid var(--bac-a-line);
+	border-radius: var(--bac-a-radius);
+}
+
+.bac-admin .bac-credit__logo {
+	width: 150px;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.bac-admin .bac-credit__text {
+	font-size: 13px;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.bac-admin .bac-credit__text strong {
+	display: block;
+	color: #1d2327;
 }
