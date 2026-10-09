@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "updated": "2026-08-24T17:35:00+00:00",
+    "updated": "2026-10-09T23:30:23+00:00",
     "plugins": {
         "beaver-access": {
             "slug": "beaver-access",
@@ -17,14 +17,18 @@
         "beaver-ai-chat": {
             "slug": "beaver-ai-chat",
             "name": "Beaver AI Chat",
-            "version": "1.6.2",
+            "version": "2.0.0",
             "description": "A customisable AI chat assistant that answers visitor questions using your own site content, captures leads, and hands off to your team. Works with Claude, ChatGPT, DeepSeek, Gemini or any OpenAI-com…",
             "requires": "5.8",
             "requires_php": "7.4",
             "tested": "6.8",
             "author": "Digital Beaver",
             "homepage": "https://github.com/SteveBodyJr/wp-tools/tree/main/beaver-ai-chat",
-            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-ai-chat-1.6.2/beaver-ai-chat-1.6.2.zip"
+            "package": "https://github.com/SteveBodyJr/wp-tools/releases/download/beaver-ai-chat-2.0.0/beaver-ai-chat-2.0.0.zip",
+            "icons": {
+                "1x": "https://raw.githubusercontent.com/SteveBodyJr/wp-tools/main/beaver-ai-chat/assets/icon-128x128.png",
+                "2x": "https://raw.githubusercontent.com/SteveBodyJr/wp-tools/main/beaver-ai-chat/assets/icon-256x256.png"
+            }
         },
         "beaver-alt-text": {
             "slug": "beaver-alt-text",
