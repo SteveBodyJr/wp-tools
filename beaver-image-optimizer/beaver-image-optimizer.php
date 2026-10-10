@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver Image Optimizer
  * Plugin URI:        https://digitalbeavertz.com/
  * Description:       Converts JPEG and PNG uploads to WebP using only the image libraries bundled with PHP and WordPress. Built for shared hosting: no root access, no CLI tools, no external APIs.
- * Version:           1.3.6
+ * Version:           1.3.7
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Digital Beaver
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BEAVER_IO_VERSION', '1.3.6' );
+define( 'BEAVER_IO_VERSION', '1.3.7' );
 define( 'BEAVER_IO_FILE', __FILE__ );
 define( 'BEAVER_IO_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BEAVER_IO_URL', plugin_dir_url( __FILE__ ) );
@@ -144,6 +144,7 @@ final class Beaver_Image_Optimizer_Plugin {
 		delete_option( Beaver_Image_Optimizer::OPTION_INFLIGHT );
 		delete_option( Beaver_Image_Optimizer::OPTION_LOCK );
 		delete_transient( 'beaver_io_delivery_test' );
+		wp_unschedule_hook( Beaver_Image_Optimizer::DEFERRED_HOOK );
 	}
 
 	/**
@@ -165,6 +166,7 @@ final class Beaver_Image_Optimizer_Plugin {
 		delete_option( Beaver_Image_Optimizer::OPTION_INFLIGHT );
 		delete_option( Beaver_Image_Optimizer::OPTION_LOCK );
 		delete_transient( 'beaver_io_delivery_test' );
+		wp_unschedule_hook( Beaver_Image_Optimizer::DEFERRED_HOOK );
 
 		$wpdb->query(
 			$wpdb->prepare(

@@ -60,6 +60,7 @@ quantum depth is used instead.
 | **Keep originals** | On by default. Turning it off deletes the source once the WebP is verified on disk — there is no undo. |
 | **Downscale oversized** | Applies to the WebP copy only; the original is untouched. |
 | **Picture element fallback** | Only needed where rewrite rules are not read, such as Nginx. Run the delivery test first. |
+| **CDN-safe mode** | Turn on behind Cloudflare or another CDN that ignores `Vary: Accept`. Stops swapping files at the same address; WebP goes out through `<picture>` in post content only. The delivery test tells you when it is needed. |
 | **Bulk batch size** | Lower it if your host times out. |
 
 ## WP-CLI

@@ -224,8 +224,10 @@ class Beaver_Image_Admin {
 
 		$clean = Beaver_Image_Optimizer::sanitize_settings( $input );
 
-		if ( ! Beaver_Image_Optimizer::delivery_rules_installed() ) {
-			Beaver_Image_Optimizer::write_delivery_rules();
+		// The rules depend on CDN-safe mode, and this runs before the new value
+		// is stored, so they are built from the submitted settings.
+		if ( ! Beaver_Image_Optimizer::delivery_rules_installed() || (int) $clean['cdn_safe'] !== (int) Beaver_Image_Optimizer::get_setting( 'cdn_safe' ) ) {
+			Beaver_Image_Optimizer::write_delivery_rules( $clean );
 		}
 
 		delete_transient( 'beaver_io_delivery_test' );
@@ -877,8 +879,8 @@ class Beaver_Image_Admin {
 					: __( 'Not installed', 'beaver-image-optimizer' ),
 			),
 			array(
-				'ok'    => 'working' === $delivery['status'],
-				'warn'  => 'untested' === $delivery['status'],
+				'ok'    => in_array( $delivery['status'], array( 'working', 'cdn_safe' ), true ),
+				'warn'  => in_array( $delivery['status'], array( 'untested', 'cdn_risk' ), true ),
 				'label' => __( 'Live delivery test', 'beaver-image-optimizer' ),
 				'value' => $delivery['message'],
 			),
@@ -955,7 +957,7 @@ class Beaver_Image_Admin {
 					<?php
 					printf(
 						/* translators: 1: pending image count, 2: total image count. */
-						esc_html__( '%1$s of %2$s images have not been optimized yet.', 'beaver-image-optimizer' ),
+						esc_html__( '%1$s of %2$s images still need optimizing.', 'beaver-image-optimizer' ),
 						'<strong>' . esc_html( number_format_i18n( $pending ) ) . '</strong>',
 						'<strong>' . esc_html( number_format_i18n( $total ) ) . '</strong>'
 					);
@@ -1143,6 +1145,21 @@ class Beaver_Image_Admin {
 								<?php esc_html_e( 'Wrap post content images in a picture element', 'beaver-image-optimizer' ); ?>
 							</label>
 							<p class="description"><?php esc_html_e( 'Only needed when the rewrite rules cannot run, for example on Nginx. Leave this off on Apache and LiteSpeed hosts such as Namecheap.', 'beaver-image-optimizer' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'CDN-safe mode', 'beaver-image-optimizer' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $option ); ?>[cdn_safe]" value="1" <?php checked( $settings['cdn_safe'], 1 ); ?> />
+								<?php esc_html_e( 'Never send a different file from the same image address', 'beaver-image-optimizer' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Turn this on when the site is behind Cloudflare or another CDN. Those caches keep one copy of each image for every visitor, so swapping in WebP at the original address can send it to a browser that cannot display it. In this mode WebP is offered through picture elements in post content only; theme images keep their original format.', 'beaver-image-optimizer' ); ?>
+								<?php if ( Beaver_Image_Optimizer::behind_cloudflare() ) : ?>
+									<strong><?php esc_html_e( 'This site is currently being served through Cloudflare.', 'beaver-image-optimizer' ); ?></strong>
+								<?php endif; ?>
+							</p>
 						</td>
 					</tr>
 					<tr>

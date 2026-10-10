@@ -6,7 +6,7 @@ Tags: webp, image optimization, performance, compression, lazy loading
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.3.6
+Stable tag: 1.3.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,7 +36,8 @@ Because no URL in the page ever changes, WordPress `srcset`, responsive images, 
 * Statistics for original size, optimized size, saved bytes and average compression percentage.
 * A WebP column in the media library with per-image optimize and remove actions.
 * Plain-language failure reporting: every image that cannot be converted records why, shown in the media library and on the dashboard with a Retry button.
-* Live delivery self-test that makes a real HTTP request to confirm WebP is reaching browsers.
+* Live delivery self-test that makes real HTTP requests to confirm WebP reaches browsers that support it and never reaches those that do not.
+* CDN-safe mode for sites behind Cloudflare or another CDN that caches one copy of each image.
 
 == Installation ==
 
@@ -61,6 +62,10 @@ No. In the default "keep originals" mode, no image URL in your HTML is modified 
 
 Rewrite rules are not read on Nginx. Run the delivery test on the dashboard; if it reports a failure, enable **Picture element fallback** in the settings and post content images will be wrapped in a `<picture>` element instead.
 
+= My site is behind Cloudflare. Is that a problem? =
+
+It can be. Cloudflare below its Enterprise plan ignores the `Vary: Accept` header the rewrite rules depend on, so it caches whichever format the first visitor received and hands that copy to everyone. The delivery test detects Cloudflare and says so. Turn on **CDN-safe mode** in the settings: the plugin then never swaps files at the same address, and WebP is offered through `<picture>` elements in post content instead.
+
 = Can I undo "delete originals"? =
 
 No. That mode removes the source file once the WebP version is verified on disk, which is the point of the setting. Use "keep originals" unless disk space is genuinely the constraint.
@@ -81,6 +86,13 @@ No. Deactivation removes only the rewrite rules. Image files and statistics are 
 4. WebP status column in the media library.
 
 == Changelog ==
+
+= 1.3.7 =
+* Fixed images left "partially optimized" never being finished. An image that ran out of time part way was told to "run the bulk optimizer to finish the remaining sizes", but the bulk optimizer only ever looked for images it had never touched, so it skipped them. Bulk runs, WP-CLI and the pending count now include them. A partial image with a real conversion error still goes to the Retry list instead, so the count can reach zero.
+* Fixed uploads of large photos timing out on 30-second hosts. Conversion's time limit used to start counting when conversion began, ignoring the time WordPress had already spent making thumbnails. It now counts from the start of the request. When too little time is left, the image is converted by a background job a few seconds later and the upload finishes normally. An upload that runs out of time half way finishes in the background too.
+* An image that ran out of time before its first size was converted is now recorded as partial, not "skipped: the WebP version was not meaningfully smaller".
+* The delivery test now sends the control request it always claimed to: one as a browser without WebP support. A server or cache that sends WebP to that browser is reported as a failure, since that browser would show a broken image.
+* Detects Cloudflare, which ignores the Vary: Accept header that rewrite delivery relies on. Added CDN-safe mode: the browser-dependent swap is removed from the rules, so each image address always returns the same file, and WebP is offered through picture elements in post content.
 
 = 1.3.6 =
 * Fixed "delete originals" mode becoming a dead end. Once an attachment's original was removed, its mime type became image/webp, which the plugin's own file-type filter then excluded from every future path — auto-optimize on a new thumbnail size, a bulk rescan, even pressing Optimize on it by hand. Attachments this plugin converted are now recognised by their own status record and stay reachable.

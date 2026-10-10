@@ -357,11 +357,15 @@
 
 			request( 'test_delivery', {} )
 				.then( function ( data ) {
-					notify(
-						'beaver-io-health-notice',
-						data.message,
-						data.status === 'working' ? 'success' : 'error'
-					);
+					var tone = 'error';
+
+					if ( data.status === 'working' || data.status === 'cdn_safe' ) {
+						tone = 'success';
+					} else if ( data.status === 'cdn_risk' || data.status === 'untested' ) {
+						tone = 'info';
+					}
+
+					notify( 'beaver-io-health-notice', data.message, tone );
 				} )
 				.catch( function ( error ) {
 					notify( 'beaver-io-health-notice', error.message, 'error' );

@@ -49,6 +49,18 @@ class Beaver_Image_Optimizer {
 	const HTACCESS_MARKER = 'Beaver Image Optimizer';
 
 	/**
+	 * Cron hook that finishes an upload too slow to convert in its own request.
+	 */
+	const DEFERRED_HOOK = 'beaver_io_deferred_optimize';
+
+	/**
+	 * Background passes an upload gets before it is left to the bulk optimizer.
+	 *
+	 * @var int
+	 */
+	const DEFERRED_ATTEMPTS = 3;
+
+	/**
 	 * Runtime settings cache.
 	 *
 	 * @var array|null
@@ -63,6 +75,7 @@ class Beaver_Image_Optimizer {
 	public static function init() {
 		add_filter( 'wp_generate_attachment_metadata', array( __CLASS__, 'filter_generate_metadata' ), 9999, 3 );
 		add_action( 'delete_attachment', array( __CLASS__, 'on_delete_attachment' ) );
+		add_action( self::DEFERRED_HOOK, array( __CLASS__, 'run_deferred' ), 10, 2 );
 
 		// The runtime cache has to be dropped once the new value is on disk, not
 		// while it is still being sanitized, or the next read in the same request
@@ -78,7 +91,9 @@ class Beaver_Image_Optimizer {
 			add_filter( 'wp_omit_loading_attr_threshold', array( __CLASS__, 'filter_lazy_threshold' ) );
 		}
 
-		if ( ! empty( $settings['picture_fallback'] ) ) {
+		// CDN-safe mode stops swapping files at the same address, so the
+		// picture element becomes the only way WebP reaches the browser.
+		if ( ! empty( $settings['picture_fallback'] ) || ! empty( $settings['cdn_safe'] ) ) {
 			add_filter( 'wp_content_img_tag', array( __CLASS__, 'filter_content_img_tag' ), 20, 3 );
 		}
 	}
@@ -108,6 +123,7 @@ class Beaver_Image_Optimizer {
 			'lazy_load'        => 1,
 			'lazy_skip_first'  => 1,
 			'picture_fallback' => 0,
+			'cdn_safe'         => 0,
 			'batch_size'       => 3,
 		);
 	}
@@ -175,6 +191,7 @@ class Beaver_Image_Optimizer {
 		$clean['keep_originals']   = empty( $input['keep_originals'] ) ? 0 : 1;
 		$clean['lazy_load']        = empty( $input['lazy_load'] ) ? 0 : 1;
 		$clean['picture_fallback'] = empty( $input['picture_fallback'] ) ? 0 : 1;
+		$clean['cdn_safe']         = empty( $input['cdn_safe'] ) ? 0 : 1;
 
 		$types                = isset( $input['file_types'] ) ? (array) $input['file_types'] : array();
 		$types                = array_values( array_intersect( array_map( 'sanitize_text_field', $types ), Beaver_Image_Converter::SUPPORTED_MIME_TYPES ) );
@@ -256,9 +273,119 @@ class Beaver_Image_Optimizer {
 			return $metadata;
 		}
 
-		$processed = self::process( (int) $attachment_id, $metadata );
+		$attachment_id = (int) $attachment_id;
+		$budget        = self::request_time_budget();
+
+		/*
+		 * By the time this filter runs, WordPress has already spent part of
+		 * the request generating every thumbnail size. On a 30 second host a
+		 * large photo can leave too little to convert anything safely, and a
+		 * request killed here loses the whole upload, not just the WebP. In
+		 * that case the work moves to a background request with its own
+		 * execution limit, and the upload finishes normally.
+		 */
+		if ( $budget < self::MIN_ATTACHMENT_BUDGET ) {
+			self::defer( $attachment_id, 1 );
+
+			return $metadata;
+		}
+
+		$processed = self::process( $attachment_id, $metadata, array( 'time_budget' => $budget ) );
+
+		// Ran out of time with sizes still to convert: finish them in the
+		// background rather than waiting for someone to run the bulk optimizer.
+		if ( 'partial' === $processed['status'] && empty( $processed['errors'] ) ) {
+			self::defer( $attachment_id, 1 );
+		}
 
 		return $processed['metadata'];
+	}
+
+	/**
+	 * Returns the conversion time this request has left.
+	 *
+	 * Unlike self::time_budget(), this counts from the start of the request:
+	 * an upload has already spent part of the execution limit on thumbnails,
+	 * and a cron request may already have run other deferred images.
+	 *
+	 * @since 1.3.7
+	 *
+	 * @return float Seconds.
+	 */
+	private static function request_time_budget() {
+		$budget = self::time_budget();
+
+		// WP-CLI has no execution limit, and its requests can run for hours.
+		if ( ( defined( 'WP_CLI' ) && WP_CLI ) || empty( $_SERVER['REQUEST_TIME_FLOAT'] ) ) {
+			return $budget;
+		}
+
+		$max = (int) ini_get( 'max_execution_time' );
+
+		if ( $max < 1 ) {
+			return $budget;
+		}
+
+		$elapsed = microtime( true ) - (float) $_SERVER['REQUEST_TIME_FLOAT'];
+
+		return (float) min( $budget, ( $max * 0.6 ) - $elapsed );
+	}
+
+	/**
+	 * Schedules a background pass for one attachment.
+	 *
+	 * @since 1.3.7
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @param int $attempt       Which pass this will be, starting at 1.
+	 */
+	private static function defer( $attachment_id, $attempt ) {
+		$args = array( (int) $attachment_id, (int) $attempt );
+
+		if ( ! wp_next_scheduled( self::DEFERRED_HOOK, $args ) ) {
+			wp_schedule_single_event( time() + 5, self::DEFERRED_HOOK, $args );
+		}
+	}
+
+	/**
+	 * Finishes an upload in the background.
+	 *
+	 * Each pass gets a fresh request and its full time budget. An image that
+	 * is still unfinished after the last pass stays "partial", which the bulk
+	 * optimizer picks up.
+	 *
+	 * @since 1.3.7
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @param int $attempt       Which pass this is.
+	 */
+	public static function run_deferred( $attachment_id, $attempt = 1 ) {
+		$attachment_id = (int) $attachment_id;
+		$attempt       = (int) $attempt;
+
+		if ( $attachment_id <= 0 || 'attachment' !== get_post_type( $attachment_id ) || ! self::get_setting( 'auto_optimize' ) ) {
+			return;
+		}
+
+		$budget = self::request_time_budget();
+
+		/*
+		 * WP-Cron runs every due event in one request, one after another. A
+		 * bulk regeneration can defer dozens of images at once, so each must
+		 * check what is left of the shared limit instead of assuming a fresh
+		 * request. Out of time: this pass goes back on the schedule unspent.
+		 */
+		if ( $budget < self::MIN_ATTACHMENT_BUDGET ) {
+			self::defer( $attachment_id, $attempt );
+
+			return;
+		}
+
+		$result = self::optimize_attachment( $attachment_id, false, array( 'time_budget' => $budget ) );
+
+		if ( 'partial' === $result['status'] && empty( $result['errors'] ) && $attempt < self::DEFERRED_ATTEMPTS ) {
+			self::defer( $attachment_id, $attempt + 1 );
+		}
 	}
 
 	/**
@@ -449,7 +576,9 @@ class Beaver_Image_Optimizer {
 			$targets[ $key ]['webp_bytes'] = $report['webp_bytes'];
 		}
 
-		if ( 0 === $result['files'] ) {
+		// Running out of time before the first file is not a verdict on the
+		// image; it falls through to "partial" below so another pass resumes it.
+		if ( 0 === $result['files'] && ( ! $partial || $failed > 0 ) ) {
 			$status = $failed > 0 ? 'failed' : 'skipped';
 
 			return self::finish(
@@ -1386,21 +1515,66 @@ class Beaver_Image_Optimizer {
 		);
 
 		if ( ! $include_processed ) {
+			/*
+			 * "Partial" with no recorded error means the image ran out of
+			 * time, not that a size failed, so another pass will finish it.
+			 * Leaving it out sent the "run the bulk optimizer to finish"
+			 * message to a bulk run that never picked the image up. A partial
+			 * image with an error is a genuine failure and stays on the
+			 * Retry list instead, or every scan would count it forever.
+			 */
 			$args['meta_query'] = array(
+				'relation' => 'OR',
 				array(
 					'key'     => self::META_STATUS,
 					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'relation' => 'AND',
+					array(
+						'key'   => self::META_STATUS,
+						'value' => 'partial',
+					),
+					array(
+						'key'     => self::META_ERROR,
+						'compare' => 'NOT EXISTS',
+					),
 				),
 			);
 		}
 
 		$query = new WP_Query( $args );
+		$ids   = array_map( 'intval', $query->posts );
 
-		return array_map( 'intval', $query->posts );
+		if ( ! $include_processed && ( $limit < 0 || count( $ids ) < $limit ) ) {
+			/*
+			 * In "delete originals" mode a partial image's full size has
+			 * already been replaced, so its mime type is now image/webp and the
+			 * file-type filter above cannot see it. Only this plugin's own
+			 * unfinished records are added; a native WebP upload has no
+			 * "partial" status and is never picked up here.
+			 */
+			$webp = new WP_Query(
+				array_merge(
+					$args,
+					array(
+						'post_mime_type' => 'image/webp',
+						'posts_per_page' => $limit < 0 ? -1 : $limit - count( $ids ),
+						'meta_query'     => $args['meta_query'][1],
+					)
+				)
+			);
+
+			$ids = array_merge( $ids, array_map( 'intval', $webp->posts ) );
+			sort( $ids );
+		}
+
+		return $ids;
 	}
 
 	/**
-	 * Counts attachments that have never been processed.
+	 * Counts attachments that still need work: never processed, or stopped
+	 * part way by the time limit.
 	 *
 	 * Uses a direct count so that a library with tens of thousands of images
 	 * does not have to load every ID into memory just to render a number.
@@ -1429,7 +1603,7 @@ class Beaver_Image_Optimizer {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param bool $pending_only Restrict to attachments with no status meta.
+	 * @param bool $pending_only Restrict to attachments that still need work.
 	 * @return int Count.
 	 */
 	private static function count_attachments( $pending_only ) {
@@ -1451,11 +1625,14 @@ class Beaver_Image_Optimizer {
 			$sql = $wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->posts} p
 				 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = %s
+				 LEFT JOIN {$wpdb->postmeta} e ON e.post_id = p.ID AND e.meta_key = %s
 				 WHERE p.post_type = 'attachment'
 				   AND p.post_status = 'inherit'
-				   AND p.post_mime_type IN ( {$placeholders} )
-				   AND m.post_id IS NULL",
-				array_merge( array( self::META_STATUS ), $mimes )
+				   AND (
+				         ( p.post_mime_type IN ( {$placeholders} ) AND m.post_id IS NULL )
+				      OR ( ( p.post_mime_type IN ( {$placeholders} ) OR p.post_mime_type = 'image/webp' ) AND m.meta_value = 'partial' AND e.post_id IS NULL )
+				   )",
+				array_merge( array( self::META_STATUS, self::META_ERROR ), $mimes, $mimes )
 			);
 		} else {
 			$sql = $wpdb->prepare(
@@ -1758,32 +1935,68 @@ class Beaver_Image_Optimizer {
 	/**
 	 * Builds the Apache / LiteSpeed rules that serve WebP transparently.
 	 *
-	 * @since 1.0.0
+	 * In CDN-safe mode the browser-dependent swap is left out. A CDN that
+	 * ignores `Vary: Accept`, which includes Cloudflare below its Enterprise
+	 * plan, caches whichever format the first visitor received and hands it
+	 * to everyone. Without the swap one address always means one file. The
+	 * fallback for deleted originals stays, because it answers every browser
+	 * the same way.
 	 *
+	 * @since 1.0.0
+	 * @since 1.3.7 Accepts the settings, and honours CDN-safe mode.
+	 *
+	 * @param array|null $settings Optional. Settings to build from. Default current settings.
 	 * @return string[] Lines for insert_with_markers().
 	 */
-	public static function delivery_rules() {
-		return array(
+	public static function delivery_rules( $settings = null ) {
+		$settings = is_array( $settings ) ? $settings : self::get_settings();
+		$swap     = empty( $settings['cdn_safe'] );
+
+		$rules = array(
 			'<IfModule mod_mime.c>',
 			'AddType image/webp .webp',
 			'</IfModule>',
 			'<IfModule mod_rewrite.c>',
 			'RewriteEngine On',
-			'# Serve the WebP sidecar when the browser advertises WebP support.',
-			'RewriteCond %{HTTP_ACCEPT} image/webp',
-			'RewriteCond %{REQUEST_FILENAME}\.webp -f',
-			'RewriteRule (.+)\.(jpe?g|png)$ $1.$2.webp [NC,T=image/webp,L]',
-			'# Originals removed: keep legacy URLs alive by falling back to the sidecar.',
-			'RewriteCond %{REQUEST_FILENAME} !-f',
-			'RewriteCond %{REQUEST_FILENAME}\.webp -f',
-			'RewriteRule (.+)\.(jpe?g|png)$ $1.$2.webp [NC,T=image/webp,L]',
-			'</IfModule>',
-			'<IfModule mod_headers.c>',
-			'<FilesMatch "(?i)\.(jpe?g|png)$">',
-			'Header append Vary Accept',
-			'</FilesMatch>',
-			'</IfModule>',
 		);
+
+		if ( $swap ) {
+			$rules = array_merge(
+				$rules,
+				array(
+					'# Serve the WebP sidecar when the browser advertises WebP support.',
+					'RewriteCond %{HTTP_ACCEPT} image/webp',
+					'RewriteCond %{REQUEST_FILENAME}\.webp -f',
+					'RewriteRule (.+)\.(jpe?g|png)$ $1.$2.webp [NC,T=image/webp,L]',
+				)
+			);
+		}
+
+		$rules = array_merge(
+			$rules,
+			array(
+				'# Originals removed: keep legacy URLs alive by falling back to the sidecar.',
+				'RewriteCond %{REQUEST_FILENAME} !-f',
+				'RewriteCond %{REQUEST_FILENAME}\.webp -f',
+				'RewriteRule (.+)\.(jpe?g|png)$ $1.$2.webp [NC,T=image/webp,L]',
+				'</IfModule>',
+			)
+		);
+
+		if ( $swap ) {
+			$rules = array_merge(
+				$rules,
+				array(
+					'<IfModule mod_headers.c>',
+					'<FilesMatch "(?i)\.(jpe?g|png)$">',
+					'Header append Vary Accept',
+					'</FilesMatch>',
+					'</IfModule>',
+				)
+			);
+		}
+
+		return $rules;
 	}
 
 	/**
@@ -1810,10 +2023,12 @@ class Beaver_Image_Optimizer {
 	 * Writes the delivery rules into the uploads .htaccess file.
 	 *
 	 * @since 1.0.0
+	 * @since 1.3.7 Accepts the settings to build from.
 	 *
+	 * @param array|null $settings Optional. Settings to build from. Default current settings.
 	 * @return bool True on success.
 	 */
-	public static function write_delivery_rules() {
+	public static function write_delivery_rules( $settings = null ) {
 		/*
 		 * The rules are written regardless of the detected server: every
 		 * directive is wrapped in <IfModule>, and a server that does not read
@@ -1845,7 +2060,7 @@ class Beaver_Image_Optimizer {
 
 		delete_transient( 'beaver_io_delivery_test' );
 
-		return (bool) insert_with_markers( $path, self::HTACCESS_MARKER, self::delivery_rules() );
+		return (bool) insert_with_markers( $path, self::HTACCESS_MARKER, self::delivery_rules( $settings ) );
 	}
 
 	/**
@@ -1913,13 +2128,17 @@ class Beaver_Image_Optimizer {
 	 * Verifies WebP delivery with two real HTTP requests.
 	 *
 	 * One request advertises WebP support and should receive `image/webp`; the
-	 * control request does not and should receive the original type.
+	 * control request does not and should receive the original type. Both
+	 * halves matter: a server or CDN that answers the control with WebP is
+	 * breaking images for browsers that cannot display it.
 	 *
 	 * @since 1.0.0
+	 * @since 1.3.7 Sends the control request, and reports a Cloudflare risk.
 	 *
 	 * @param bool $refresh Bypass the cached verdict.
 	 * @return array {
-	 *     @type string $status  One of 'working', 'not_working' or 'untested'.
+	 *     @type string $status  One of 'working', 'not_working', 'cdn_risk',
+	 *                           'cdn_safe' or 'untested'.
 	 *     @type string $message Translated explanation.
 	 *     @type string $url     The URL that was probed.
 	 * }
@@ -1939,6 +2158,17 @@ class Beaver_Image_Optimizer {
 			'url'     => '',
 		);
 
+		if ( self::get_setting( 'cdn_safe' ) ) {
+			// Nothing is swapped at the same address in this mode, so there is
+			// no rewrite to test; WebP reaches browsers through picture elements.
+			$result['status']  = 'cdn_safe';
+			$result['message'] = __( 'CDN-safe mode: images keep one file per address, and WebP is offered through picture elements in post content.', 'beaver-image-optimizer' );
+
+			set_transient( 'beaver_io_delivery_test', $result, HOUR_IN_SECONDS );
+
+			return $result;
+		}
+
 		$sample = self::find_sample_url();
 
 		if ( '' === $sample ) {
@@ -1947,14 +2177,7 @@ class Beaver_Image_Optimizer {
 
 		$result['url'] = $sample;
 
-		$response = wp_remote_get(
-			$sample,
-			array(
-				'timeout'   => 15,
-				'sslverify' => false,
-				'headers'   => array( 'Accept' => 'image/webp,image/*,*/*;q=0.8' ),
-			)
-		);
+		$response = self::probe( $sample, 'image/webp,image/*,*/*;q=0.8' );
 
 		if ( is_wp_error( $response ) ) {
 			$result['status']  = 'not_working';
@@ -1969,11 +2192,23 @@ class Beaver_Image_Optimizer {
 			return $result;
 		}
 
-		$content_type = strtolower( (string) wp_remote_retrieve_header( $response, 'content-type' ) );
+		// What an older browser without WebP support sends.
+		$control    = self::probe( $sample, 'image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5' );
+		$cloudflare = self::behind_cloudflare( $response ) || ( ! is_wp_error( $control ) && self::behind_cloudflare( $control ) );
 
-		if ( false !== strpos( $content_type, 'image/webp' ) ) {
-			$result['status']  = 'working';
-			$result['message'] = __( 'WebP is being served to browsers that support it.', 'beaver-image-optimizer' );
+		if ( ! is_wp_error( $control ) && self::is_webp_response( $control ) ) {
+			$result['status']  = 'not_working';
+			$result['message'] = $cloudflare
+				? __( 'WebP is also being sent to browsers that cannot display it, most likely from Cloudflare\'s cache. Turn on CDN-safe mode in the settings.', 'beaver-image-optimizer' )
+				: __( 'WebP is also being sent to browsers that cannot display it. A cache in front of the site is probably ignoring the Vary: Accept header; turn on CDN-safe mode in the settings.', 'beaver-image-optimizer' );
+		} elseif ( self::is_webp_response( $response ) ) {
+			if ( $cloudflare ) {
+				$result['status']  = 'cdn_risk';
+				$result['message'] = __( 'WebP is being served, but this site is behind Cloudflare, which keeps one cached copy of each image for every browser. Turn on CDN-safe mode in the settings so no visitor is sent a format they cannot display.', 'beaver-image-optimizer' );
+			} else {
+				$result['status']  = 'working';
+				$result['message'] = __( 'WebP is being served to browsers that support it, and the original to those that do not.', 'beaver-image-optimizer' );
+			}
 		} else {
 			$result['status']  = 'not_working';
 			$result['message'] = __( 'The server returned the original image. Rewrite rules are not being applied — enable the picture element fallback.', 'beaver-image-optimizer' );
@@ -1982,6 +2217,59 @@ class Beaver_Image_Optimizer {
 		set_transient( 'beaver_io_delivery_test', $result, HOUR_IN_SECONDS );
 
 		return $result;
+	}
+
+	/**
+	 * Requests an image the way a browser would.
+	 *
+	 * @since 1.3.7
+	 *
+	 * @param string $url    Image URL.
+	 * @param string $accept Accept header to send.
+	 * @return array|WP_Error Response.
+	 */
+	private static function probe( $url, $accept ) {
+		return wp_remote_get(
+			$url,
+			array(
+				'timeout'   => 15,
+				'sslverify' => false,
+				'headers'   => array( 'Accept' => $accept ),
+			)
+		);
+	}
+
+	/**
+	 * Checks whether a response carried a WebP image.
+	 *
+	 * @since 1.3.7
+	 *
+	 * @param array $response Response from self::probe().
+	 * @return bool True for image/webp.
+	 */
+	private static function is_webp_response( $response ) {
+		return false !== strpos( strtolower( (string) wp_remote_retrieve_header( $response, 'content-type' ) ), 'image/webp' );
+	}
+
+	/**
+	 * Detects Cloudflare, from the test response or the current request.
+	 *
+	 * @since 1.3.7
+	 *
+	 * @param array $response Response from self::probe().
+	 * @return bool True when Cloudflare sits in front of the site.
+	 */
+	public static function behind_cloudflare( $response = null ) {
+		if ( ! empty( $_SERVER['HTTP_CF_RAY'] ) ) {
+			return true;
+		}
+
+		if ( ! is_array( $response ) ) {
+			return false;
+		}
+
+		return '' !== (string) wp_remote_retrieve_header( $response, 'cf-ray' )
+			|| false !== stripos( (string) wp_remote_retrieve_header( $response, 'server' ), 'cloudflare' );
 	}
 
 	/**
