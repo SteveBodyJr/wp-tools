@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver AI Chat
  * Plugin URI:        https://digitalbeavertz.com/
  * Description:       A customisable AI chat assistant that answers visitor questions using your own site content, captures leads, and hands off to your team. Works with Claude, ChatGPT, DeepSeek, Gemini or any OpenAI-compatible endpoint. Your API key is stored on your server and never exposed to visitors.
- * Version:           2.0.0
+ * Version:           2.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Digital Beaver
@@ -33,7 +33,7 @@ if ( defined( 'BAC_VERSION' ) ) {
 	return;
 }
 
-define( 'BAC_VERSION', '2.0.0' );
+define( 'BAC_VERSION', '2.1.0' );
 define( 'BAC_FILE', __FILE__ );
 define( 'BAC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BAC_URL', plugin_dir_url( __FILE__ ) );
@@ -80,6 +80,12 @@ if ( ! function_exists( 'bac_init' ) ) {
 		BAC_Notify::init();
 		BAC_Rest::init();
 		BAC_Widget::init();
+
+		// Rebuild the assistant's copy of the site when the site changes. The
+		// knowledge class is only loaded if one of these actually fires.
+		foreach ( array( 'save_post', 'deleted_post', 'created_term', 'edited_term', 'delete_term' ) as $hook ) {
+			add_action( $hook, array( 'BAC_Knowledge', 'on_change' ) );
+		}
 
 		if ( is_admin() ) {
 			BAC_Admin::init();

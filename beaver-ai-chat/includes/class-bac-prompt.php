@@ -210,6 +210,15 @@ class BAC_Prompt {
 	 * @return string
 	 */
 	private static function finish( $prompt, $s ) {
+		// The greeting is shown by the widget before the visitor types, and a
+		// conversation sent to a provider must start with the visitor, so the
+		// greeting cannot travel as a message. Visitors often answer it
+		// directly ("August"), so the model is told what it opened with.
+		$greeting = trim( self::tokens( (string) $s['greeting'], $s ) );
+		if ( '' !== $greeting ) {
+			$prompt .= "\nOPENING: Before the visitor wrote anything, the chat showed them your greeting: \"" . $greeting . "\" Their first message may be a reply to it.\n";
+		}
+
 		// Some models will otherwise leak internal markup into visible replies
 		// when reasoning is switched off. Stated generically on purpose.
 		$prompt .= "\nDo not include internal or system XML tags in your response. Reply with the answer for the visitor only.\n";

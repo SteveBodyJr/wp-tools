@@ -36,7 +36,25 @@ work in making the assistant sound like you.
 
 **Knowledge tab** — tick the post types it should read (Pages, Products,
 Services, whatever your site uses). If your items store a price in a custom
-field, add that field name under **Price fields**.
+field, add that field name under **Price fields**, and set the **Currency**.
+If the real detail lives in custom fields (ACF and the like), list them under
+**Detail fields**, one per line, with `*` for repeating rows:
+
+```
+overview
+price_note
+itinerary_days_*_day_title
+itinerary_days_*_accommodation_text
+itinerary_days_*_day_description
+included_items_*_item
+excluded_items_*_item
+package_faqs_*_question
+package_faqs_*_answer
+```
+
+The best few matches for each question are then sent in full ("Itinerary day
+4: …", "Included items: …; …"), so the assistant can answer the detailed
+questions visitors actually ask.
 
 **Leads tab** — set the email address that should be alerted, plus your phone,
 WhatsApp and any links the assistant may share.

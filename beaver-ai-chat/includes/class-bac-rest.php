@@ -155,22 +155,26 @@ class BAC_Rest {
 			return self::reply( self::cap_message( $s ), true );
 		}
 
-		$history  = ( isset( $body['messages'] ) && is_array( $body['messages'] ) ) ? $body['messages'] : array();
-		$messages = array();
+		// Only the visitor's newest message is taken from the browser. The
+		// conversation before it is the server's own record for this chat
+		// session, so a visitor cannot put words in the assistant's mouth
+		// ("as you said, the safari is $100") or forge the transcript the
+		// team later reads.
+		$sid      = isset( $body['sid'] ) ? preg_replace( '/[^A-Za-z0-9\-]/', '', (string) $body['sid'] ) : '';
+		$incoming = self::latest_user_message( $body, $s );
 
-		foreach ( array_slice( $history, -1 * (int) $s['history_turns'] ) as $m ) {
-			$role = ( isset( $m['role'] ) && 'assistant' === $m['role'] ) ? 'assistant' : 'user';
-			$text = isset( $m['content'] ) ? trim( wp_strip_all_tags( (string) $m['content'] ) ) : '';
-
-			if ( '' === $text ) {
-				continue;
-			}
-
-			$messages[] = array(
-				'role'    => $role,
-				'content' => mb_substr( $text, 0, (int) $s['msg_max_chars'] ),
-			);
+		if ( '' === $incoming ) {
+			return self::reply( __( 'What would you like to know?', 'beaver-ai-chat' ) );
 		}
+
+		$thread   = self::transcript( $sid, $s );
+		$thread[] = array(
+			'role'    => 'user',
+			'content' => $incoming,
+		);
+
+		// The model sees the recent turns; the lead keeps the whole thread.
+		$messages = array_slice( $thread, -1 * (int) $s['history_turns'] );
 
 		if ( empty( $messages ) ) {
 			return self::reply( __( 'What would you like to know?', 'beaver-ai-chat' ) );
@@ -188,13 +192,14 @@ class BAC_Rest {
 			return self::reply( __( 'I hit a brief snag just then. Please try again in a moment, or contact our team and they will help right away.', 'beaver-ai-chat' ), true );
 		}
 
+		self::remember( $sid, $incoming, $reply, $s );
+
 		// Lead capture is best effort and must never break the visitor's reply.
-		$sid = isset( $body['sid'] ) ? (string) $body['sid'] : '';
 		if ( '' !== $sid ) {
 			try {
 				BAC_Leads::store(
 					$sid,
-					$messages,
+					$thread,
 					$reply,
 					$s,
 					isset( $body['page'] ) ? esc_url_raw( (string) $body['page'] ) : ''
@@ -294,14 +299,119 @@ class BAC_Rest {
 			? sprintf( __( 'Thank you, %s! I have passed your details and notes to our team and they will be in touch shortly.', 'beaver-ai-chat' ), $first )
 			: __( 'Thank you! I have passed your details and notes to our team and they will be in touch shortly.', 'beaver-ai-chat' );
 
+		$reply .= ' ' . __( 'Is there anything else I can help you with in the meantime?', 'beaver-ai-chat' );
+
+		// So the assistant knows, on the next turn, that the team has it.
+		self::remember( $sid, '', $reply, $s );
+
 		return new WP_REST_Response(
 			array(
 				'ok'    => true,
 				'done'  => true,
-				'reply' => $reply . ' ' . __( 'Is there anything else I can help you with in the meantime?', 'beaver-ai-chat' ),
+				'reply' => $reply,
 			),
 			200
 		);
+	}
+
+	/** How long a chat session's record is kept after its last message. */
+	const TRANSCRIPT_TTL = 2 * HOUR_IN_SECONDS;
+
+	/** The most turns kept in a session's record. */
+	const TRANSCRIPT_MAX = 40;
+
+	/**
+	 * The visitor's newest message from the request, cleaned and clipped.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array $body Request body.
+	 * @param array $s    Settings.
+	 * @return string
+	 */
+	private static function latest_user_message( $body, $s ) {
+		$sent = ( isset( $body['messages'] ) && is_array( $body['messages'] ) ) ? $body['messages'] : array();
+
+		foreach ( array_reverse( $sent ) as $m ) {
+			if ( is_array( $m ) && isset( $m['role'], $m['content'] ) && 'user' === $m['role'] ) {
+				$text = trim( wp_strip_all_tags( (string) $m['content'] ) );
+				return '' === $text ? '' : mb_substr( $text, 0, (int) $s['msg_max_chars'] );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * The server's record of a chat session, oldest first. A new session
+	 * starts with the configured greeting, so the saved transcript reads as
+	 * the visitor saw it. (Providers are sent the greeting through the system
+	 * prompt instead: see BAC_Prompt::finish().)
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $sid Chat session id.
+	 * @param array  $s   Settings.
+	 * @return array
+	 */
+	private static function transcript( $sid, $s ) {
+		$saved = '' !== $sid ? get_transient( self::transcript_key( $sid ) ) : false;
+
+		if ( is_array( $saved ) && ! empty( $saved ) ) {
+			return $saved;
+		}
+
+		$greeting = trim( BAC_Prompt::tokens( (string) $s['greeting'], $s ) );
+
+		return '' === $greeting ? array() : array(
+			array(
+				'role'    => 'assistant',
+				'content' => $greeting,
+			),
+		);
+	}
+
+	/**
+	 * Add one exchange to a session's record. Only answered turns are kept: a
+	 * failed turn is retried by the widget with the same message.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $sid      Chat session id.
+	 * @param string $question Visitor's message.
+	 * @param string $answer   Assistant's reply.
+	 * @param array  $s        Settings.
+	 */
+	private static function remember( $sid, $question, $answer, $s ) {
+		if ( '' === $sid ) {
+			return;
+		}
+
+		$record = self::transcript( $sid, $s );
+
+		if ( '' !== $question ) {
+			$record[] = array(
+				'role'    => 'user',
+				'content' => $question,
+			);
+		}
+
+		$record[] = array(
+			'role'    => 'assistant',
+			'content' => (string) $answer,
+		);
+
+		set_transient( self::transcript_key( $sid ), array_slice( $record, -1 * self::TRANSCRIPT_MAX ), self::TRANSCRIPT_TTL );
+	}
+
+	/**
+	 * Transient name for a session's record.
+	 *
+	 * @param string $sid Chat session id.
+	 * @return string
+	 */
+	private static function transcript_key( $sid ) {
+		return 'bac_conv_' . md5( $sid );
 	}
 
 	/**

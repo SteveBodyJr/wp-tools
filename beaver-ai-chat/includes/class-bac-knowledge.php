@@ -118,6 +118,8 @@ class BAC_Knowledge {
 		$price_keys = BAC_Settings::to_list( $s['kb_price_meta'] );
 		$extra_keys = BAC_Settings::to_list( $s['kb_extra_meta'] );
 		$exclude    = array_map( 'sanitize_title', BAC_Settings::to_list( $s['kb_exclude'] ) );
+		$details    = BAC_Settings::to_list( $s['kb_detail_meta'] );
+		$detail_max = (int) $s['kb_detail_chars'];
 
 		$items      = array();
 		$taxonomies = array();
@@ -153,7 +155,9 @@ class BAC_Knowledge {
 					continue;
 				}
 
-				$title = get_the_title( $post );
+				// get_the_title() is display HTML: "Booking &#038; Payment Terms".
+				// The model reads plain text, and so does the matcher.
+				$title = html_entity_decode( wp_strip_all_tags( get_the_title( $post ) ), ENT_QUOTES, 'UTF-8' );
 				$line  = '- ' . $title;
 				$meta  = '';
 
@@ -176,6 +180,7 @@ class BAC_Knowledge {
 					$line .= ' [' . $permalink . ']';
 				}
 
+				$head = $line;
 				$body = self::clip(
 					'' !== trim( (string) $post->post_content ) ? $post->post_content : $post->post_excerpt,
 					$item_chars
@@ -184,14 +189,21 @@ class BAC_Knowledge {
 					$line .= "\n  " . $body;
 				}
 
+				// The full record, used only for the few items that best match
+				// a question: the short line says a tour exists, this says what
+				// happens on day three and what the price leaves out.
+				$detail = self::detail( $post->ID, $details, $detail_max );
+				$full   = '' !== $detail ? $head . "\n  " . str_replace( "\n", "\n  ", $detail ) : $line;
+
 				$items[] = array(
 					'group' => strtoupper( $label ),
 					'title' => $title,
 					'line'  => $line,
+					'full'  => $full,
 					// Lowercased once here so scoring a message is only string
 					// searching, not case folding the whole site per turn.
 					'tl'    => self::fold( $title ),
-					'bl'    => self::fold( $title . ' ' . $body . ' ' . $meta ),
+					'bl'    => self::fold( $title . ' ' . $body . ' ' . $meta . ' ' . $detail ),
 				);
 			}
 		}
@@ -248,6 +260,26 @@ class BAC_Knowledge {
 	}
 
 	/**
+	 * Every item as its one-line summary (title, price, link), no body text.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array $index Index.
+	 * @param array $s     Settings.
+	 * @return string
+	 */
+	private static function compact( $index, $s ) {
+		$items = array();
+
+		foreach ( $index['items'] as $item ) {
+			$item['line'] = strtok( $item['line'], "\n" );
+			$items[]      = $item;
+		}
+
+		return self::assemble( $items, $index['taxonomies'], '', $s );
+	}
+
+	/**
 	 * The entries that answer this question, plus a catalogue of everything
 	 * else so nothing the site offers can be denied outright.
 	 *
@@ -272,11 +304,13 @@ class BAC_Knowledge {
 			}
 		}
 
-		// Nothing matched: the visitor is asking something general, or in a
-		// language the index is not written in. Fall back to the whole digest
-		// rather than answering from an empty page.
+		// Nothing matched: the visitor is asking something general ("is it
+		// safe?"), or in a language the index is not written in. Send every
+		// item's one-line summary rather than every item's text: the model
+		// still sees the whole range with prices and links, at a fraction of
+		// the size, and the team notes carry the general answers.
 		if ( empty( $scored ) ) {
-			return self::everything( $index, $s );
+			return self::compact( $index, $s );
 		}
 
 		usort(
@@ -290,6 +324,17 @@ class BAC_Knowledge {
 		);
 
 		$top = array_slice( $scored, 0, max( 1, (int) $s['kb_top_k'] ) );
+
+		// The strongest few matches are sent in full, with their detail fields,
+		// and every match carries its rank so the best ones are given room
+		// first when the budget is tight.
+		foreach ( array_keys( $top ) as $rank ) {
+			$top[ $rank ]['item']['rank'] = $rank;
+
+			if ( $rank < (int) $s['kb_expand'] && ! empty( $top[ $rank ]['item']['full'] ) ) {
+				$top[ $rank ]['item']['line'] = $top[ $rank ]['item']['full'];
+			}
+		}
 
 		// Put them back in the site's order so the digest still reads as a list
 		// rather than a ranking.
@@ -363,7 +408,7 @@ class BAC_Knowledge {
 			if ( mb_strlen( $word ) < 3 || in_array( $word, $stop, true ) ) {
 				continue;
 			}
-			$out[ $word ] = true;
+			$out[ self::singular( $word ) ] = true;
 		}
 
 		// Long messages are mostly noise after the first dozen useful words.
@@ -432,11 +477,81 @@ class BAC_Knowledge {
 	 * @return string
 	 */
 	private static function assemble( $items, $taxonomies, $catalogue, $s ) {
-		$budget  = (int) $s['kb_budget'];
-		$grouped = array();
+		$budget = (int) $s['kb_budget'];
 
-		foreach ( $items as $item ) {
-			$grouped[ $item['group'] ][] = $item['line'];
+		// The categories and the catalogue of everything else are what stop
+		// the assistant denying something the site offers, so their room is
+		// set aside first. Clipped last, they used to be the first thing lost
+		// whenever the detailed matches filled the budget.
+		$tail = array();
+		foreach ( $taxonomies as $line ) {
+			$tail[] = $line . "\n";
+		}
+		if ( '' !== $catalogue ) {
+			$tail[] = $catalogue;
+		}
+
+		// Each tail chunk is counted as the final loop counts it.
+		$reserve = 0;
+		foreach ( $tail as $chunk ) {
+			$reserve += mb_strlen( $chunk );
+		}
+
+		$room = max( (int) ( $budget * 0.4 ), $budget - $reserve );
+
+		// Whole items only, best match first: room is handed out by rank, and
+		// the result is then written in the site's own order.
+		$order = array_keys( $items );
+		usort(
+			$order,
+			static function ( $a, $b ) use ( $items ) {
+				$ra = isset( $items[ $a ]['rank'] ) ? $items[ $a ]['rank'] : PHP_INT_MAX;
+				$rb = isset( $items[ $b ]['rank'] ) ? $items[ $b ]['rank'] : PHP_INT_MAX;
+				return ( $ra === $rb ) ? $a - $b : $ra - $rb;
+			}
+		);
+
+		// Every item first gets its first line, so nothing selected can go
+		// missing; then, best match first, items are upgraded to their full
+		// text while the room lasts.
+		// Room is counted exactly as the output is written: each group adds
+		// its "NAME:" header line and a closing line break.
+		$kept   = array();
+		$used   = 0;
+		$headed = array();
+
+		foreach ( $order as $key ) {
+			$head  = strtok( $items[ $key ]['line'], "\n" );
+			$group = $items[ $key ]['group'];
+			$cost  = mb_strlen( $head ) + 1 + ( isset( $headed[ $group ] ) ? 0 : mb_strlen( $group ) + 2 );
+
+			if ( $used + $cost > $room ) {
+				continue; // Only on a site far larger than the budget.
+			}
+
+			$kept[ $key ]     = $head;
+			$headed[ $group ] = true;
+			$used            += $cost;
+		}
+
+		foreach ( $order as $key ) {
+			if ( ! isset( $kept[ $key ] ) ) {
+				continue;
+			}
+
+			$extra = mb_strlen( $items[ $key ]['line'] ) - mb_strlen( $kept[ $key ] );
+
+			if ( $extra > 0 && $used + $extra <= $room ) {
+				$kept[ $key ] = $items[ $key ]['line'];
+				$used        += $extra;
+			}
+		}
+
+		ksort( $kept );
+
+		$grouped = array();
+		foreach ( $kept as $key => $line ) {
+			$grouped[ $items[ $key ]['group'] ][] = $line;
 		}
 
 		$parts = array();
@@ -445,13 +560,7 @@ class BAC_Knowledge {
 			$parts[] = $group . ":\n" . implode( "\n", $lines ) . "\n";
 		}
 
-		foreach ( $taxonomies as $line ) {
-			$parts[] = $line . "\n";
-		}
-
-		if ( '' !== $catalogue ) {
-			$parts[] = $catalogue;
-		}
+		$parts = array_merge( $parts, $tail );
 
 		/**
 		 * Filter the knowledge chunks before they are assembled and clipped.
@@ -468,9 +577,9 @@ class BAC_Knowledge {
 			if ( $used >= $budget ) {
 				break;
 			}
-			$room = $budget - $used;
-			if ( mb_strlen( $chunk ) > $room ) {
-				$chunk = rtrim( mb_substr( $chunk, 0, $room ) ) . "…\n";
+			$left = $budget - $used;
+			if ( mb_strlen( $chunk ) > $left ) {
+				$chunk = rtrim( mb_substr( $chunk, 0, $left ) ) . "…\n";
 			}
 			$out  .= $chunk . "\n";
 			$used += mb_strlen( $chunk );
@@ -479,7 +588,256 @@ class BAC_Knowledge {
 		return trim( $out );
 	}
 
+
 	/* ------------------------------------------------------------------ Bits */
+
+	/**
+	 * A plural search word cut back to its singular, so "safaris" finds the
+	 * pages that say "safari". Matching is by substring, so the singular still
+	 * finds the plural, never the other way round. English only, and only the
+	 * regular endings; anything else is left as typed.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $word Folded word.
+	 * @return string
+	 */
+	private static function singular( $word ) {
+		if ( mb_strlen( $word ) <= 4 ) {
+			return $word;
+		}
+		if ( 'ies' === mb_substr( $word, -3 ) ) {
+			return mb_substr( $word, 0, -3 ) . 'y';
+		}
+		if ( 's' === mb_substr( $word, -1 ) && 'ss' !== mb_substr( $word, -2 ) && 'us' !== mb_substr( $word, -2 ) ) {
+			return mb_substr( $word, 0, -1 );
+		}
+		return $word;
+	}
+
+	/**
+	 * An item's detail fields as readable text.
+	 *
+	 * A plain key ("overview") becomes "Overview: …". A key with * is a
+	 * repeating row, as ACF stores repeaters: itinerary_days_0_day_title,
+	 * itinerary_days_1_day_title and so on. Rows sharing a prefix are read
+	 * together in order, so itinerary_days_*_day_title with
+	 * itinerary_days_*_day_description becomes "Itinerary day 1: title.
+	 * description." A repeater with one field per row, such as
+	 * included_items_*_item, becomes one list: "Included items: a; b; c."
+	 *
+	 * Bare numbers in a repeater are skipped: there they are almost always
+	 * the ID of a linked post, which means nothing to a visitor.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param array $specs   Field names, * for a row number.
+	 * @param int   $max     Character limit.
+	 * @return string
+	 */
+	private static function detail( $post_id, $specs, $max ) {
+		if ( empty( $specs ) ) {
+			return '';
+		}
+
+		$all    = get_post_meta( $post_id );
+		$blocks = array();
+		$rows   = array();
+
+		foreach ( $specs as $spec ) {
+			if ( false === strpos( $spec, '*' ) ) {
+				$value = self::field_text( isset( $all[ $spec ][0] ) ? $all[ $spec ][0] : '' );
+				if ( '' !== $value ) {
+					$blocks[ $spec ] = self::label( $spec ) . ': ' . $value;
+				}
+				continue;
+			}
+
+			list( $prefix, $suffix ) = explode( '*', $spec, 2 );
+			$pattern = '/^' . preg_quote( $prefix, '/' ) . '(\d+)' . preg_quote( $suffix, '/' ) . '$/';
+
+			if ( ! isset( $rows[ $prefix ] ) ) {
+				$rows[ $prefix ]   = array();
+				$blocks[ $prefix ] = null; // Keeps its place in the order.
+			}
+
+			foreach ( $all as $key => $values ) {
+				if ( preg_match( $pattern, $key, $m ) ) {
+					$value = self::field_text( $values[0] );
+					if ( '' !== $value && ! is_numeric( $value ) ) {
+						$rows[ $prefix ][ (int) $m[1] ][ $suffix ] = $value;
+					}
+				}
+			}
+		}
+
+		foreach ( $rows as $prefix => $found ) {
+			if ( empty( $found ) ) {
+				unset( $blocks[ $prefix ] );
+				continue;
+			}
+
+			ksort( $found );
+			$suffixes = array();
+			foreach ( $found as $cells ) {
+				$suffixes += array_flip( array_keys( $cells ) );
+			}
+
+			$label = self::label( $prefix );
+
+			if ( 1 === count( $suffixes ) ) {
+				$list = array();
+				foreach ( $found as $cells ) {
+					$list[] = rtrim( reset( $cells ), '.' );
+				}
+				$blocks[ $prefix ] = $label . ': ' . implode( '; ', $list ) . '.';
+			} else {
+				// "Itinerary days" → "Itinerary day 1: …", numbered from 1.
+				$row   = ucfirst( self::singular( strtolower( $label ) ) );
+				$lines = array();
+				$n     = 0;
+				foreach ( $found as $cells ) {
+					// The first field (a day's title) leads; the rest go
+					// shortest first, so short facts such as the night's lodge
+					// come before long prose and survive any trimming.
+					$first = array_shift( $cells );
+					usort(
+						$cells,
+						static function ( $a, $b ) {
+							return mb_strlen( $a ) - mb_strlen( $b );
+						}
+					);
+					array_unshift( $cells, $first );
+
+					$cells   = array_map( 'rtrim', $cells, array_fill( 0, count( $cells ), '. ' ) );
+					$lines[] = $row . ' ' . ( ++$n ) . ': ' . implode( '. ', $cells ) . '.';
+				}
+				$blocks[ $prefix ] = implode( "\n", $lines );
+			}
+		}
+
+		return self::fit( array_filter( $blocks ), $max );
+	}
+
+	/**
+	 * Fit detail blocks into a character limit without losing any of them.
+	 *
+	 * Cutting the joined text at the limit loses whatever was listed last,
+	 * which on a long tour was the exclusions: the assistant then told a
+	 * visitor they "are not spelled out". Instead the limit is shared out:
+	 * blocks shorter than an even share are kept whole (lists, price notes),
+	 * and the long ones (an overview, an itinerary) split what is left. A
+	 * block of several rows is trimmed row by row, so a long itinerary keeps
+	 * every day, each a little shorter, rather than losing its last days.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array $blocks Text blocks, rows separated by line breaks.
+	 * @param int   $max    Character limit.
+	 * @return string
+	 */
+	private static function fit( $blocks, $max ) {
+		$blocks = array_values( $blocks );
+		$total  = 0;
+
+		foreach ( $blocks as $block ) {
+			$total += mb_strlen( $block ) + 1;
+		}
+
+		if ( $total <= $max ) {
+			return trim( implode( "\n", $blocks ) );
+		}
+
+		// Even shares, smallest first; whatever a short block does not use
+		// passes on to the longer ones.
+		$sizes = array_map( 'mb_strlen', $blocks );
+		asort( $sizes );
+
+		$left  = $max - count( $blocks );
+		$count = count( $blocks );
+		$caps  = array();
+
+		foreach ( $sizes as $i => $size ) {
+			$share      = (int) floor( $left / $count );
+			$caps[ $i ] = min( $size, $share );
+			$left      -= $caps[ $i ];
+			$count--;
+		}
+
+		foreach ( $blocks as $i => $block ) {
+			if ( mb_strlen( $block ) <= $caps[ $i ] ) {
+				continue;
+			}
+
+			$rows = explode( "\n", $block );
+			$each = max( 40, (int) floor( $caps[ $i ] / count( $rows ) ) - 1 );
+
+			foreach ( $rows as $r => $row ) {
+				if ( mb_strlen( $row ) > $each ) {
+					$rows[ $r ] = rtrim( mb_substr( $row, 0, $each - 1 ) ) . '…';
+				}
+			}
+
+			$blocks[ $i ] = implode( "\n", $rows );
+		}
+
+		return trim( implode( "\n", $blocks ) );
+	}
+
+	/**
+	 * One stored field value as a single line of plain text: arrays joined,
+	 * markup, shortcodes and HTML comments removed, entities decoded.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param mixed $raw Stored value.
+	 * @return string
+	 */
+	private static function field_text( $raw ) {
+		$value = maybe_unserialize( $raw );
+
+		if ( is_array( $value ) ) {
+			$value = implode( ', ', array_filter( array_map( 'strval', array_filter( $value, 'is_scalar' ) ), 'strlen' ) );
+		}
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		return self::clip( (string) $value, 100000 );
+	}
+
+	/**
+	 * "itinerary_days_" reads as "Itinerary days".
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $key Field name or prefix.
+	 * @return string
+	 */
+	private static function label( $key ) {
+		return ucfirst( trim( str_replace( array( '_', '-' ), ' ', ltrim( $key, '_' ) ) ) );
+	}
+
+	/**
+	 * Drop the cached index when content it was built from changes, so a new
+	 * price or itinerary reaches the assistant on the next message rather than
+	 * hours later. Registered from bac_init(); the class only loads when one
+	 * of these actually fires.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $post_id Post ID, or a term ID for the term hooks.
+	 */
+	public static function on_change( $post_id = 0 ) {
+		if ( doing_action( 'save_post' ) || doing_action( 'deleted_post' ) ) {
+			if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || BAC_LEAD_CPT === get_post_type( $post_id ) ) {
+				return;
+			}
+		}
+
+		self::flush_cache();
+	}
 
 	/**
 	 * Lowercase, strip punctuation, collapse whitespace: the form both the
@@ -566,7 +924,11 @@ class BAC_Knowledge {
 	private static function format_price( $amount ) {
 		$symbol = '';
 
-		if ( function_exists( 'get_woocommerce_currency_symbol' ) ) {
+		$own = trim( (string) BAC_Settings::get( 'kb_currency', '' ) );
+
+		if ( '' !== $own ) {
+			$symbol = $own;
+		} elseif ( function_exists( 'get_woocommerce_currency_symbol' ) ) {
 			$symbol = html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' );
 		}
 

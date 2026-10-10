@@ -4,7 +4,7 @@ Tags: ai, chat, chatbot, live chat, lead generation
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -209,6 +209,28 @@ variable. Create a template with one body variable in your Meta account, wait
 for approval, and put its name in the settings.
 
 == Changelog ==
+
+= 2.1.0 =
+* New: Detail fields. List the custom fields that hold an item's real detail
+  (an overview, a day-by-day itinerary, inclusions, exclusions, FAQs), with *
+  for repeating rows such as itinerary_days_*_day_title. The best few matches
+  for a question are sent in full, so the assistant can answer "what is
+  included" or "where do we sleep on day 4" instead of guessing.
+* New: a Currency setting, so prices read "from $5,675" rather than "from 5675".
+* New: the assistant's copy of the site refreshes as soon as a post or term is
+  saved, instead of up to six hours later.
+* Improved: the catalogue of everything the site offers is now always sent in
+  full. It used to be cut off whenever the detailed matches filled the budget,
+  and the assistant could then deny a tour the site sells.
+* Improved: long details are shortened fairly. Short lists such as exclusions
+  stay whole and each itinerary day is trimmed, rather than the end being cut.
+* Improved: "safaris" now finds pages that say "safari". A question that matches
+  nothing sends a compact one-line catalogue instead of the whole site.
+* Security: the server keeps its own record of each conversation and takes only
+  the visitor's newest message from the browser, so a visitor can no longer
+  forge what the assistant said, to steer it or to plant it in a saved
+  transcript. The model is told the greeting it opened with.
+* Fixed: titles reached the assistant as HTML ("Booking &#038; Payment Terms").
 
 = 2.0.0 =
 * Redesigned: the widget now takes on the site's look instead of imposing its

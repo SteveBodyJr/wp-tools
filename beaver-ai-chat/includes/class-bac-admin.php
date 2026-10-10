@@ -1195,6 +1195,24 @@ class BAC_Admin {
 				</tr>
 
 				<tr>
+					<th scope="row"><label for="bac-kb-detail-meta"><?php esc_html_e( 'Detail fields', 'beaver-ai-chat' ); ?></label></th>
+					<td>
+						<?php self::textarea( 'kb_detail_meta', $s, 5 ); ?>
+						<p class="description">
+							<?php esc_html_e( 'Custom fields that hold the real detail of an item, one per line: an overview, a day-by-day itinerary, what is included, FAQs. Use * for repeating rows, so itinerary_days_*_day_title reads every day in order. These are read in full for the items that best match a question, so the assistant can answer "what is included" or "what happens on day 3" instead of guessing.', 'beaver-ai-chat' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr>
+					<th scope="row"><label for="bac-kb-currency"><?php esc_html_e( 'Currency', 'beaver-ai-chat' ); ?></label></th>
+					<td>
+						<?php self::text( 'kb_currency', $s, __( 'For example $ or US$ or TSh', 'beaver-ai-chat' ), 'small-text' ); ?>
+						<p class="description"><?php esc_html_e( 'Written before numeric prices, so "from 5675" becomes "from $5,675". Leave blank to use WooCommerce\'s currency when it is installed.', 'beaver-ai-chat' ); ?></p>
+					</td>
+				</tr>
+
+				<tr>
 					<th scope="row"><label for="bac-context"><?php esc_html_e( 'Extra knowledge', 'beaver-ai-chat' ); ?></label></th>
 					<td>
 						<?php self::textarea( 'context', $s, 6 ); ?>
@@ -1207,6 +1225,8 @@ class BAC_Admin {
 					<td>
 						<p><label><?php esc_html_e( 'Items per content type', 'beaver-ai-chat' ); ?> <?php self::number( 'kb_per_type', $s, 1, 200 ); ?></label></p>
 						<p><label><?php esc_html_e( 'Characters per item', 'beaver-ai-chat' ); ?> <?php self::number( 'kb_item_chars', $s, 80, 4000 ); ?></label></p>
+						<p><label><?php esc_html_e( 'Read in full for the best matches', 'beaver-ai-chat' ); ?> <?php self::number( 'kb_expand', $s, 0, 10 ); ?></label></p>
+						<p><label><?php esc_html_e( 'Characters of detail per item', 'beaver-ai-chat' ); ?> <?php self::number( 'kb_detail_chars', $s, 200, 12000 ); ?></label></p>
 						<p><label><?php esc_html_e( 'Total character budget', 'beaver-ai-chat' ); ?> <?php self::number( 'kb_budget', $s, 1000, 60000 ); ?></label></p>
 						<p><label><?php esc_html_e( 'Rebuild after (hours)', 'beaver-ai-chat' ); ?> <?php self::number( 'kb_cache_hours', $s, 0, 168 ); ?></label></p>
 						<p class="description"><?php esc_html_e( 'A bigger budget means a better informed assistant and a higher cost per message. Around 14000 characters is a sensible balance.', 'beaver-ai-chat' ); ?></p>

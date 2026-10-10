@@ -83,6 +83,10 @@ class BAC_Settings {
 			'kb_cache_hours'   => 6,
 			'kb_price_meta'    => 'price, from_price, _price, _regular_price',
 			'kb_extra_meta'    => 'duration, location, sku',
+			'kb_detail_meta'   => '',
+			'kb_expand'        => 3,
+			'kb_detail_chars'  => 3000,
+			'kb_currency'      => '',
 			'kb_exclude'       => 'privacy-policy, terms, terms-and-conditions, terms-of-service, cookie-policy, disclaimer, cart, checkout, my-account',
 
 			/* ---- Contact details & links ------------------------------- */
@@ -567,6 +571,10 @@ class BAC_Settings {
 		$out['kb_cache_hours']  = self::clamp_int( $in, 'kb_cache_hours', 0, 168, $def['kb_cache_hours'] );
 		$out['kb_price_meta']   = self::text( $in, 'kb_price_meta' );
 		$out['kb_extra_meta']   = self::text( $in, 'kb_extra_meta' );
+		$out['kb_detail_meta']  = self::textarea( $in, 'kb_detail_meta' );
+		$out['kb_expand']       = self::clamp_int( $in, 'kb_expand', 0, 10, $def['kb_expand'] );
+		$out['kb_detail_chars'] = self::clamp_int( $in, 'kb_detail_chars', 200, 12000, $def['kb_detail_chars'] );
+		$out['kb_currency']     = self::text( $in, 'kb_currency' );
 		$out['kb_exclude']      = self::textarea( $in, 'kb_exclude' );
 
 		/* ---- Contact ---------------------------------------------------- */
