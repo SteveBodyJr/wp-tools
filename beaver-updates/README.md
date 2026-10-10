@@ -75,9 +75,19 @@ fleet hammers an endpoint that is already unhappy.
 
 ## What it will not install
 
-A package is only offered if its URL is published where this channel publishes.
-A manifest that had been tampered with cannot point an install at somebody
-else's archive.
+A package is only offered if its URL is published where this channel publishes:
+after the releases folder there must be exactly a tag and a `.zip` file name, so a
+`../` cannot climb out into somebody else's repository.
+
+Every archive is checked against the `sha256` the manifest publishes for it before
+WordPress unpacks it (1.3.0+). A mismatch installs nothing and leaves the site as
+it was. `tools/build-manifest.php` writes the hash of the local zip, so the zip
+uploaded as the release asset must be that exact file; `gh release view <tag>
+--json assets` shows GitHub's own digest to compare.
+
+What the checksum does not defend against is someone who controls the GitHub
+account itself: they could change the manifest and the archive together. That
+would need the manifest signed with a key kept off GitHub.
 
 Entries are also validated before use: anything missing a version or a package
 is dropped rather than half trusted, and our data is written into the update

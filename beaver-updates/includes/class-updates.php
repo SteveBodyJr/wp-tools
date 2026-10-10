@@ -45,6 +45,69 @@ final class Beaver_Updates_Updates {
 		add_filter( 'plugins_api', array( __CLASS__, 'details' ), 20, 3 );
 		add_filter( 'plugin_row_meta', array( __CLASS__, 'row_meta' ), 10, 2 );
 		add_action( 'load-update-core.php', array( __CLASS__, 'on_force_check' ) );
+		add_filter( 'upgrader_pre_download', array( __CLASS__, 'verified_download' ), 10, 2 );
+	}
+
+	/**
+	 * Downloads one of our packages and checks it before WordPress unpacks it.
+	 *
+	 * The manifest publishes a SHA-256 for every archive. The file that
+	 * arrives has to match it exactly, or nothing is installed. That catches
+	 * a release asset replaced after its version was published, a truncated
+	 * or corrupted download, and a cache serving a stale archive under a new
+	 * version's name. Each of these would otherwise be unpacked over a
+	 * working plugin.
+	 *
+	 * Every install path goes through here: Plugins → Updates, automatic
+	 * updates, WP-CLI, and this plugin's own Install button.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param bool|string|WP_Error $reply   Result so far; false means "not handled yet".
+	 * @param string               $package Package URL.
+	 * @return bool|string|WP_Error Path to the verified file, an error, or $reply untouched.
+	 */
+	public static function verified_download( $reply, $package ) {
+		if ( false !== $reply ) {
+			return $reply;
+		}
+
+		$entry = Beaver_Updates_Channel::entry_for_package( $package );
+
+		// Not ours, or published before checksums: WordPress downloads it as
+		// usual. empty() rather than a comparison, because a manifest cached
+		// by 1.2.0 has no sha256 key at all until it is next fetched.
+		if ( null === $entry || empty( $entry['sha256'] ) ) {
+			return $reply;
+		}
+
+		if ( ! function_exists( 'download_url' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$file = download_url( $package, 300 );
+
+		if ( is_wp_error( $file ) ) {
+			return $file;
+		}
+
+		$actual = (string) hash_file( 'sha256', $file );
+
+		if ( ! hash_equals( $entry['sha256'], $actual ) ) {
+			wp_delete_file( $file );
+
+			return new WP_Error(
+				'beaver_updates_checksum',
+				sprintf(
+					/* translators: 1: plugin name, 2: version. */
+					__( 'The download of %1$s %2$s did not match the checksum published for it, so it was not installed. Nothing on this site was changed.', 'beaver-updates' ),
+					$entry['name'],
+					$entry['version']
+				)
+			);
+		}
+
+		return $file;
 	}
 
 	/**
@@ -129,9 +192,18 @@ final class Beaver_Updates_Updates {
 			$transient->no_update = array();
 		}
 
-		if ( ! function_exists( 'get_plugin_data' ) ) {
+		/*
+		 * This filter runs every time anything reads the update transient,
+		 * which is several times on every admin page. get_plugins() is cached
+		 * for the request and cleared by WordPress after an install or
+		 * update, so it stays accurate. Reading each plugin file again with
+		 * get_plugin_data(), as 1.2.0 did, cost a file read per plugin per call.
+		 */
+		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
+
+		$installed = get_plugins();
 
 		foreach ( self::ours() as $plugin_file => $slug ) {
 			$entry = Beaver_Updates_Channel::plugin( $slug );
@@ -140,8 +212,7 @@ final class Beaver_Updates_Updates {
 				continue;
 			}
 
-			$installed = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file, false, false );
-			$current   = isset( $installed['Version'] ) ? (string) $installed['Version'] : '0';
+			$current = isset( $installed[ $plugin_file ]['Version'] ) ? (string) $installed[ $plugin_file ]['Version'] : '0';
 
 			$update = self::build( $plugin_file, $entry );
 

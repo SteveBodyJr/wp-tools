@@ -277,7 +277,26 @@ final class Beaver_Updates_Admin {
 			return new WP_Error( 'beaver_updates_unknown', __( 'That is not a plugin from this channel.', 'beaver-updates' ) );
 		}
 
-		$activated = activate_plugin( $plugin_file );
+		/*
+		 * The redirect is what core's own Activate link uses as a sandbox.
+		 * WordPress sends it as a header before loading the plugin. If the
+		 * plugin dies with a fatal error, the browser follows that header
+		 * back to this screen with a message, instead of a white page.
+		 * On success the caller's redirect replaces it.
+		 */
+		$sandbox = add_query_arg(
+			'bu_error',
+			rawurlencode(
+				sprintf(
+					/* translators: %s: plugin folder. */
+					__( '%s stopped with a fatal error while activating, so it was left inactive. Check the PHP error log for the reason.', 'beaver-updates' ),
+					dirname( $plugin_file )
+				)
+			),
+			self::url()
+		);
+
+		$activated = activate_plugin( $plugin_file, $sandbox );
 
 		return is_wp_error( $activated ) ? $activated : true;
 	}

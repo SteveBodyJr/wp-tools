@@ -240,7 +240,39 @@ final class Beaver_Updates_Channel {
 	 * @return bool
 	 */
 	public static function is_allowed_package( $package ) {
-		return 0 === strpos( (string) $package, self::PACKAGE_PREFIX );
+		$package = (string) $package;
+
+		if ( 0 !== strpos( $package, self::PACKAGE_PREFIX ) ) {
+			return false;
+		}
+
+		/*
+		 * A prefix match alone is not containment. "…/releases/download/../../../
+		 * someone-else/repo/…" starts with the right text and, once the dot
+		 * segments are resolved, names another repository's release. What
+		 * follows the prefix has to be exactly a tag and a zip file, each made
+		 * of ordinary characters and neither starting with a dot.
+		 */
+		return 1 === preg_match( '#^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\.zip$#', substr( $package, strlen( self::PACKAGE_PREFIX ) ) )
+			&& false === strpos( $package, '..' );
+	}
+
+	/**
+	 * Finds the manifest entry that publishes a package URL.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $package Package URL.
+	 * @return array|null Entry, or null when this channel did not publish it.
+	 */
+	public static function entry_for_package( $package ) {
+		foreach ( self::plugins() as $entry ) {
+			if ( $entry['package'] === (string) $package ) {
+				return $entry;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -297,8 +329,13 @@ final class Beaver_Updates_Channel {
 				continue;
 			}
 
+			// A malformed checksum is dropped rather than trusted. An entry
+			// without one still installs; one with a checksum must match it.
+			$sha256 = isset( $entry['sha256'] ) ? strtolower( trim( (string) $entry['sha256'] ) ) : '';
+
 			$clean[ $slug ] = array(
 				'slug'         => $slug,
+				'sha256'       => preg_match( '/^[a-f0-9]{64}$/', $sha256 ) ? $sha256 : '',
 				'name'         => isset( $entry['name'] ) ? sanitize_text_field( (string) $entry['name'] ) : $slug,
 				'description'  => isset( $entry['description'] ) ? sanitize_text_field( (string) $entry['description'] ) : '',
 				'version'      => $version,
@@ -353,6 +390,14 @@ final class Beaver_Updates_Channel {
 	 * @return bool
 	 */
 	public static function is_allowed_image( $url ) {
+		$url = (string) $url;
+
+		// Same containment rule as packages: no dot segments, and nothing
+		// encoded that could become one once the server decodes it.
+		if ( false !== strpos( $url, '..' ) || false !== strpos( $url, '\\' ) || preg_match( '/%2e|%2f|%5c/i', $url ) ) {
+			return false;
+		}
+
 		foreach ( self::IMAGE_PREFIXES as $prefix ) {
 			if ( 0 === strpos( (string) $url, $prefix ) ) {
 				return true;

@@ -98,6 +98,10 @@ foreach ( glob( 'beaver-*', GLOB_ONLYDIR ) as $slug ) {
 		'author'       => $header( 'Author' ),
 		'homepage'     => REPO . '/tree/main/' . $slug,
 		'package'      => sprintf( '%s/releases/download/%s-%s/%s', REPO, $slug, $version, $archive ),
+		// Checked by beaver-updates 1.3.0+ before anything is unpacked. It is
+		// the hash of the local zip, so upload exactly this file as the release
+		// asset and confirm with `gh release view <tag> --json assets`.
+		'sha256'       => file_exists( $archive ) ? hash_file( 'sha256', $archive ) : '',
 	);
 
 	// Icons for Plugins -> Updates (beaver-updates 1.2.0+), from the plugin's own assets.

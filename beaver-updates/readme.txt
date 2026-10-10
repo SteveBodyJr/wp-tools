@@ -6,7 +6,7 @@ Tags: updates, plugin updates, self hosted, maintenance
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,12 @@ No. It fetches a static file and sends nothing but the request itself.
 
 == Changelog ==
 
+= 1.3.0 =
+* **Every download is checked before it is installed.** The manifest now publishes a SHA-256 for each archive, and the file that arrives has to match it exactly or nothing is unpacked. This catches a release asset replaced after its version was published, a truncated or corrupted download, and a stale cached archive. It applies to every route: Plugins → Updates, automatic updates, WP-CLI and the Install button.
+* **Package addresses are checked properly.** 1.2.0 only checked that an address began with the channel's releases folder, so `…/releases/download/../../../someone-else/…` passed. Now what follows has to be exactly a release tag and a zip file name. Icon and banner addresses get the same rule.
+* **Activate from this screen is sandboxed** the way core's Activate link is. A plugin that crashes while activating now brings you back here with a message, instead of a white screen, and is left inactive.
+* **Less work on every admin page.** The update data used to re-read every plugin file each time WordPress looked at it, several times per page. It now uses WordPress's cached plugin list.
+
 = 1.2.0 =
 * Plugin icons (and banners) from the manifest on Plugins -> Updates and in the details window; only images published in the wp-tools repository are shown.
 * WordPress's own "Check again" (Dashboard -> Updates) now reads the manifest afresh too, so a newly published plugin or version shows at once (a manifest fetched in the last minute is kept).
@@ -84,6 +90,9 @@ No. It fetches a static file and sends nothing but the request itself.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Checks every download against a published checksum before installing it, and closes a gap in the package address check. Recommended for every site.
 
 = 1.1.0 =
 Adds a browsable list of the plugins this site does not have yet, and an install button for each.
