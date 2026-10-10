@@ -15,7 +15,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | Plugin | Version | What it does |
 |---|---|---|
 | [beaver-ai-chat](beaver-ai-chat/README.md) | 2.1.0 | AI chat assistant that answers from your own content, captures leads, hands off to your team. Works with Claude, ChatGPT, Gemini and more, with backups. |
-| [beaver-access](beaver-access/README.md) | 1.0.2 | Temporary login links. Time-limited access at a chosen role, no password shared. |
+| [beaver-access](beaver-access/README.md) | 1.0.3 | Temporary login links. Time-limited access at a chosen role, no password shared. |
 | [beaver-alt-text](beaver-alt-text/README.md) | 1.2.0 | Writes alt text for images that have none, using a vision model. Reviewed before publishing. |
 | [beaver-appbar](beaver-appbar/README.md) | 1.0.0 | Gives a site the bottom tab bar of a phone app. Any theme, no external request. |
 | [beaver-chameleon](beaver-chameleon/README.md) | 1.1.0 | A daily-mutating honeypot and a human-interaction trap for the comment and login forms. Invisible to visitors, every block logged. |
@@ -29,7 +29,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | [beaver-sync](beaver-sync/README.md) | 1.0.0 | Brings the live site's media down to a local copy over HTTPS. Read-only on the live site. |
 | [beaver-shutter](beaver-shutter/README.md) | 1.0.0 | Puts a holding page over the front end for a launch window or a migration, and takes it off again. wp-admin is never touched. |
 | [beaver-translate](beaver-translate/README.md) | 1.5.0 | AI-drafted translations for posts and pages, reviewed by a human before anything goes live, each published at its own /fr/ address. |
-| [beaver-updates](beaver-updates/README.md) | 1.2.0 | Puts the others into Plugins → Updates, and lists the ones a site is missing so they can be added in a click. |
+| [beaver-updates](beaver-updates/README.md) | 1.3.0 | Puts the others into Plugins → Updates, and lists the ones a site is missing so they can be added in a click. |
 
 Each folder has its own README covering how that plugin works and why it makes
 the choices it does.
