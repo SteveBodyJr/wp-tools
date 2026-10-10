@@ -23,6 +23,13 @@ class Beaver_Access_Users {
 	const META_LINK = '_beaver_access_link';
 
 	/**
+	 * User meta holding the session tokens each link opened.
+	 *
+	 * @since 1.0.3
+	 */
+	const META_SESSIONS = '_beaver_access_sessions';
+
+	/**
 	 * Returns the user a link should sign in as, creating one if needed.
 	 *
 	 * @since 1.0.0
@@ -85,7 +92,7 @@ class Beaver_Access_Users {
 			// Nothing was created, but a link pointed at a real account may
 			// still have a live session that should end.
 			if ( (int) $link->target_user > 0 && ! empty( $link->last_used_at ) ) {
-				self::end_sessions( (int) $link->target_user );
+				self::end_link_sessions( (int) $link->target_user, (int) $link->id );
 			}
 
 			return;
@@ -110,6 +117,76 @@ class Beaver_Access_Users {
 		wp_delete_user( $user_id, $reassign );
 
 		Beaver_Access_Links::set_temp_user( (int) $link->id, 0 );
+	}
+
+	/**
+	 * Opens a session for a link that ends when the link does.
+	 *
+	 * WordPress gives a normal sign-in two days. Access through a link should
+	 * stop at the link's expiry, not up to two days later, and not only when
+	 * the hourly cleanup next runs. The session carries its own expiry, which
+	 * WordPress checks on every request.
+	 *
+	 * The token is kept against the link, so revoking ends this session and
+	 * nothing else. Ending every session of an existing account would also
+	 * sign its owner out of their own browsers.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param int    $user_id User signing in.
+	 * @param object $link    Link used.
+	 * @return string Session token for wp_set_auth_cookie().
+	 */
+	public static function open_session( $user_id, $link ) {
+		$expires = strtotime( $link->expires_at . ' UTC' );
+		$cap     = time() + ( 2 * DAY_IN_SECONDS );
+		$token   = WP_Session_Tokens::get_instance( (int) $user_id )->create( (int) min( $expires, $cap ) );
+
+		$sessions = get_user_meta( (int) $user_id, self::META_SESSIONS, true );
+		$sessions = is_array( $sessions ) ? $sessions : array();
+
+		$sessions[ (int) $link->id ][] = $token;
+
+		update_user_meta( (int) $user_id, self::META_SESSIONS, $sessions );
+
+		return $token;
+	}
+
+	/**
+	 * Ends the sessions one link opened on an account.
+	 *
+	 * Links issued before 1.0.3 recorded no tokens. For those the only way to
+	 * end the link's session is to end them all, as 1.0.2 did, which now
+	 * happens once rather than hourly.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param int $user_id Account.
+	 * @param int $link_id Link.
+	 */
+	private static function end_link_sessions( $user_id, $link_id ) {
+		$sessions = get_user_meta( $user_id, self::META_SESSIONS, true );
+		$sessions = is_array( $sessions ) ? $sessions : array();
+
+		if ( ! isset( $sessions[ $link_id ] ) ) {
+			self::end_sessions( $user_id );
+
+			return;
+		}
+
+		$manager = WP_Session_Tokens::get_instance( $user_id );
+
+		foreach ( (array) $sessions[ $link_id ] as $token ) {
+			$manager->destroy( (string) $token );
+		}
+
+		unset( $sessions[ $link_id ] );
+
+		if ( empty( $sessions ) ) {
+			delete_user_meta( $user_id, self::META_SESSIONS );
+		} else {
+			update_user_meta( $user_id, self::META_SESSIONS, $sessions );
+		}
 	}
 
 	/**

@@ -24,6 +24,13 @@ class Beaver_Access_Links {
 	const DB_VERSION = '1';
 
 	/**
+	 * Option listing links whose access has already been ended.
+	 *
+	 * @since 1.0.3
+	 */
+	const RETIRED_OPTION = 'beaver_access_retired';
+
+	/**
 	 * Shortest life a link may be given.
 	 *
 	 * Below this the link expires before it can realistically be sent, read and
@@ -136,6 +143,17 @@ class Beaver_Access_Links {
 				return new WP_Error( 'beaver_access_no_user', __( 'That user does not exist.', 'beaver-access' ) );
 			}
 
+			/*
+			 * Signing in as an existing account hands out everything that
+			 * account can do, so it faces the same ceiling as a role link.
+			 * Before 1.0.3 this branch skipped the check entirely, and anyone
+			 * able to reach this screen could mint a link into an
+			 * administrator's account.
+			 */
+			if ( ! self::can_target( $user ) ) {
+				return new WP_Error( 'beaver_access_escalation', __( 'You cannot create a link for an account with more capabilities than your own.', 'beaver-access' ) );
+			}
+
 			$role = '';
 		} else {
 			if ( ! get_role( $role ) ) {
@@ -204,6 +222,12 @@ class Beaver_Access_Links {
 	 * @return bool Whether it is allowed.
 	 */
 	public static function can_grant( $role ) {
+		// Someone running WP-CLI already controls the server, and has no
+		// signed-in user to measure against unless --user was passed.
+		if ( self::is_cli_without_user() ) {
+			return true;
+		}
+
 		// Issuing a link is handing out a role, so the bar is the same as
 		// changing somebody's role in the users screen.
 		if ( ! current_user_can( 'promote_users' ) ) {
@@ -230,6 +254,58 @@ class Beaver_Access_Links {
 		 * issue an editor link.
 		 */
 		return array_key_exists( $role, (array) get_editable_roles() );
+	}
+
+	/**
+	 * Whether the current user may issue a link into an existing account.
+	 *
+	 * Three conditions, all required: WordPress must let them edit that user,
+	 * which already keeps a site administrator away from a network super
+	 * admin; they must be able to grant every role the account holds; and a
+	 * super admin can only be targeted by another super admin.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param WP_User|int $user The account.
+	 * @return bool Whether it is allowed.
+	 */
+	public static function can_target( $user ) {
+		$user = $user instanceof WP_User ? $user : get_userdata( (int) $user );
+
+		if ( ! $user || ! $user->exists() ) {
+			return false;
+		}
+
+		if ( self::is_cli_without_user() ) {
+			return true;
+		}
+
+		if ( ! current_user_can( 'promote_users' ) || ! current_user_can( 'edit_user', $user->ID ) ) {
+			return false;
+		}
+
+		if ( is_multisite() && is_super_admin( $user->ID ) && ! is_super_admin() ) {
+			return false;
+		}
+
+		foreach ( (array) $user->roles as $role ) {
+			if ( ! self::can_grant( $role ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Whether this is a WP-CLI command run without --user.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @return bool Whether it is.
+	 */
+	private static function is_cli_without_user() {
+		return defined( 'WP_CLI' ) && WP_CLI && 0 === get_current_user_id();
 	}
 
 	/**
@@ -313,28 +389,50 @@ class Beaver_Access_Links {
 	}
 
 	/**
-	 * Records a successful use.
+	 * Claims one use of a link, atomically.
 	 *
-	 * @since 1.0.0
+	 * The count is raised by a single UPDATE that only matches while a use is
+	 * still left, the link is live, and the address is allowed. Reading the
+	 * count and writing it back, as 1.0.2 did, let two requests arriving
+	 * together both see "unused" and both sign in on a single-use link.
+	 * Whichever UPDATE the database applies second matches no row and is
+	 * refused.
+	 *
+	 * @since 1.0.3
 	 *
 	 * @param object $link Link row.
-	 * @param string $ip   Address that used it.
+	 * @param string $ip   Address using it.
+	 * @return bool Whether this request got the use.
 	 */
-	public static function mark_used( $link, $ip ) {
+	public static function claim_use( $link, $ip ) {
 		global $wpdb;
 
-		$data = array(
-			'used'         => (int) $link->used + 1,
-			'last_used_at' => current_time( 'mysql', true ),
-		);
+		$table = self::table();
+		$now   = current_time( 'mysql', true );
 
 		// The address is bound on first use, so a link can be sent before
 		// knowing where it will be opened from.
-		if ( (int) $link->lock_ip && '' === $link->bound_ip ) {
-			$data['bound_ip'] = $ip;
-		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$claimed = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				 SET used = used + 1,
+				     last_used_at = %s,
+				     bound_ip = IF( lock_ip = 1 AND bound_ip = '', %s, bound_ip )
+				 WHERE id = %d
+				   AND used < max_uses
+				   AND revoked_at IS NULL
+				   AND expires_at > %s
+				   AND ( lock_ip = 0 OR bound_ip = '' OR bound_ip = %s )",
+				$now,
+				$ip,
+				(int) $link->id,
+				$now,
+				$ip
+			)
+		);
 
-		$wpdb->update( self::table(), $data, array( 'id' => (int) $link->id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return 1 === (int) $claimed;
 	}
 
 	/**
@@ -375,7 +473,7 @@ class Beaver_Access_Links {
 
 		// Revoking has to end the session too. Marking the row alone would
 		// leave whoever is already signed in exactly where they were.
-		Beaver_Access_Users::retire( $link );
+		self::retire( $link );
 
 		Beaver_Access_Log::record( (int) $id, 'revoked', '' );
 	}
@@ -401,16 +499,58 @@ class Beaver_Access_Links {
 	}
 
 	/**
+	 * Ends a link's access, once.
+	 *
+	 * Expired links stay in the table for 30 days so the screen can show
+	 * them. 1.0.2 retired every one of them on every hourly run, and for a
+	 * link into an existing account that meant ending all of that person's
+	 * sessions every hour for a month: the owner kept being logged out of
+	 * their own site. A retired link is now remembered and skipped.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param object $link Link row.
+	 */
+	public static function retire( $link ) {
+		$retired = self::retired_ids();
+		$id      = (int) $link->id;
+
+		if ( isset( $retired[ $id ] ) ) {
+			return;
+		}
+
+		Beaver_Access_Users::retire( $link );
+
+		$retired[ $id ] = time();
+
+		update_option( self::RETIRED_OPTION, $retired, false );
+	}
+
+	/**
+	 * Returns the IDs of links already retired.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @return array<int,int> Link ID => when it was retired.
+	 */
+	private static function retired_ids() {
+		$retired = get_option( self::RETIRED_OPTION, array() );
+
+		return is_array( $retired ) ? $retired : array();
+	}
+
+	/**
 	 * Cleans up expired links.
 	 *
 	 * @since 1.0.0
+	 * @since 1.0.3 Retires each expired link once rather than every run.
 	 */
 	public static function cleanup() {
 		global $wpdb;
 
 		foreach ( self::all( 500 ) as $link ) {
 			if ( strtotime( $link->expires_at . ' UTC' ) < time() ) {
-				Beaver_Access_Users::retire( $link );
+				self::retire( $link );
 			}
 		}
 
@@ -419,5 +559,16 @@ class Beaver_Access_Links {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE expires_at < %s", $cut ) );
+
+		// Forget links whose rows are gone, so the list cannot grow forever.
+		$retired = self::retired_ids();
+
+		if ( ! empty( $retired ) ) {
+			$ids  = implode( ',', array_map( 'intval', array_keys( $retired ) ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$live = array_map( 'intval', (array) $wpdb->get_col( "SELECT id FROM {$table} WHERE id IN ( {$ids} )" ) );
+
+			update_option( self::RETIRED_OPTION, array_intersect_key( $retired, array_flip( $live ) ), false );
+		}
 	}
 }

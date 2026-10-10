@@ -484,7 +484,12 @@ class Beaver_Access_Admin {
 							<select id="ba-user" name="target_user">
 								<option value="0"><?php esc_html_e( '— create a temporary account instead —', 'beaver-access' ); ?></option>
 								<?php
-								foreach ( get_users( array( 'number' => 50, 'fields' => array( 'ID', 'display_name', 'user_login' ) ) ) as $user ) {
+								foreach ( get_users( array( 'number' => 200 ) ) as $user ) {
+									// Only accounts this person could open a link into.
+									if ( ! Beaver_Access_Links::can_target( $user ) ) {
+										continue;
+									}
+
 									printf(
 										'<option value="%d">%s (%s)</option>',
 										(int) $user->ID,

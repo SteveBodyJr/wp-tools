@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver Access
  * Plugin URI:        https://digitalbeavertz.com/
  * Description:       Temporary login links. Give a developer or supporter time-limited access at the role you choose, without sharing a password — self-expiring, single-use by default, fully logged, and revocable in one click. Find it under Users → Access Links.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Digital Beaver
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BEAVER_ACCESS_VERSION', '1.0.2' );
+define( 'BEAVER_ACCESS_VERSION', '1.0.3' );
 define( 'BEAVER_ACCESS_FILE', __FILE__ );
 define( 'BEAVER_ACCESS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BEAVER_ACCESS_URL', plugin_dir_url( __FILE__ ) );

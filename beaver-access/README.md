@@ -86,6 +86,14 @@ signed in after the plugin is switched off is access nobody can see or withdraw.
 * **No privilege escalation.** Links can only be issued for roles you could
   already assign, decided by WordPress's own `get_editable_roles()`, so the
   `editable_roles` filter that multisite and membership plugins hook is honoured.
+  A link into an existing account needs the same: you must be able to edit that
+  user and grant every role they hold, and only a super admin can target a super
+  admin.
+* **One use means one use.** A use is claimed by a single atomic `UPDATE`, so two
+  clicks arriving together cannot both sign in.
+* **Access ends with the link.** Each sign-in gets its own session that expires
+  with the link. Revoking ends only the sessions the link opened, never the
+  account owner's own.
 * **Redirects immediately** after signing in, so the token does not linger in
   browser history, bookmarks, or a referrer header sent to the next site.
 * **Everything is logged** — created, used, denied and revoked, with address,

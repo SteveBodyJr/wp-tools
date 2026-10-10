@@ -81,13 +81,21 @@ class Beaver_Access_Session {
 			self::deny( (int) $link->id, 'insecure', $ip );
 		}
 
+		/*
+		 * Claimed before anything is created. The checks above read a row
+		 * that a second request may be reading at the same moment; only this
+		 * atomic update decides which of them gets the use.
+		 */
+		if ( ! Beaver_Access_Links::claim_use( $link, $ip ) ) {
+			self::deny( (int) $link->id, 'exhausted', $ip );
+		}
+
 		$user_id = Beaver_Access_Users::resolve( $link );
 
 		if ( is_wp_error( $user_id ) ) {
 			self::deny( (int) $link->id, 'no_user', $ip );
 		}
 
-		Beaver_Access_Links::mark_used( $link, $ip );
 		Beaver_Access_Log::record( (int) $link->id, 'used', $ip );
 
 		self::clear_throttle( $ip );
@@ -96,9 +104,9 @@ class Beaver_Access_Session {
 
 		/*
 		 * Never a "remember me" session. Access granted by a temporary link
-		 * should not outlive the browser it was opened in.
+		 * should not outlive the browser it was opened in, nor the link.
 		 */
-		wp_set_auth_cookie( $user_id, false );
+		wp_set_auth_cookie( $user_id, false, '', Beaver_Access_Users::open_session( $user_id, $link ) );
 
 		do_action( 'wp_login', get_userdata( $user_id )->user_login, get_userdata( $user_id ) );
 

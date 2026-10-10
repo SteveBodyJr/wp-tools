@@ -6,7 +6,7 @@ Tags: login, temporary access, support, security, users
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,15 @@ Links are refused, and the settings screen says so. A token in a URL is readable
 
 == Changelog ==
 
+= 1.0.3 =
+Security release. Update every site that runs it.
+
+* **Fixed privilege escalation.** A link into an existing account skipped the check that stops anyone issuing more power than they hold. Any account allowed to manage user roles could create a link into an administrator's account. That link now faces the same rule as a role link. You need to be able to edit that user and grant every role they hold, and only a super admin can target a super admin. The account picker lists only the people you could target.
+* **Fixed account owners being logged out every hour.** For 30 days after a link into an existing account expired, the hourly cleanup ended every session that person had. Each link is now retired once. Revoking or expiring ends only the sessions the link itself opened. The owner's own logins are never touched.
+* **Fixed single-use links working twice.** Two clicks arriving together could both sign in, because the use count was read and written back in separate steps. A use is now claimed in one database step, so exactly one request gets it. Lock-to-address links are protected the same way.
+* **Access now ends exactly when the link expires.** A sign-in used to last WordPress's usual two days and was only cut off when the hourly cleanup next ran. Each session now carries the link's own expiry.
+* WP-CLI `create` works without `--user` again. Server access already implies full control.
+
 = 1.0.2 =
 * **Expires after** now takes a custom length. Choose **Custom length** and type any number of minutes, hours or days.
 * Or choose **Until a specific time** and pick the moment it should stop working, read on the site's own clock, which is shown beside the field.
@@ -93,6 +102,9 @@ Links are refused, and the settings screen says so. A token in a URL is readable
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Security release: fixes a privilege escalation through links into existing accounts, owners being logged out hourly, and single-use links working twice. Update now.
 
 = 1.0.2 =
 Adds a custom expiry length and an exact stop time. Links already issued are unaffected.

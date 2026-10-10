@@ -34,5 +34,8 @@ $wpdb->query( "DROP TABLE IF EXISTS {$beaver_access_table}" ); // phpcs:ignore W
 delete_option( 'beaver_access_settings' );
 delete_option( 'beaver_access_log' );
 delete_option( 'beaver_access_db_version' );
+delete_option( 'beaver_access_retired' );
+
+delete_metadata( 'user', 0, '_beaver_access_sessions', '', true );
 
 wp_clear_scheduled_hook( 'beaver_access_cleanup' );
