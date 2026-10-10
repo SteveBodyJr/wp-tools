@@ -22,7 +22,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | [beaver-press](beaver-press/README.md) | 3.0.0 | Translates the whole site into other languages with Claude, ChatGPT, DeepSeek, Gemini or DeepL: language switcher, visual editor, translated addresses, sitemaps and forms. One plugin; the free TranslatePress engine (GPL) is bundled unchanged. |
 | [beaver-debug](beaver-debug/README.md) | 1.1.0 | Records what goes wrong on a site you cannot SSH into, and makes it shareable. |
 | [beaver-filemanager](beaver-filemanager/README.md) | 1.1.0 | A full file manager inside wp-admin, with backups and a restorable trash. |
-| [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.6 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
+| [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.7 | Converts JPEG and PNG to WebP using only what PHP already ships with. |
 | [beaver-pwa](beaver-pwa/README.md) | 1.0.0 | Makes a site installable as an app: manifest, offline worker, generated icons, install prompt. |
 | [beaver-seo](beaver-seo/README.md) | 1.1.0 | Titles, meta descriptions, Open Graph tags, canonical URLs, an XML sitemap and a redirect manager — generated from what WordPress already knows. |
 | [beaver-shield](beaver-shield/README.md) | 1.0.0 | Strips version and component detail, closes user enumeration, adds security headers, and scans the site to show the result. Every switch is reversible. |
