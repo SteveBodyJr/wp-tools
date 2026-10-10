@@ -297,7 +297,7 @@ final class BP_Forms {
 		?>
 		<div class="bp-card" id="bp-forms">
 			<h2><?php esc_html_e( 'Forms in the visitor\'s language', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'The messages shown after sending a form, and the confirmation email to the visitor (Theme Settings, when switched on), in the language of the page the form was sent from. Emails to you stay in the original language. Messages only appear after a submission, so they are translated here once: every form page is opened with each result in each language. Run it again after changing form texts.', 'beaver-press' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Thank-you and error messages, and the visitor\'s confirmation email, in the language of the page. Prepare again after changing a form message or adding a language.', 'beaver-press' ); ?></p>
 			<p>
 				<button type="button" class="button bp-forms__go" <?php disabled( '' !== BP_Run::blocker() ); ?>><?php esc_html_e( 'Prepare forms', 'beaver-press' ); ?></button>
 				<span class="bp-forms__msg" aria-live="polite">

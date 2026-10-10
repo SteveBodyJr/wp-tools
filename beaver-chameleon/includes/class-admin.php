@@ -32,6 +32,11 @@ class Beaver_Chameleon_Admin {
 	const NONCE = 'beaver_chameleon_reset';
 
 	/**
+	 * Nonce action for the guarded-forms form.
+	 */
+	const FORMS_NONCE = 'beaver_chameleon_forms';
+
+	/**
 	 * Registers hooks.
 	 *
 	 * @since 1.0.0
@@ -96,7 +101,7 @@ class Beaver_Chameleon_Admin {
 	 * @since 1.0.0
 	 */
 	public static function handle_actions() {
-		if ( ! isset( $_POST['beaver_chameleon_action'] ) || 'reset' !== $_POST['beaver_chameleon_action'] ) {
+		if ( ! isset( $_POST['beaver_chameleon_action'] ) ) {
 			return;
 		}
 
@@ -108,12 +113,28 @@ class Beaver_Chameleon_Admin {
 			);
 		}
 
-		check_admin_referer( self::NONCE );
+		if ( 'reset' === $_POST['beaver_chameleon_action'] ) {
+			check_admin_referer( self::NONCE );
 
-		Beaver_Chameleon_Stats::reset();
+			Beaver_Chameleon_Stats::reset();
 
-		wp_safe_redirect( add_query_arg( 'bc_reset', '1', admin_url( 'admin.php?page=' . BEAVER_CHAMELEON_SLUG ) ) );
-		exit;
+			wp_safe_redirect( add_query_arg( 'bc_reset', '1', admin_url( 'admin.php?page=' . BEAVER_CHAMELEON_SLUG ) ) );
+			exit;
+		}
+
+		if ( 'save_forms' === $_POST['beaver_chameleon_action'] ) {
+			check_admin_referer( self::FORMS_NONCE );
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every value is reduced to a known key via array_intersect_key() against available_forms() in update(), so nothing raw from $_POST is ever stored.
+			$enabled = isset( $_POST['beaver_chameleon_forms'] ) && is_array( $_POST['beaver_chameleon_forms'] )
+				? array_map( 'sanitize_key', wp_unslash( $_POST['beaver_chameleon_forms'] ) )
+				: array();
+
+			Beaver_Chameleon_Settings::update( $enabled );
+
+			wp_safe_redirect( add_query_arg( 'bc_forms_saved', '1', admin_url( 'admin.php?page=' . BEAVER_CHAMELEON_SLUG ) ) );
+			exit;
+		}
 	}
 
 	/**
@@ -141,6 +162,10 @@ class Beaver_Chameleon_Admin {
 
 			<?php if ( isset( $_GET['bc_reset'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag, no state changes on this branch. ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Chameleon Shield statistics were reset.', 'beaver-chameleon' ); ?></p></div>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['bc_forms_saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag, no state changes on this branch. ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Guarded forms were saved.', 'beaver-chameleon' ); ?></p></div>
 			<?php endif; ?>
 
 			<div class="bc-app bg-slate-50 rounded-2xl border border-slate-200 p-6 sm:p-10">
@@ -193,6 +218,8 @@ class Beaver_Chameleon_Admin {
 						</div>
 
 					</div>
+
+					<?php self::render_forms_section(); ?>
 
 					<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 						<div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200">
@@ -249,6 +276,58 @@ class Beaver_Chameleon_Admin {
 					<?php self::render_credit(); ?>
 				</div>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the guarded-forms card: every form detected on this install,
+	 * with an on/off switch each.
+	 *
+	 * The list itself is never hand-maintained — see
+	 * Beaver_Chameleon_Settings::available_forms() — so a site with no
+	 * integration active simply shows Comment form and Login form, and one
+	 * with att-core shows its two forms as well, already switched off.
+	 *
+	 * @since 1.1.0
+	 */
+	private static function render_forms_section() {
+		$forms   = Beaver_Chameleon_Settings::available_forms();
+		$enabled = array();
+
+		foreach ( array_keys( $forms ) as $key ) {
+			if ( Beaver_Chameleon_Settings::is_enabled( $key ) ) {
+				$enabled[] = $key;
+			}
+		}
+		?>
+		<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+			<div class="px-5 py-4 border-b border-slate-200">
+				<h3 class="text-base font-semibold text-slate-900 m-0"><?php esc_html_e( 'Guarded Forms', 'beaver-chameleon' ); ?></h3>
+				<p class="text-xs text-slate-400 mt-1 mb-0"><?php esc_html_e( 'Detected on this site. Turn a form off to stop checking it without deactivating the plugin.', 'beaver-chameleon' ); ?></p>
+			</div>
+
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=' . BEAVER_CHAMELEON_SLUG ) ); ?>">
+				<?php wp_nonce_field( self::FORMS_NONCE ); ?>
+				<input type="hidden" name="beaver_chameleon_action" value="save_forms" />
+
+				<div class="divide-y divide-slate-100">
+					<?php foreach ( $forms as $key => $form ) : ?>
+						<label class="flex items-center justify-between gap-3 px-5 py-3 text-sm cursor-pointer">
+							<span class="text-slate-700"><?php echo esc_html( $form['label'] ); ?></span>
+							<input type="checkbox" name="beaver_chameleon_forms[]" value="<?php echo esc_attr( $key ); ?>"
+								<?php checked( in_array( $key, $enabled, true ) ); ?>
+								class="rounded border-slate-300 text-slate-900 focus:ring-slate-500" />
+						</label>
+					<?php endforeach; ?>
+				</div>
+
+				<div class="px-5 py-4 border-t border-slate-200">
+					<button type="submit" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+						<?php esc_html_e( 'Save', 'beaver-chameleon' ); ?>
+					</button>
+				</div>
+			</form>
 		</div>
 		<?php
 	}

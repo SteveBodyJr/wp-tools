@@ -78,6 +78,7 @@ final class BP_History {
 			BP_Usage::PRICES_OPTION,
 			BP_Instructions::OPTION,
 			BP_Profiles::OPTION,
+			BP_Terms::OPTION,
 			BP_Slug_Bases::OPTION,
 		);
 	}
@@ -176,6 +177,58 @@ final class BP_History {
 	}
 
 	/**
+	 * The differences in plain words for the table: "Switches (8), spending limit, model price".
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string[] $diff From differences().
+	 * @return string
+	 */
+	public static function describe( array $diff ) {
+		$switches = array( 'auto', 'topup', 'cache', 'complete_only', 'suggest', 'redirect', 'slugs', 'quiet', 'alerts' );
+		$labels   = array(
+			'machine-translation'                         => __( 'Automatic translation', 'beaver-press' ),
+			'translation-engine'                          => __( 'Translation engine', 'beaver-press' ),
+			'bp-provider'                                 => __( 'Provider', 'beaver-press' ),
+			'bp-model'                                    => __( 'Model', 'beaver-press' ),
+			'bp-endpoint'                                 => __( 'Endpoint', 'beaver-press' ),
+			'bp-chunk-size'                               => __( 'Batch size', 'beaver-press' ),
+			'bp-effort'                                   => __( 'Model effort', 'beaver-press' ),
+			'bp-visitor-guard'                            => __( 'Visitor guard', 'beaver-press' ),
+			'bp-glossary-auto'                            => __( 'Names to keep', 'beaver-press' ),
+			'bp-glossary'                                 => __( 'Names to keep', 'beaver-press' ),
+			'machine_translation_limit'                   => __( 'Daily character limit', 'beaver-press' ),
+			'machine_translation_limit_enabled'           => __( 'Daily character limit', 'beaver-press' ),
+			'auto'                                        => __( 'Translate updated content', 'beaver-press' ),
+			'topup'                                       => __( 'Daily top-up', 'beaver-press' ),
+			'cache'                                       => __( 'Ready pages', 'beaver-press' ),
+			'complete_only'                               => __( 'Only complete pages', 'beaver-press' ),
+			'suggest'                                     => __( 'Language suggestion', 'beaver-press' ),
+			'redirect'                                    => __( 'First-visit redirect', 'beaver-press' ),
+			'slugs'                                       => __( 'Translated addresses', 'beaver-press' ),
+			'quiet'                                       => __( 'Hide engine extras', 'beaver-press' ),
+			'alerts'                                      => __( 'Alert email', 'beaver-press' ),
+			'budget'                                      => __( 'Spending limit', 'beaver-press' ),
+			'prices'                                      => __( 'Model price', 'beaver-press' ),
+			'instructions'                                => __( 'Instructions', 'beaver-press' ),
+			'profile'                                     => __( 'Translation profile', 'beaver-press' ),
+			'slug_bases'                                  => __( 'Address prefixes', 'beaver-press' ),
+			'terms'                                       => __( 'Terms and search words', 'beaver-press' ),
+		);
+		$changed = array_values( array_intersect( $switches, $diff ) );
+		$out     = array();
+		if ( count( $changed ) >= 3 ) {
+			/* translators: %s: number of switches */
+			$out[] = sprintf( __( 'Switches (%s)', 'beaver-press' ), number_format_i18n( count( $changed ) ) );
+			$diff  = array_diff( $diff, $switches );
+		}
+		foreach ( $diff as $key ) {
+			$out[] = $labels[ $key ] ?? ( 0 === strpos( (string) $key, 'ai_words_' ) || false !== strpos( (string) $key, 'notification' ) ? __( 'Engine notifications', 'beaver-press' ) : ( 'names to keep' === $key ? __( 'Names to keep', 'beaver-press' ) : __( 'Other engine setting', 'beaver-press' ) ) );
+		}
+		return implode( ', ', array_values( array_unique( $out ) ) );
+	}
+
+	/**
 	 * Write a copy back.
 	 *
 	 * @param int $index Copy number (0 = newest).
@@ -235,7 +288,7 @@ final class BP_History {
 			is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : $result,
 			60
 		);
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . BP_Admin::SLUG . '#bp-history' ) );
+		wp_safe_redirect( BP_Admin::tab_url( 'tools', 'bp-history' ) );
 		exit;
 	}
 
@@ -250,8 +303,8 @@ final class BP_History {
 		}
 		?>
 		<div class="bp-card" id="bp-history">
-			<h2><?php esc_html_e( 'Settings history', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'A copy of the Beaver Press and engine settings is kept each time an administrator saves a change (the last 10). Restore puts a copy back. Never in a copy: API keys, translations and the language list.', 'beaver-press' ); ?></p>
+			<div class="bp-card__head bp-card__head--inset"><h2><?php esc_html_e( 'Settings history', 'beaver-press' ); ?></h2></div>
+			<p class="bp-card__meta bp-card__lead"><?php esc_html_e( 'The last 10 saves. Restore puts one back; keys, translations and languages are never changed.', 'beaver-press' ); ?></p>
 			<?php if ( is_array( $result ) && isset( $result['error'] ) ) : ?>
 				<div class="notice notice-error inline"><p><?php echo esc_html( $result['error'] ); ?></p></div>
 			<?php elseif ( is_array( $result ) && isset( $result['time'] ) ) : ?>
@@ -276,7 +329,7 @@ final class BP_History {
 							<tr>
 								<td><?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $entry['time'] ) ); ?></td>
 								<td><?php echo esc_html( (string) $entry['user'] ); ?></td>
-								<td><?php echo $diff ? esc_html( implode( ', ', $diff ) ) : '<em>' . esc_html__( 'same as now', 'beaver-press' ) . '</em>'; ?></td>
+								<td><?php echo $diff ? esc_html( self::describe( $diff ) ) : '<em>' . esc_html__( 'same as now', 'beaver-press' ) . '</em>'; ?></td>
 								<td>
 									<?php if ( $diff ) : ?>
 										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

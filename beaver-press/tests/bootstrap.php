@@ -65,6 +65,7 @@ function bp_test_options() {
 		'beaver_press_slug_bases',
 		'beaver_press_backups',
 		'beaver_press_profile',
+		'beaver_press_terms',
 	);
 }
 

@@ -30,6 +30,7 @@ ok( 'no customer named but the site itself', false === stripos( $prompt, 'Raya' 
 ok( 'names rule: safari and tourism', 0 === strpos( BP_Names_AI::rule(), 'You are sorting names from a safari and tourism website' ) );
 ok( 'per-language suggestion from the profile', false !== strpos( BP_Instructions::suggestion( 'es_ES' ), 'travel websites' ) && false !== strpos( BP_Instructions::suggestion( 'sw' ), 'East African tourism' ) );
 ok( 'profile card shown', ( function () { ob_start(); BP_Profiles::render(); $h = ob_get_clean(); return false !== strpos( $h, 'Safari &amp; Tourism' ) && false !== strpos( $h, 'id="bp-profile"' ); } )() );
+ok( 'one profile: shown as a line, no radio or Save', ( function () { ob_start(); BP_Profiles::render(); $h = ob_get_clean(); return false === strpos( $h, 'type="radio"' ) && false === strpos( $h, 'Save profile' ); } )() );
 
 // A site's own saved instruction and names rule win (as on Raya).
 $own = 'Our own words for our own company.';
@@ -40,6 +41,7 @@ ok( 'saved names rule wins', 'Keep every name.' === BP_Names_AI::rule() );
 // Another profile can be added without code changes elsewhere.
 add_filter( 'beaver_press_profiles', static function ( $p ) { $p['test'] = array( 'label' => 'Test', 'context' => 'TEST CONTEXT.', 'site' => '%s test.' ); return $p; } );
 update_option( BP_Profiles::OPTION, 'test', false );
+ok( 'two profiles: radios and Save', ( function () { ob_start(); BP_Profiles::render(); $h = ob_get_clean(); return 2 === substr_count( $h, 'type="radio"' ) && false !== strpos( $h, 'Save profile' ); } )() );
 ok( 'profiles are extensible (filter)', 0 === strpos( BP_Batch::system_prompt( 'English', 'French', array() ), 'TEST CONTEXT.' ) );
 update_option( BP_Profiles::OPTION, 'nonexistent', false );
 ok( 'unknown profile falls back to Safari & Tourism', 'safari' === BP_Profiles::current_id() );

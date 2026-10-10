@@ -253,7 +253,7 @@ final class BP_Transfer {
 			$result = self::import_json( (string) file_get_contents( $file['tmp_name'] ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- uploaded temp file.
 		}
 		set_transient( 'bp_import_result_' . get_current_user_id(), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'done' => $result ), 5 * MINUTE_IN_SECONDS );
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . BP_Admin::SLUG . '#bp-transfer' ) );
+		wp_safe_redirect( BP_Admin::tab_url( 'tools', 'bp-transfer' ) );
 		exit;
 	}
 
@@ -267,8 +267,8 @@ final class BP_Transfer {
 		}
 		?>
 		<div class="bp-card" id="bp-transfer">
-			<h2><?php esc_html_e( 'Copy these settings to another site', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'Export: engine, model and batch size, visitor guard, names to keep, every switch on this page, the languages limit and the translator instructions (your site name becomes {site}). API keys are never included. Import it on the other site, then paste that site\'s API key and add its languages in Beaver Press -> Languages.', 'beaver-press' ); ?></p>
+			<div class="bp-card__head bp-card__head--inset"><h2><?php esc_html_e( 'Copy these settings to another site', 'beaver-press' ); ?></h2></div>
+			<p class="bp-card__meta bp-card__lead"><?php esc_html_e( 'Switches, engine, model, names to keep and instructions; API keys are never included. On the other site, paste its key and add its languages.', 'beaver-press' ); ?></p>
 			<?php if ( is_array( $result ) && isset( $result['error'] ) ) : ?>
 				<div class="notice notice-error inline"><p><?php echo esc_html( $result['error'] ); ?></p></div>
 			<?php elseif ( is_array( $result ) && isset( $result['done'] ) ) : ?>

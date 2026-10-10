@@ -11,7 +11,10 @@
 	function fmt(n) { return (n || 0).toLocaleString(); }
 	function post(action, data) { return $.post(cfg.ajax, $.extend({ action: action, nonce: cfg.nonce }, data || {})); }
 
-	function filter() {
+	// 2.7.0: 50 rows a page; per-language counts that filter; actions use every matching row.
+	var PER = 50, page = 0, only = null; // only: { lang, kind: done | missing | none }
+	function kind($c) { return $c.find('.bp-cell--done').length ? 'done' : ($c.find('.bp-cell--missing').length ? 'missing' : 'none'); }
+	function filter(keepPage) {
 		var q = $.trim($box.find('.bp-pages__search').val()).toLowerCase();
 		var type = $box.find('.bp-pages__type').val(), state = $box.find('.bp-pages__state').val(), shown = 0;
 		$rows.each(function () {
@@ -22,11 +25,41 @@
 				var done = $r.find('.bp-cell--done').length === $r.find('.bp-pages__cell').length;
 				if ((state === 'complete') !== done) ok = false;
 			}
-			$r.toggle(ok); if (ok) shown++;
+			if (only && kind($r.find('.bp-pages__cell[data-lang="' + only.lang + '"]')) !== only.kind) ok = false;
+			$r.toggleClass('is-match', ok); if (ok) shown++;
 		});
 		$box.find('.bp-pages__count').text((t.shown || '%1$s / %2$s').replace('%1$s', fmt(shown)).replace('%2$s', fmt($rows.length)));
+		if (!keepPage) page = 0;
+		paginate(); counts();
 	}
-	$box.on('input change', '.bp-pages__search, .bp-pages__type, .bp-pages__state', filter);
+	function paginate() {
+		var $m = $rows.filter('.is-match'), pages = Math.max(1, Math.ceil($m.length / PER));
+		if (page > pages - 1) page = pages - 1;
+		$rows.hide(); $m.slice(page * PER, page * PER + PER).show();
+		var $p = $box.find('.bp-pages__pager').empty();
+		if (pages < 2) return;
+		$p.append(
+			$('<button type="button" class="button">').text('\u2039 ' + t.prev).prop('disabled', page === 0).on('click', function () { page--; paginate(); }),
+			$('<span>').text(' ' + t.pageOf.replace('%1$s', fmt(page + 1)).replace('%2$s', fmt(pages)) + ' '),
+			$('<button type="button" class="button">').text(t.next + ' \u203a').prop('disabled', page >= pages - 1).on('click', function () { page++; paginate(); })
+		);
+	}
+	function counts() {
+		var $c = $box.find('.bp-pages__counts').empty();
+		$box.find('.bp-pages__lang').each(function () {
+			var lang = this.value, name = $.trim($(this).parent().text()), n = { done: 0, missing: 0, none: 0 };
+			$rows.find('.bp-pages__cell[data-lang="' + lang + '"]').each(function () { n[kind($(this))]++; });
+			var $line = $('<p>').append($('<strong>').text(name + ': '));
+			[['done', t.cDone], ['missing', t.cMissing], ['none', t.cNone]].forEach(function (k, i) {
+				if (i) $line.append(' \u00b7 ');
+				var on = only && only.lang === lang && only.kind === k[0];
+				$line.append($('<button type="button" class="button-link">').toggleClass('is-on', !!on).attr('aria-pressed', on ? 'true' : 'false')
+					.text(k[1].replace('%s', fmt(n[k[0]]))).on('click', function () { only = on ? null : { lang: lang, kind: k[0] }; filter(); }));
+			});
+			$c.append($line);
+		});
+		if (only) $c.append($('<button type="button" class="button-link">').text(t.showAll).on('click', function () { only = null; filter(); }));
+	}	$box.on('input change', '.bp-pages__search, .bp-pages__type, .bp-pages__state', function () { filter(); });
 	$box.on('change', '.bp-pages__all', function () { $rows.filter(':visible').find('.bp-pages__pick').prop('checked', this.checked); });
 
 	function languages() { return $box.find('.bp-pages__lang:checked').map(function () { return this.value; }).get(); }
@@ -43,14 +76,14 @@
 		}).always(function () { $btn.prop('disabled', false); });
 	}
 	$box.on('click', '.bp-pages__go', function () {
-		add($rows.filter(':visible').has('.bp-pages__pick:checked').map(function () { return $(this).data('url'); }).get(), $(this));
+		add($rows.filter('.is-match').has('.bp-pages__pick:checked').map(function () { return $(this).data('url'); }).get(), $(this));
 	});
 	$box.on('click', '.bp-pages__one', function () { add([$(this).closest('tr').data('url')], $(this)); });
 
 	// Draft translated addresses for the ticked pages.
 	$box.on('click', '.bp-pages__draft', function () {
 		var $btn = $(this), $msg = $box.find('.bp-pages__msg'), langs = languages();
-		var urls = $rows.filter(':visible').has('.bp-pages__pick:checked').map(function () { return $(this).data('url'); }).get();
+		var urls = $rows.filter('.is-match').has('.bp-pages__pick:checked').map(function () { return $(this).data('url'); }).get();
 		if (!urls.length || !langs.length) { $msg.text(t.pick); return; }
 		$btn.prop('disabled', true);
 		post('bp_slugs_draft', { urls: urls, languages: langs, machine: 1 }).done(function (r) {
@@ -61,8 +94,8 @@
 	// Free progress check: ticked pages, or every page shown when none is ticked.
 	$box.on('click', '.bp-pages__check', function () {
 		var $btn = $(this), $msg = $box.find('.bp-pages__msg'), langs = languages();
-		var $picked = $rows.filter(':visible').has('.bp-pages__pick:checked');
-		var urls = ($picked.length ? $picked : $rows.filter(':visible')).map(function () { return $(this).data('url'); }).get();
+		var $picked = $rows.filter('.is-match').has('.bp-pages__pick:checked');
+		var urls = ($picked.length ? $picked : $rows.filter('.is-match')).map(function () { return $(this).data('url'); }).get();
 		if (!urls.length || !langs.length) { $msg.text(t.pick); return; }
 		$btn.prop('disabled', true);
 		(function next(offset) {
@@ -100,7 +133,7 @@
 				$c.empty().append(cell(m, $c.data('href'), texts[lang] ? texts[lang][key] : null));
 			});
 		});
-		filter();
+		filter(true);
 	}
 	function showProgress(p) {
 		var $now = $box.find('.bp-pages__now').empty();
@@ -114,7 +147,10 @@
 				$rows.filter('[data-key="' + p.current.key + '"]').addClass('is-current');
 			}
 		} else if (p && p.status && p.status !== 'idle') {
-			$now.append($('<p>').text((t[p.status] || p.status) + (p.message ? ': ' + p.message : '')));
+			var label = t[p.status] || p.status, msg = p.message || '';
+			// "Finished: Finished." -> "Finished".
+			if (msg.replace(/[.\s]+$/, '').toLowerCase() === String(label).toLowerCase()) { msg = ''; }
+			$now.append($('<p>').text(label + (msg ? ': ' + msg : '')));
 		}
 	}
 	// Keep the run moving while this page is open (a lock stops double work), and refresh.

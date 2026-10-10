@@ -65,6 +65,35 @@ timestamp and a masked IP (`203.0.113.xxx` / `2001:db8:****`) — enough to spot
 a repeat network without keeping full addresses. "Reset statistics" clears all
 of it and asks first.
 
+## Guarded Forms
+
+The dashboard also lists every form this install can actually guard, detected
+rather than hand-picked: the comment form and login page are always there,
+and a form from a third-party integration — currently att-core's
+tour-inquiry and contact forms — only appears once that plugin is active. Comment and login
+start switched on, matching the plugin's behaviour before this screen
+existed; anything detected afterward starts off, so activating a new
+integration never begins blocking its form without someone turning it on.
+
+Turning a form off stops checking it without deactivating the plugin — the
+same escape hatch `BEAVER_CHAMELEON_OFF` gives you for everything at once,
+scoped to one form.
+
+## Extending it to another form
+
+A plugin that wants both traps on its own form needs two hooks, both
+optional and both no-ops until something calls them:
+
+* An action to print the fields into the form, e.g.
+  `do_action( 'your_plugin_form_fields_after', $form_key )`.
+* A filter around the spam verdict, e.g.
+  `apply_filters( 'your_plugin_validate_submission', true, $form_key )` —
+  return `true` for "no objection" or a `WP_Error` to reject.
+
+`includes/class-forms.php` is the att-core integration built on exactly that
+shape; a second integration is another class the same size, registered only
+when the other plugin's own function exists.
+
 ## Storage
 
 Three rows, none of which grow without bound:

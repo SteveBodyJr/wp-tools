@@ -57,6 +57,29 @@ final class BP_Slug_Bases {
 	}
 
 	/**
+	 * Prefixes with something behind them: a post type with a published item, a taxonomy with
+	 * a term in use. Others (an editor's internal types) are left off the card.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return array Prefix => true.
+	 */
+	public static function in_use() {
+		$out = array();
+		foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $type ) {
+			if ( ! empty( $type->rewrite['slug'] ) && (int) ( wp_count_posts( $type->name )->publish ?? 0 ) > 0 ) {
+				$out[ trim( (string) $type->rewrite['slug'], '/' ) ] = true;
+			}
+		}
+		foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $tax ) {
+			if ( ! empty( $tax->rewrite['slug'] ) && (int) wp_count_terms( array( 'taxonomy' => $tax->name, 'hide_empty' => true ) ) > 0 ) {
+				$out[ trim( (string) $tax->rewrite['slug'], '/' ) ] = true;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Saved prefixes (only languages and prefixes that still exist).
 	 *
 	 * @return array Language => [ original => translated ].
@@ -224,7 +247,7 @@ final class BP_Slug_Bases {
 			BP_Cache::clear(); // Ready pages carry the old links.
 			set_transient( $key, array( 'saved' => true, 'problems' => $problems ), 60 );
 		}
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . BP_Admin::SLUG . '#bp-bases' ) );
+		wp_safe_redirect( BP_Admin::tab_url( 'settings', 'bp-bases' ) );
 		exit;
 	}
 
@@ -248,7 +271,7 @@ final class BP_Slug_Bases {
 		?>
 		<div class="bp-card" id="bp-bases">
 			<h2><?php esc_html_e( 'Address prefixes', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'The fixed first part of addresses, per language: /fr/circuits/... instead of /fr/tours/... Empty keeps the original. Old addresses are sent to the new ones (301), and links, menus, sitemaps and language links follow. Languages not written in Latin letters keep the original addresses.', 'beaver-press' ); ?></p>
+			<p class="description"><?php esc_html_e( 'The first part of addresses per language (/fr/circuits/ instead of /fr/tours/). Empty keeps the original; old addresses redirect. Languages not written in Latin letters keep the original.', 'beaver-press' ); ?></p>
 			<?php if ( is_array( $result ) && ! empty( $result['saved'] ) ) : ?>
 				<div class="notice notice-success inline"><p><?php esc_html_e( 'Prefixes saved. Pages are served at their new addresses now.', 'beaver-press' ); ?></p></div>
 			<?php elseif ( is_array( $result ) && isset( $result['draft'] ) ) : ?>
@@ -260,6 +283,7 @@ final class BP_Slug_Bases {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="bp_slug_bases" />
 				<?php wp_nonce_field( 'bp_slug_bases' ); ?>
+				<div class="bp-scroll">
 				<table class="widefat striped bp-bases">
 					<thead><tr><th><?php esc_html_e( 'Prefix', 'beaver-press' ); ?></th>
 						<?php foreach ( $languages as $name ) : ?>
@@ -267,7 +291,14 @@ final class BP_Slug_Bases {
 						<?php endforeach; ?>
 					</tr></thead>
 					<tbody>
-						<?php foreach ( self::originals() as $original => $label ) : ?>
+						<?php
+						$in_use = self::in_use();
+						foreach ( self::originals() as $original => $label ) :
+							// Only prefixes visitors meet: some content, or one already translated (saving posts every row shown).
+							if ( ! isset( $in_use[ $original ] ) && ! array_filter( array_column( $values, $original ) ) ) {
+								continue;
+							}
+							?>
 							<tr>
 								<th scope="row"><code><?php echo esc_html( $original ); ?></code><br /><span class="description"><?php echo esc_html( $label ); ?></span></th>
 								<?php foreach ( $languages as $code => $name ) : ?>
@@ -277,6 +308,7 @@ final class BP_Slug_Bases {
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+				</div>
 				<p>
 					<button class="button button-primary"><?php esc_html_e( 'Save prefixes', 'beaver-press' ); ?></button>
 					<button class="button" name="draft" value="1" title="<?php esc_attr_e( 'Fills empty boxes from stored translations, or asks the engine (a few words). Nothing is saved.', 'beaver-press' ); ?>"><?php esc_html_e( 'Draft empty boxes', 'beaver-press' ); ?></button>

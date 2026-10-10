@@ -142,7 +142,7 @@ class BP_AI_Machine_Translator extends TRP_Machine_Translator {
 		$reply = BP_Providers::request_json(
 			$engine,
 			$key,
-			BP_Batch::system_prompt( $this->language_name( $source ), $this->language_name( $target ), BP_Batch::glossary_for( array_values( $chunk ) ), $target ),
+			BP_Batch::system_prompt( $this->language_name( $source ), $this->language_name( $target ), BP_Batch::glossary_for( array_values( $chunk ) ), $target, array_values( $chunk ) ),
 			BP_Batch::user_message( $map ),
 			BP_Batch::schema( array_keys( $map ) )
 		);

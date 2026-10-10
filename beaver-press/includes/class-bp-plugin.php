@@ -31,6 +31,7 @@ final class BP_Plugin {
 		BP_Guard::init();
 		BP_Glossary::init();
 		BP_Profiles::init();
+		BP_Terms::init();
 		BP_Seo::init();
 		BP_Schema::init();
 		BP_Complete::init();

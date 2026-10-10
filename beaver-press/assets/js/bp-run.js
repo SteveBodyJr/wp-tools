@@ -2,6 +2,14 @@
  * Settings -> Beaver Press: drive the Translate-site run while the page is open.
  * Each step fetches pages for up to ~20 s; WP-Cron continues if the page is closed.
  */
+/* 2.7.0: cards moved to the Settings and Tools tabs; an old link to one of them lands there. */
+(function () {
+	var moved = { 'bp-switches': 'settings', 'bp-costs': 'settings', 'bp-forms': 'settings', 'bp-bases': 'settings', 'bp-transfer': 'tools', 'bp-history': 'tools', 'bp-translations': 'tools' };
+	var id = (window.location.hash || '').slice(1);
+	if (moved[id] && !/[?&]tab=/.test(window.location.search) && document.getElementById('bp-run')) {
+		window.location.replace(window.location.pathname + window.location.search + '&tab=' + moved[id] + '#' + id);
+	}
+})();
 (function ($) {
 	var cfg = window.BP_RUN || {};
 	var $box = $('#bp-run');
@@ -19,7 +27,7 @@
 		$box.find('.bp-progress__pages').text(total ? fmt(pos) + ' / ' + fmt(total) + ' ' + t.pages : '');
 		var list = $box.find('.bp-progress__strings').empty();
 		(p.strings || []).forEach(function (s) {
-			list.append($('<li>').text(s.name + ': ' + fmt(s.done) + ' / ' + fmt(s.total) + ' ' + t.strings));
+			list.append($('<li>').append($('<span>').text(s.name), $('<span>').text(fmt(s.done) + ' / ' + fmt(s.total) + ' ' + t.strings))); // 3.0.0: name | figures
 		});
 		var u = p.usage || {};
 		var usage = '';
@@ -30,6 +38,8 @@
 		}
 		$box.find('.bp-progress__usage').text(usage);
 		var msg = p.message || '';
+		// The status line already says it ("Finished" / "Finished."): no second time.
+		if (msg.replace(/[.\s]+$/, '').toLowerCase() === String(t[status] || status).toLowerCase()) { msg = ''; }
 		if (p.rejected) { msg += (msg ? ' ' : '') + fmt(p.rejected) + ' ' + t.rejected + '.'; }
 		if (status === 'running') { msg += (msg ? ' ' : '') + t.closed; }
 		$box.find('.bp-progress__message').text(msg).toggleClass('bp-status--error', status === 'error');
@@ -98,5 +108,20 @@
 				} else { $msg.text(t.prepared); $btn.prop('disabled', false); }
 			}).fail(function () { $btn.prop('disabled', false); });
 		})(0);
+	});
+})(jQuery);
+
+/* 2.9.0 Overview: "Translate" on a language row runs that language only (same run as the button below). */
+(function ($) {
+	$(document).on('click', '.bp-langrow__go', function () {
+		var code = $(this).data('lang'), $boxes = $('#bp-run .bp-langs input[name="bp_languages[]"]');
+		$boxes.prop('checked', false).filter(function () { return this.value === code; }).prop('checked', true);
+		var $start = $('#bp-run-start');
+		if ($start.is(':visible') && !$start.prop('disabled')) {
+			document.getElementById('bp-run').scrollIntoView({ behavior: 'smooth', block: 'start' });
+			$start.trigger('click');
+		} else {
+			document.getElementById('bp-run').scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 	});
 })(jQuery);

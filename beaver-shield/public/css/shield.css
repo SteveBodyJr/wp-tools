@@ -1,0 +1,46 @@
+/**
+ * Beaver Shield — front end.
+ *
+ * Selection is switched off on the body and switched back on for everything a
+ * visitor legitimately needs to select. The exceptions are the important half:
+ * a rule that stops someone selecting the text in a contact form, a search box
+ * or a checkout field has broken the site to protect an article.
+ */
+
+.beaver-shield-guard {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+
+.beaver-shield-guard input,
+.beaver-shield-guard textarea,
+.beaver-shield-guard select,
+.beaver-shield-guard option,
+.beaver-shield-guard button,
+.beaver-shield-guard [contenteditable],
+.beaver-shield-guard [contenteditable] *,
+.beaver-shield-guard .beaver-shield-allow,
+.beaver-shield-guard .beaver-shield-allow * {
+	-webkit-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+	-webkit-touch-callout: default;
+}
+
+/**
+ * Code samples stay selectable. A snippet nobody can copy is a snippet nobody
+ * can use, and on a technical site that is the content working against itself.
+ */
+.beaver-shield-guard code,
+.beaver-shield-guard pre,
+.beaver-shield-guard kbd,
+.beaver-shield-guard samp {
+	-webkit-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+}

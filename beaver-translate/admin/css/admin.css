@@ -1,0 +1,202 @@
+/**
+ * Beaver Translate admin styles.
+ *
+ * Built on the core admin palette so the screens inherit the active colour
+ * scheme instead of fighting it.
+ */
+
+.beaver-translate-panel {
+	padding: 4px 20px 20px;
+	margin-bottom: 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+}
+
+.beaver-translate-danger {
+	color: #b32d2e;
+}
+
+.beaver-translate-danger:hover {
+	color: #8a2424;
+}
+
+/* Languages table --------------------------------------------------------- */
+
+.beaver-translate-languages {
+	max-width: 760px;
+	margin-bottom: 8px;
+}
+
+.beaver-translate-languages th,
+.beaver-translate-languages td {
+	padding: 8px;
+}
+
+.beaver-translate-languages input[type="text"] {
+	width: 100%;
+}
+
+/* Translations metabox ----------------------------------------------------- */
+
+.beaver-translate-list {
+	margin: 0;
+}
+
+.beaver-translate-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
+	padding: 8px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-translate-row:last-child {
+	border-bottom: none;
+}
+
+.beaver-translate-row__label {
+	flex: 1 1 auto;
+	font-weight: 600;
+}
+
+.beaver-translate-row__actions {
+	flex-basis: 100%;
+}
+
+.beaver-translate-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 10px;
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.beaver-translate-badge--needs_review {
+	background: #fcf0d8;
+	color: #94660c;
+}
+
+.beaver-translate-badge--published {
+	background: #edfaef;
+	color: #007017;
+}
+
+.beaver-translate-badge--failed {
+	background: #fcf0f1;
+	color: #b32d2e;
+}
+
+.beaver-translate-badge--pending {
+	background: #e5f5fa;
+	color: #0a4b78;
+}
+
+.beaver-translate-error {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: #b32d2e;
+}
+
+/* Dashboard ----------------------------------------------------------------- */
+
+.beaver-translate-coverage th,
+.beaver-translate-coverage td {
+	vertical-align: middle;
+}
+
+.beaver-translate-progress {
+	margin-top: 18px;
+}
+
+.beaver-translate-progress__bar {
+	height: 22px;
+	background: #f0f0f1;
+	border-radius: 11px;
+	overflow: hidden;
+}
+
+.beaver-translate-progress__bar span {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: linear-gradient( 90deg, #2271b1, #72aee6 );
+	transition: width 0.25s ease;
+}
+
+.beaver-translate-progress__text {
+	margin: 8px 0;
+	font-size: 13px;
+	color: #50575e;
+}
+
+.beaver-translate-inline-notice {
+	margin-top: 14px;
+	padding: 10px 12px;
+	font-size: 13px;
+	border-left: 4px solid #2271b1;
+	background: #f6f7f7;
+}
+
+.beaver-translate-inline-notice--error {
+	border-left-color: #d63638;
+}
+
+.beaver-translate-inline-notice--success {
+	border-left-color: #00a32a;
+}
+
+/* Maker's credit ------------------------------------------------------------ */
+
+.beaver-translate-credit {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 32px 0 0;
+	padding: 12px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-translate-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	height: 34px;
+	width: auto;
+}
+
+.beaver-translate-credit__text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.beaver-translate-credit__text strong {
+	display: block;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-translate-credit__text a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.beaver-translate-credit__text a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-translate-credit {
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-right: 12px;
+	}
+}

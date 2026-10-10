@@ -6,7 +6,7 @@ Tags: anti-spam, honeypot, login security, comment spam, bot protection
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,10 @@ Two independent traps, both invisible, both checked on every comment and login s
 Either one tripping ends the request immediately with a 403, before WordPress inserts the comment or attempts the login. REST API and XML-RPC requests are never checked — those clients authenticate through their own mechanisms and never touched this plugin's forms in the first place.
 
 **Chameleon Shield**, a dashboard under its own top-level admin menu item, shows total bots blocked, blocks today, a breakdown by trap, and the last ten blocks with a timestamp and a masked IP address.
+
+= Guarded Forms =
+
+The dashboard lists every form this install can actually guard, detected rather than hand-picked: the comment form and login page are always there, and a form from a third-party integration — currently att-core's tour-inquiry and contact forms — only appears once that plugin is active. Comment and login start switched on, matching the plugin's behaviour before this screen existed; anything detected afterward starts off. Turn a form off to stop checking it without deactivating the plugin.
 
 = Storage =
 
@@ -62,10 +66,18 @@ Both statistics options and the current daily transient are removed. Define `BEA
 
 == Changelog ==
 
+= 1.1.0 =
+* New: Guarded Forms screen — every form this install can guard, detected rather than hand-picked, each with its own on/off switch.
+* New: att-core integration (tour-inquiry and contact forms), off by default until switched on per form.
+* New: `att_core_form_security_fields_after` action and `att_core_validate_submission` filter in att-core, for this and future integrations.
+
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Adds a Guarded Forms screen and an off-by-default att-core integration. No behaviour changes for existing sites until a form is switched on.
 
 = 1.0.0 =
 Initial release.

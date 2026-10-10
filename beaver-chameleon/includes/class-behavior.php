@@ -91,6 +91,17 @@ class Beaver_Chameleon_Behavior {
 	}
 
 	/**
+	 * Public entry point for a form this class doesn't already inject into
+	 * on its own — e.g. Beaver_Chameleon_Forms adding this trap to a
+	 * third-party integration's form.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function render_fields() {
+		echo self::markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built entirely from esc_attr()/self::sign_timestamp() in markup().
+	}
+
+	/**
 	 * Prints the unlock script.
 	 *
 	 * Deliberately small: one nonce, one function, four `{ once: true }`

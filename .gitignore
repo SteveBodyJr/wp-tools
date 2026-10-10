@@ -6,11 +6,12 @@
 # Generated per site. Shipping one would hand every install the same token.
 beaver-debug/viewer-config.php
 
-# Editor and OS noise.
+# Editor and OS noise. Office lock files carry the user and machine name.
 .DS_Store
 Thumbs.db
 *.swp
 *~
+.~lock.*
 
 # Nothing here should ever hold credentials, but make it explicit.
 .env

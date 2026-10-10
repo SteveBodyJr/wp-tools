@@ -314,7 +314,7 @@ final class BP_Instructions {
 		?>
 		<div class="bp-card bp-names" id="bp-names">
 			<h2><?php esc_html_e( 'Names to keep in every language', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'Ticked names keep their spelling in every translation (generic words around them, such as "National Park" or "Lake", are still translated). Unticked names are translated. The list follows the site, and the AI sorts new names with the rule under "How to decide". Your own ticks always win. The site name is always kept.', 'beaver-press' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Ticked names keep their spelling in every language; generic words around them (National Park, Lake) are still translated. Your ticks always win.', 'beaver-press' ); ?></p>
 			<?php if ( isset( $_GET['names'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>
 				<div class="notice notice-success inline"><p><?php esc_html_e( 'Names saved. They apply to new translations.', 'beaver-press' ); ?></p></div>
 			<?php endif; ?>
@@ -465,7 +465,7 @@ final class BP_Instructions {
 				<p class="bp-status bp-status--error"><?php esc_html_e( 'The engine is set to DeepL, which does not take instructions. They are used with Claude, ChatGPT, DeepSeek, Gemini and custom models.', 'beaver-press' ); ?></p>
 			<?php endif; ?>
 			<p class="description">
-				<?php esc_html_e( 'Tell the translator how your site speaks: audience, tone, form of address, spelling, words to keep. Plain sentences work best. They are added after Beaver Press\'s fixed rules (JSON reply, tags, placeholders, numbers, names), which always win, so an instruction can change the style but cannot break a page.', 'beaver-press' ); ?>
+				<?php esc_html_e( 'How your site speaks: audience, tone, form of address, words to keep. Plain sentences work best. The fixed rules (tags, placeholders, numbers, names) always win, so an instruction changes the style but never breaks a page.', 'beaver-press' ); ?>
 				<?php if ( ! $ins['saved'] ) : ?>
 					<strong><?php esc_html_e( 'Suggested instructions are shown and already in use; edit them and Save to make them yours.', 'beaver-press' ); ?></strong>
 				<?php endif; ?>
@@ -499,6 +499,7 @@ final class BP_Instructions {
 		</div>
 
 		<?php self::render_names(); ?>
+		<?php BP_Terms::render(); ?>
 
 		<div class="bp-card bp-ins-try" id="bp-ins-try">
 			<h2><?php esc_html_e( 'Try it', 'beaver-press' ); ?></h2>

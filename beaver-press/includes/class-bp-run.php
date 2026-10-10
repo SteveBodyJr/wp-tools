@@ -21,6 +21,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class BP_Run {
 
+	/** Path of the page-not-found check (any address that does not exist). */
+	const MISSING_PATH = 'beaver-press-page-not-found';
+
 	/** Run state. */
 	const STATE_OPTION = 'beaver_press_run';
 
@@ -136,7 +139,7 @@ final class BP_Run {
 	 */
 	public static function known_urls( array $urls ) {
 		$known = array();
-		foreach ( self::urls() as $url ) {
+		foreach ( array_merge( self::urls(), self::service_urls() ) as $url ) {
 			$known[ untrailingslashit( $url ) ] = $url;
 		}
 		$out = array();
@@ -362,7 +365,8 @@ final class BP_Run {
 			return new WP_Error( 'bp_run_no_language', __( 'Tick at least one language.', 'beaver-press' ) );
 		}
 
-		$urls = null === $urls ? self::urls() : self::known_urls( (array) $urls );
+		// A whole-site run also visits the service pages (search results, nothing found, page not found).
+		$urls = null === $urls ? array_merge( self::urls(), self::service_urls() ) : self::known_urls( (array) $urls );
 		if ( ! $urls ) {
 			return new WP_Error( 'bp_run_no_page', __( 'Choose at least one page.', 'beaver-press' ) );
 		}
@@ -559,6 +563,32 @@ final class BP_Run {
 	}
 
 	/**
+	 * Pages that are not in any sitemap but carry fixed texts: search results (with and without
+	 * results) and the page-not-found page. A whole-site run visits them once per language so
+	 * their words are translated; they are never listed in the language sitemaps (query string
+	 * or 404). Filter `beaver_press_run_service_urls`.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return string[]
+	 */
+	public static function service_urls() {
+		$terms = class_exists( 'BP_Profiles' ) ? (array) BP_Profiles::get( 'terms', array() ) : array();
+		$word  = $terms ? (string) reset( $terms ) : 'a';
+		$home  = home_url( '/' );
+		return array_values(
+			(array) apply_filters(
+				'beaver_press_run_service_urls',
+				array(
+					add_query_arg( 's', rawurlencode( $word ), $home ),
+					add_query_arg( 's', 'bp-nothing-found-check', $home ),
+					home_url( '/' . self::MISSING_PATH . '/' ),
+				)
+			)
+		);
+	}
+
+	/**
 	 * Fetch one page as the signed run.
 	 *
 	 * @param string $url URL.
@@ -581,6 +611,9 @@ final class BP_Run {
 			return $response->get_error_message();
 		}
 		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 404 === $code && false !== strpos( (string) $url, self::MISSING_PATH ) ) {
+			return true; // The page-not-found check: 404 is its answer.
+		}
 		return $code >= 200 && $code < 400 ? true : 'HTTP ' . $code;
 	}
 

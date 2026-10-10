@@ -125,3 +125,52 @@
 		if (!$found.children().length) { $found.prop('hidden', true); }
 	});
 })(jQuery);
+
+/* 2.8.0 Terms and search words: AI suggestions fill only empty boxes; nothing is saved until Save. */
+(function ($) {
+	var cfg = window.BP_INS || {}, t = cfg.i18n || {};
+	var $card = $('#bp-terms');
+	if (!$card.length) return;
+	var $msg = $card.find('.bp-terms__msg');
+	function langs() { var out = []; $card.find('.bp-terms__search .bp-terms__phrases').each(function () { out.push({ code: $(this).data('lang'), name: $.trim($(this).closest('p').find('strong').text()) }); }); return out; }
+	$card.on('click', '.bp-terms__suggest', function () {
+		var $btn = $(this).prop('disabled', true), list = langs(), filled = 0, asked = 0;
+		(function next(i) {
+			if (i >= list.length) { $btn.prop('disabled', false); $msg.removeClass('bp-status--error').text(asked ? t.termsDone : t.termsNone); return; }
+			var code = list[i].code, terms = [], known = {};
+			$card.find('tbody tr').each(function () {
+				var term = $.trim($(this).find('.bp-terms__term').val()), $in = $(this).find('.bp-terms__in[data-lang="' + code + '"]'), val = $.trim($in.val());
+				if (term && !val) terms.push(term);
+				if (term && val) known[term] = val; // 2.9.1: longer terms are built from these.
+			});
+			if (!terms.length) { next(i + 1); return; }
+			asked++;
+			$msg.text((t.termsAsking || '%s').replace('%s', list[i].name));
+			$.post(cfg.ajax, { action: 'bp_terms_suggest', nonce: cfg.nonce, language: code, terms: terms, known: known }).done(function (r) {
+				if (!r || !r.success) { $msg.addClass('bp-status--error').text((r && r.data && r.data.message) || t.failed); $btn.prop('disabled', false); return; }
+				$card.find('tbody tr').each(function () {
+					var term = $.trim($(this).find('.bp-terms__term').val()), $in = $(this).find('.bp-terms__in[data-lang="' + code + '"]');
+					if (term && !$.trim($in.val()) && r.data.terms[term]) { $in.val(r.data.terms[term]); filled++; }
+				});
+				next(i + 1);
+			}).fail(function () { $msg.addClass('bp-status--error').text(t.failed); $btn.prop('disabled', false); });
+		})(0);
+	});
+	$card.on('click', '.bp-terms__suggest-search', function () {
+		var $btn = $(this).prop('disabled', true), code = $btn.data('lang'), $box = $card.find('.bp-terms__phrases[data-lang="' + code + '"]');
+		$.post(cfg.ajax, { action: 'bp_search_suggest', nonce: cfg.nonce, language: code }).done(function (r) {
+			if (r && r.success) {
+				var have = $.trim($box.val()), add = r.data.phrases.filter(function (p) { return have.toLowerCase().split('\n').indexOf(p.toLowerCase()) < 0; });
+				$box.val((have ? have + '\n' : '') + add.join('\n'));
+				$msg.removeClass('bp-status--error').text(t.termsDone);
+			} else { $msg.addClass('bp-status--error').text((r && r.data && r.data.message) || t.failed); }
+		}).fail(function () { $msg.addClass('bp-status--error').text(t.failed); }).always(function () { $btn.prop('disabled', false); dirty(); });
+	});
+	// 2.9.1: unsaved changes are shown on the card, and leaving the page asks first.
+	var changed = false, $warn = $card.find('.bp-terms__unsaved');
+	function dirty() { changed = true; $warn.prop('hidden', false); }
+	$card.on('input', 'input, textarea', dirty);
+	$(document).ajaxComplete(function (e, xhr, o) { if (o && o.data && String(o.data).indexOf('bp_terms_suggest') > -1) dirty(); });
+	$card.find('form').on('submit', function () { changed = false; });
+	window.addEventListener('beforeunload', function (e) { if (changed) { e.preventDefault(); e.returnValue = ''; } });
+})(jQuery);

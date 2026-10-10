@@ -22,7 +22,8 @@ are in `readme.txt`.
 | `includes/class-bp-providers.php` | Presets, one JSON request path per API format (Anthropic, OpenAI-compatible, Gemini), DeepL, model lists, token usage |
 | `includes/class-bp-engine-settings.php` | The Beaver Press translator on Languages -> Automatic Translation: panel, saving, Test connection, Load models |
 | `includes/class-bp-ai-machine-translator.php` | The translator (`TRP_Machine_Translator`): batches, checks, give-up list, usage |
-| `includes/class-bp-batch.php` | Prompt (fixed technical rules + profile lines + names + owner instructions), reply schema, per-string checks |
+| `includes/class-bp-batch.php` | Prompt (fixed technical rules + profile lines + names + owner instructions), reply schema, per-string checks (structure, then facts: numbers by value, e-mail/web addresses, shortcodes; `BP_Batch::facts()`) |
+| `includes/class-bp-terms.php` | Terms per language and search words per language (Instructions tab card, AI suggestions, request lines) |
 | `includes/class-bp-profiles.php` | Translation profiles: Safari & Tourism (context, style, terms, places, protections, per-language suggestions, names rule); filter `beaver_press_profiles` |
 | `includes/class-bp-instructions.php` | Instructions tab: profile card, site and per-language instructions (profile suggestions until saved), names to keep, Try it, Redo |
 | `includes/class-bp-glossary.php` | Names kept in every language (groups, per-name choices, own list); DeepL `<bp-keep>` |
@@ -48,7 +49,7 @@ are in `readme.txt`.
 | `includes/class-bp-roles.php` | Translator role (visual editor only) |
 | `includes/class-bp-transfer.php` | Settings export / import (never keys) |
 | `includes/class-bp-quiet.php`, `class-bp-numbers.php`, `class-bp-languages.php` | Engine extras hidden; number format; languages limit |
-| `includes/class-bp-admin.php` | Settings -> Beaver Press: Translate site, Pages, Instructions, Languages (no Review tab since 2.1.0: corrections in the visual editor) |
+| `includes/class-bp-admin.php` | Settings -> Beaver Press: Translate site (status line, run, usage), Pages (paged, per-language counts), Instructions, Settings (switches, costs and limits, forms, prefixes), Tools (backups, transfer, history), Languages; `tab_url()` (no Review tab since 2.1.0: corrections in the visual editor) |
 | `includes/class-bp-cli.php` | `wp beaver-press ...` |
 | `tests/` | Command-line tests (`run-all.sh`, shared `bootstrap.php`), never on a live site, never during a run |
 | `tests/audit/` | SEO/URL audit, SEO-plugin and upgrade checks for disposable copies only (see `tests/README.md`) |

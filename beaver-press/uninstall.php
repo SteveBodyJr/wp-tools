@@ -45,6 +45,7 @@ delete_option( 'beaver_press_budget' );
 delete_option( 'beaver_press_history' );
 delete_option( 'beaver_press_slug_bases' );
 delete_option( 'beaver_press_profile' );
+delete_option( 'beaver_press_terms' );
 delete_option( 'beaver_press_xdefault_set' );
 delete_option( 'beaver_press_backups' );
 $bp_backup_key = get_option( 'beaver_press_backup_dir' );

@@ -173,20 +173,22 @@ final class BP_Profiles {
 		?>
 		<div class="bp-card" id="bp-profile">
 			<h2><?php esc_html_e( 'Translation profile', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'What the AI is told about your kind of website before your own instructions: style, tourism terminology, places, and what must never change. Your own instructions below always come last and win.', 'beaver-press' ); ?></p>
+			<p class="description"><?php esc_html_e( 'What the AI knows about your kind of website. Your own instructions below always win.', 'beaver-press' ); ?></p>
 			<?php if ( isset( $_GET['profile'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>
 				<div class="notice notice-success inline"><p><?php esc_html_e( 'Profile saved. It applies to new translations.', 'beaver-press' ); ?></p></div>
 			<?php endif; ?>
+			<?php if ( count( $all ) < 2 ) : // One profile: nothing to choose. ?>
+				<p><strong><?php echo esc_html( (string) $all[ $cur ]['label'] ); ?></strong> - <?php echo esc_html( (string) ( $all[ $cur ]['description'] ?? '' ) ); ?></p>
+			<?php else : ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="bp_profile" />
 				<?php wp_nonce_field( 'bp_profile' ); ?>
 				<?php foreach ( $all as $id => $p ) : ?>
 					<p><label><input type="radio" name="profile" value="<?php echo esc_attr( (string) $id ); ?>" <?php checked( $cur, $id ); ?> /> <strong><?php echo esc_html( (string) $p['label'] ); ?></strong> - <?php echo esc_html( (string) ( $p['description'] ?? '' ) ); ?></label></p>
 				<?php endforeach; ?>
-				<?php if ( count( $all ) > 1 ) : ?>
-					<p><button class="button"><?php esc_html_e( 'Save profile', 'beaver-press' ); ?></button></p>
-				<?php endif; ?>
+				<p><button class="button"><?php esc_html_e( 'Save profile', 'beaver-press' ); ?></button></p>
 			</form>
+			<?php endif; ?>
 		</div>
 		<?php
 	}

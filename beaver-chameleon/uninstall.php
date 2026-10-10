@@ -26,6 +26,7 @@ if ( defined( 'BEAVER_CHAMELEON_KEEP_DATA_ON_UNINSTALL' ) && BEAVER_CHAMELEON_KE
 function beaver_chameleon_uninstall_site() {
 	delete_option( 'beaver_chameleon_stats' );
 	delete_option( 'beaver_chameleon_log' );
+	delete_option( 'beaver_chameleon_forms' );
 	delete_transient( 'beaver_chameleon_today_' . gmdate( 'Y-m-d' ) );
 	delete_transient( 'beaver_chameleon_today_' . gmdate( 'Y-m-d', strtotime( '-1 day' ) ) );
 }

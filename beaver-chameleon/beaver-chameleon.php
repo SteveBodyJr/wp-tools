@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver Chameleon
  * Plugin URI:        https://digitalbeavertz.com/
  * Description:       A daily-mutating honeypot and a human-interaction trap for the comment and login forms — invisible to visitors, expensive for a bot to reverse-engineer, and every block is logged rather than just discarded. Find the counts and the last ten under Chameleon Shield.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Digital Beaver
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BEAVER_CHAMELEON_VERSION', '1.0.0' );
+define( 'BEAVER_CHAMELEON_VERSION', '1.1.0' );
 define( 'BEAVER_CHAMELEON_FILE', __FILE__ );
 define( 'BEAVER_CHAMELEON_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BEAVER_CHAMELEON_URL', plugin_dir_url( __FILE__ ) );
@@ -26,9 +26,11 @@ define( 'BEAVER_CHAMELEON_BASENAME', plugin_basename( __FILE__ ) );
 define( 'BEAVER_CHAMELEON_SLUG', 'beaver-chameleon' );
 
 require_once BEAVER_CHAMELEON_PATH . 'includes/class-stats.php';
+require_once BEAVER_CHAMELEON_PATH . 'includes/class-settings.php';
 require_once BEAVER_CHAMELEON_PATH . 'includes/class-honeypot.php';
 require_once BEAVER_CHAMELEON_PATH . 'includes/class-behavior.php';
 require_once BEAVER_CHAMELEON_PATH . 'includes/class-guard.php';
+require_once BEAVER_CHAMELEON_PATH . 'includes/class-forms.php';
 
 if ( is_admin() ) {
 	require_once BEAVER_CHAMELEON_PATH . 'includes/class-admin.php';
@@ -90,6 +92,7 @@ final class Beaver_Chameleon_Plugin {
 			Beaver_Chameleon_Honeypot::init();
 			Beaver_Chameleon_Behavior::init();
 			Beaver_Chameleon_Guard::init();
+			Beaver_Chameleon_Forms::init();
 		}
 
 		if ( is_admin() ) {

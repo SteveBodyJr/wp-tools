@@ -99,6 +99,17 @@ foreach ( glob( 'beaver-*', GLOB_ONLYDIR ) as $slug ) {
 		'homepage'     => REPO . '/tree/main/' . $slug,
 		'package'      => sprintf( '%s/releases/download/%s-%s/%s', REPO, $slug, $version, $archive ),
 	);
+
+	// Icons for Plugins -> Updates (beaver-updates 1.2.0+), from the plugin's own assets.
+	$icons = array();
+	foreach ( array( '1x' => 'icon-128x128.png', '2x' => 'icon-256x256.png' ) as $size => $file ) {
+		if ( file_exists( $slug . '/assets/' . $file ) ) {
+			$icons[ $size ] = sprintf( 'https://raw.githubusercontent.com/SteveBodyJr/wp-tools/main/%s/assets/%s', $slug, $file );
+		}
+	}
+	if ( $icons ) {
+		$plugins[ $slug ]['icons'] = $icons;
+	}
 }
 
 if ( $errors ) {

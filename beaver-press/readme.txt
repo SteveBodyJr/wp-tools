@@ -4,7 +4,7 @@ Tags: safari, tourism, multilingual, translation, multilingual seo
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 2.6.2
+Stable tag: 3.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,8 @@ Beaver Press makes safari and tourism websites multilingual: safari operators, t
 * **SEO-friendly language addresses**: your language at the root (example.com/safaris/), the others under their code (example.com/fr/safaris/, /de/, /it/, /es/, /sw/...); optional translated slugs (/fr/safaris-en-tanzanie/) and translated prefixes; old addresses answer 301.
 * **Server-rendered translated pages**: search engines and travellers get the translated HTML directly, no JavaScript needed.
 * **AI-assisted translation, stored once**: Claude, ChatGPT, DeepSeek, Gemini, DeepL or any OpenAI-compatible endpoint. Each text is translated once per language and stored (translation memory: "Book now" is translated once and used everywhere). Visitors never cause AI requests.
+* **Found in each language, not just translated**: per-language terms (game drive = Pirschfahrt everywhere) and the search words travellers really use, preferred in titles, headings and descriptions where the text already says the same.
+* **Facts checked before anything is stored**: every translation must keep the original's prices, dates, times, durations, phone numbers, e-mail and web addresses, links, HTML and shortcodes (each language may write a number its own way); one that does not is refused and asked for again, so a wrong price never reaches the page.
 * **Visual editor and manual translations**: click any text, attribute or image alt on the page and correct it. Automatic translation never overwrites your corrections.
 * **Changed texts**: when you edit a sentence that has a hand-made translation, the translation is kept on the new sentence and marked outdated (Keep, Retranslate with AI, Edit).
 * **Multilingual SEO**: a self canonical per language; hreflang plus x-default; translated title, meta description, Open Graph, image alt text and structured-data text; language sitemaps with complete, indexable pages only; pages not fully translated yet are shown in your language with noindex and a canonical to the original.
@@ -74,6 +76,39 @@ Beaver Press is free software under the GNU General Public License v2 or later; 
 The translation engine in engine/ is TranslatePress - Multilingual 3.3.7 (free edition), Copyright 2017 Cozmoslabs, licensed under the GNU General Public License v2 or later, included without changes. Source: https://wordpress.org/plugins/translatepress-multilingual/ (code: https://plugins.svn.wordpress.org/translatepress-multilingual/tags/3.3.7/). Its own licence and copyright notices, and those of the libraries it bundles, remain in its files. Beaver Press is not affiliated with or endorsed by Cozmoslabs. No code from paid editions is included.
 
 == Changelog ==
+
+= 3.0.0 =
+* A mature, professional admin in WordPress's own colours: calm cards with hairline borders, one type scale and aligned figures; a quiet header (title, version, provider status, Translate site) with plain tabs.
+* Overview: one figures strip; Languages as a table (complete pages with a thin bar and a Complete or pending label, texts left, a Translate link per row); Translate site as facts with its buttons in the card footer; Health in plain words.
+* Settings: each setting a row, name and help on the left, the control on the right; one Save per card. Instructions: language boxes as label and field rows.
+* Tools: settings history in plain words ("Switches (8), spending limit") instead of internal setting names; shorter descriptions throughout; the credit is one line.
+
+= 2.9.1 =
+* Better term suggestions: each term is sent with a sentence from your site that uses it, and the AI is told to keep exactly the meaning (no added "luxury", "photo" or "mountain hut"), to keep terms short, and to build longer terms from the base ones you already chose (private safari from safari). On DeepSeek the answers are steady: asking again gives the same words.
+* The Terms and search words card shows "Unsaved changes" after suggestions or edits, and the browser asks before leaving the page unsaved.
+
+= 2.9.0 =
+* A modern look in WordPress's own colours: a header with the provider's state and the Translate site button, tabs with icons, and an Overview tab with four figures (languages, pages complete, texts left with the cost to finish, spent this month), one row per language with its progress and its own Translate button, the run with language chips and a summary, and a Health card.
+* Settings: switches as on/off toggles in cards, grouped (Translation, Visitors, Alerts and extras).
+* Pages: states as coloured labels, the per-language counts as filter buttons, a header row that stays in view.
+* Admin notices from WordPress and other plugins now appear under the header instead of inside it.
+
+= 2.8.0 =
+* Terms per language: how each tourism term is translated, the same way on every page (game drive = Pirschfahrt); rows start from the Safari & Tourism terms, the AI can suggest the empty ones, you check and save. A batch that contains a term (also in the plural) is told to use exactly that translation.
+* Search words per language: the phrases travellers type into a search engine (Tansania Safari, safari Tanzanie). The translator prefers that wording where a text already says the same, above all in titles, headings and descriptions, and never adds it otherwise. AI suggestions are a starting point to check in Search Console or a keyword tool.
+* Search results (with and without results) and the page-not-found page are visited once per language by a whole-site run, so their fixed words are translated too; they never enter a language sitemap.
+
+= 2.7.0 =
+* Clearer settings screens: Translate site (a status line with languages, pages complete, provider connection and spend, then the run and usage), Settings (switches, costs and limits, forms, address prefixes) and Tools (backups, export and import, copy settings, settings history). Old links to a card still land on it.
+* Each switch has its own row with a one-line description; the longer explanation is behind More.
+* The model price and the spending limits are saved together in one Costs and limits form.
+* Pages tab: 50 pages at a time with paging, and per-language counts (complete, texts missing, not visited) that filter the list; Translate and Check progress still act on every matching page.
+* Address prefixes lists only prefixes with content (or one already translated); wide tables scroll inside their card, and nothing scrolls sideways on a phone.
+* The status line is no longer repeated ("Finished: Finished."); a single translation profile is shown as a line.
+
+= 2.6.3 =
+* Every translation is checked for the facts of the original before it is stored: numbers (prices, dates, times, durations, phone numbers), e-mail and web addresses, and the site's shortcodes. Numbers are compared by value, so each language may write them its own way (3,550 / 3.550 / 3 550, 11 pm / 23 h, 19th century / XIXe siècle, Chinese number words); a translation that loses or changes one is refused and asked for again. Measured on 31,730 stored translations: no correct translation refused; 8 real errors found.
+* The AI is told to keep negations and what is included, excluded, optional, private or one-way exactly as written, and to keep buttons, menu items, headings and image descriptions short.
 
 = 2.6.2 =
 * Safari & Tourism translation profile: one central definition of the industry context, tourism style, terminology, places, what must never change, per-language suggestions and the names rule (shown on the Instructions tab; further profiles can be added by filter). Sites with their own saved instruction and names rule keep them.

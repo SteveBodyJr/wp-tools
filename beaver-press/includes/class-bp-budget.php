@@ -103,21 +103,28 @@ final class BP_Budget {
 	}
 
 	/**
-	 * The form, under the price on the Translate-site card.
+	 * The limit fields, as their own form or inside the Costs and limits form (Settings tab).
 	 *
 	 * @param array $engine Engine settings.
+	 * @param bool  $form   Own form with its own Save button.
 	 */
-	public static function render( array $engine ) {
+	public static function render( array $engine, $form = true ) {
 		$limits = self::limits();
 		$spent  = self::spent();
 		?>
+		<?php if ( $form ) : ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bp-price bp-budget">
 			<input type="hidden" name="action" value="bp_budget" />
 			<?php wp_nonce_field( 'bp_budget' ); ?>
+		<?php else : ?>
+		<div class="bp-price bp-budget-fields">
+		<?php endif; ?>
 			<span><?php esc_html_e( 'Stop at (US$, 0 = no limit):', 'beaver-press' ); ?></span>
 			<label><input type="number" name="budget_day" min="0" step="0.01" value="<?php echo esc_attr( $limits['day'] > 0 ? (string) $limits['day'] : '0' ); ?>" class="small-text" /> <?php esc_html_e( 'per day', 'beaver-press' ); ?></label>
 			<label><input type="number" name="budget_month" min="0" step="0.01" value="<?php echo esc_attr( $limits['month'] > 0 ? (string) $limits['month'] : '0' ); ?>" class="small-text" /> <?php esc_html_e( 'per month', 'beaver-press' ); ?></label>
-			<button class="button button-small"><?php esc_html_e( 'Save limit', 'beaver-press' ); ?></button>
+			<?php if ( $form ) : ?>
+				<button class="button button-small"><?php esc_html_e( 'Save limit', 'beaver-press' ); ?></button>
+			<?php endif; ?>
 			<span class="description">
 				<?php
 				echo esc_html(
@@ -136,7 +143,7 @@ final class BP_Budget {
 				}
 				?>
 			</span>
-		</form>
+		<?php echo $form ? '</form>' : '</div>'; ?>
 		<?php
 	}
 
@@ -148,20 +155,31 @@ final class BP_Budget {
 			wp_die( esc_html__( 'Not allowed.', 'beaver-press' ), 403 );
 		}
 		check_admin_referer( 'bp_budget' );
+		self::store( (float) ( $_POST['budget_day'] ?? 0 ), (float) ( $_POST['budget_month'] ?? 0 ) );
+		wp_safe_redirect( BP_Admin::tab_url( 'settings', 'bp-costs' ) );
+		exit;
+	}
+
+	/**
+	 * Store the limits; a raised limit lets the next request try instead of waiting on the old stop.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param float $day   US dollars per day (0 = none).
+	 * @param float $month US dollars per month (0 = none).
+	 */
+	public static function store( $day, $month ) {
 		update_option(
 			self::OPTION,
 			array(
-				'day'   => max( 0.0, round( (float) ( $_POST['budget_day'] ?? 0 ), 2 ) ),
-				'month' => max( 0.0, round( (float) ( $_POST['budget_month'] ?? 0 ), 2 ) ),
+				'day'   => max( 0.0, round( (float) $day, 2 ) ),
+				'month' => max( 0.0, round( (float) $month, 2 ) ),
 			),
 			false
 		);
-		// A raised limit: let the next request try instead of waiting on the old stop.
 		$error = BP_Providers::last_error();
 		if ( $error && 'bp_budget' === ( $error['code'] ?? '' ) && '' === self::reached() ) {
 			delete_option( BP_Providers::ERROR_OPTION );
 		}
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . BP_Admin::SLUG . '#bp-run' ) );
-		exit;
 	}
 }

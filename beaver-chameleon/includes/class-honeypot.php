@@ -118,6 +118,17 @@ class Beaver_Chameleon_Honeypot {
 	}
 
 	/**
+	 * Public entry point for a form this class doesn't already inject into
+	 * on its own — e.g. Beaver_Chameleon_Forms adding this trap to a
+	 * third-party integration's form.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function render_field() {
+		echo self::markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built entirely from esc_attr()/esc_html__() in markup().
+	}
+
+	/**
 	 * Whether today's field arrived non-empty — the honeypot tripped.
 	 *
 	 * Uses `isset()` + `trim()` rather than `empty()` on its own: `empty()`

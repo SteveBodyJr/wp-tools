@@ -617,7 +617,7 @@ final class BP_Backup {
 	 */
 	private static function back( array $result ) {
 		set_transient( 'bp_tr_result_' . get_current_user_id(), $result, 300 );
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . BP_Admin::SLUG . '#bp-translations' ) );
+		wp_safe_redirect( BP_Admin::tab_url( 'tools', 'bp-translations' ) );
 		exit;
 	}
 
@@ -771,8 +771,8 @@ final class BP_Backup {
 		};
 		?>
 		<div class="bp-card" id="bp-translations">
-			<h2><?php esc_html_e( 'Translations: backup, export and import', 'beaver-press' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'Backups are made automatically before an import, a restore and "Redo a language" (the last 10 are kept, in a private folder). Import checks the file first and shows what would change; manual translations are never replaced unless you tick it.', 'beaver-press' ); ?></p>
+			<div class="bp-card__head bp-card__head--inset"><h2><?php esc_html_e( 'Translations: backup, export and import', 'beaver-press' ); ?></h2></div>
+			<p class="bp-card__meta bp-card__lead"><?php esc_html_e( 'A backup is made before every import, restore and redo (last 10 kept). Import checks first; your own edits are kept unless you tick it.', 'beaver-press' ); ?></p>
 			<?php if ( is_array( $result ) && isset( $result['error'] ) ) : ?>
 				<div class="notice notice-error inline"><p><?php echo esc_html( $result['error'] ); ?></p></div>
 			<?php elseif ( is_array( $result ) && isset( $result['report'] ) ) : ?>

@@ -15,7 +15,7 @@ ok( '402 (no credit) stops a run', in_array( 'bp_http_402', BP_Run::FATAL, true 
 
 $mt = get_option( 'trp_machine_translation_settings', array() );
 update_option( BP_Providers::ERROR_OPTION, array( 'time' => time(), 'provider' => BP_Engine_Settings::current( is_array( $mt ) ? $mt : array() )['provider'], 'code' => 'bp_http_402', 'message' => 'Test: no credit.' ), false );
-$v0 = (int) BP_Topup::state()['visited']; // Today's real run may already have visited pages.
+$v0 = BP_Topup::state()['day'] === wp_date( 'Y-m-d' ) ? (int) BP_Topup::state()['visited'] : 0; // Today's real run may already have visited pages; a new day starts at 0.
 $s = BP_Topup::tick( 1 );
 ok( 'provider refusal: nothing visited', $v0 === $s['visited'] && false !== strpos( $s['reason'], 'Test: no credit.' ), $s['reason'] );
 update_option( BP_Providers::ERROR_OPTION, array( 'time' => time() - 7 * HOUR_IN_SECONDS, 'provider' => '', 'code' => 'bp_http_402', 'message' => 'old' ), false );

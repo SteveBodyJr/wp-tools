@@ -25,6 +25,9 @@ tests), `BP_TEST_SLUG` (a translated language's URL slug, default `fr`), `PHP_BI
 | test-keys-providers.php | encrypted keys, provider requests, errors never showing keys |
 | test-engine-settings.php | engine panel, sanitising, models, test connection |
 | test-batches.php | batches, checks, placeholders, DeepL, Claude schema, give-up list |
+| test-terms.php | 2.8.0 terms per language (plural match), search words, request order, service pages (search, nothing found, 404) |
+| test-admin-tabs.php | 2.7.0 admin: tabs, switch rows (same field names), Costs and limits form, limits store, prefixes in use |
+| test-facts-check.php | facts kept: numbers by value in every language (thousands marks, 24-hour times, centuries, Chinese number words, 万 and 折), addresses, shortcodes; meaning lines in the prompt |
 | test-visitor-guard.php | only editors, cron/CLI and the signed run start paid translations |
 | test-glossary-prompt.php | names kept, prompt wording |
 | test-usage-estimate.php | usage log, estimate, daily limit |

@@ -1,0 +1,352 @@
+/**
+ * Beaver Shield — admin.
+ *
+ * WordPress palette, WordPress spacing, no framework. A left rail for the
+ * sections and a single panel, so the screen reads as one page with eight parts
+ * rather than eight screens.
+ */
+
+.beaver-shield {
+	--bs-blue: #2271b1;
+	--bs-line: #dcdcde;
+	--bs-ink: #1d2327;
+	--bs-muted: #646970;
+	--bs-pass: #00a32a;
+	--bs-warn: #dba617;
+	--bs-fail: #d63638;
+	--bs-skip: #a7aaad;
+	--bs-tint: #f6f7f7;
+}
+
+.beaver-shield-layout {
+	display: flex;
+	align-items: flex-start;
+	gap: 24px;
+	margin-top: 20px;
+}
+
+/* --- The rail ---------------------------------------------------------- */
+
+.beaver-shield-rail {
+	flex: 0 0 210px;
+	background: #fff;
+	border: 1px solid var(--bs-line);
+	border-radius: 4px;
+	overflow: hidden;
+	position: sticky;
+	top: 46px;
+}
+
+.beaver-shield-rail__item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 11px 14px;
+	color: var(--bs-ink);
+	text-decoration: none;
+	border-left: 3px solid transparent;
+	border-bottom: 1px solid var(--bs-line);
+	font-weight: 500;
+}
+
+.beaver-shield-rail__item:last-child {
+	border-bottom: 0;
+}
+
+.beaver-shield-rail__item:hover,
+.beaver-shield-rail__item:focus {
+	background: var(--bs-tint);
+	color: var(--bs-blue);
+}
+
+.beaver-shield-rail__item.is-current {
+	background: var(--bs-tint);
+	border-left-color: var(--bs-blue);
+	color: var(--bs-blue);
+}
+
+.beaver-shield-rail__item .dashicons {
+	color: var(--bs-muted);
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.beaver-shield-rail__item.is-current .dashicons {
+	color: var(--bs-blue);
+}
+
+/* --- The panel --------------------------------------------------------- */
+
+.beaver-shield-panel {
+	flex: 1 1 auto;
+	min-width: 0;
+	background: #fff;
+	border: 1px solid var(--bs-line);
+	border-radius: 4px;
+	padding: 8px 24px 24px;
+}
+
+.beaver-shield-panel h2 {
+	font-size: 18px;
+	margin: 20px 0 6px;
+}
+
+.beaver-shield-panel h3 {
+	font-size: 14px;
+	margin: 28px 0 6px;
+}
+
+.beaver-shield-lede {
+	max-width: 78ch;
+	color: var(--bs-muted);
+	margin: 0 0 20px;
+}
+
+.beaver-shield-note {
+	display: block;
+	color: var(--bs-muted);
+	font-size: 13px;
+	max-width: 78ch;
+	margin: 4px 0 0;
+}
+
+.beaver-shield-warn {
+	display: block;
+	max-width: 78ch;
+	font-size: 13px;
+	color: #8a6100;
+	margin: 6px 0 0;
+}
+
+.beaver-shield-warn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: text-bottom;
+	color: var(--bs-warn);
+}
+
+/* --- Switches ---------------------------------------------------------- */
+
+.beaver-shield-switches {
+	margin: 0;
+	border-top: 1px solid var(--bs-line);
+}
+
+.beaver-shield-switch {
+	margin: 0;
+	padding: 14px 0 14px 4px;
+	border-bottom: 1px solid var(--bs-line);
+}
+
+.beaver-shield-switch.is-risky {
+	border-left: 3px solid #f0c33c;
+	padding-left: 14px;
+	margin-left: -17px;
+}
+
+.beaver-shield-switch__head {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.beaver-shield-switch__head label {
+	cursor: pointer;
+}
+
+.beaver-shield-switch .beaver-shield-note,
+.beaver-shield-switch .beaver-shield-warn {
+	margin-left: 26px;
+}
+
+.beaver-shield-tag {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 1px 7px;
+	border-radius: 9px;
+	background: #edf6ff;
+	color: var(--bs-blue);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+	vertical-align: 1px;
+}
+
+.beaver-shield-modes label {
+	display: block;
+	margin-bottom: 6px;
+}
+
+.beaver-shield-prefix {
+	color: var(--bs-muted);
+}
+
+/* --- Scan -------------------------------------------------------------- */
+
+.beaver-shield-tally {
+	display: flex;
+	gap: 8px;
+	margin: 20px 0 12px;
+}
+
+.beaver-shield-pill {
+	padding: 3px 10px;
+	border-radius: 11px;
+	font-size: 12px;
+	font-weight: 600;
+	background: var(--bs-tint);
+	color: var(--bs-muted);
+}
+
+.beaver-shield-pill--pass {
+	background: #edfaef;
+	color: #006414;
+}
+
+.beaver-shield-pill--warn {
+	background: #fcf9e8;
+	color: #8a6100;
+}
+
+.beaver-shield-pill--fail {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.beaver-shield-scan td {
+	vertical-align: top;
+	padding: 12px;
+}
+
+.beaver-shield-scan__status {
+	width: 28px;
+}
+
+.beaver-shield-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-top: 5px;
+	background: var(--bs-skip);
+}
+
+.beaver-shield-dot--pass {
+	background: var(--bs-pass);
+}
+
+.beaver-shield-dot--warn {
+	background: var(--bs-warn);
+}
+
+.beaver-shield-dot--fail {
+	background: var(--bs-fail);
+}
+
+/* --- Boxes ------------------------------------------------------------- */
+
+.beaver-shield-callout,
+.beaver-shield-truth,
+.beaver-shield-recovery {
+	border: 1px solid var(--bs-line);
+	border-left: 3px solid var(--bs-blue);
+	background: var(--bs-tint);
+	border-radius: 3px;
+	padding: 4px 18px 14px;
+	margin: 24px 0;
+	max-width: 82ch;
+}
+
+.beaver-shield-truth {
+	border-left-color: var(--bs-muted);
+}
+
+.beaver-shield-recovery {
+	border-left-color: var(--bs-fail);
+}
+
+.beaver-shield-callout h3,
+.beaver-shield-truth h3,
+.beaver-shield-recovery h3 {
+	margin-top: 14px;
+}
+
+.beaver-shield-truth ul,
+.beaver-shield-callout ul {
+	list-style: disc;
+	margin-left: 20px;
+}
+
+.beaver-shield-truth li,
+.beaver-shield-recovery li {
+	margin-bottom: 8px;
+	max-width: 78ch;
+}
+
+.beaver-shield-url {
+	font-size: 14px;
+	padding: 6px 10px;
+	display: inline-block;
+}
+
+.beaver-shield-code {
+	background: var(--bs-tint);
+	border: 1px solid var(--bs-line);
+	border-radius: 3px;
+	padding: 14px;
+	overflow-x: auto;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.beaver-shield-bots__name,
+.beaver-shield-status td:first-child {
+	width: 220px;
+}
+
+/* --- Credit ------------------------------------------------------------ */
+
+.beaver-shield-credit {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	margin: 28px 0 10px;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid var(--bs-line);
+	border-radius: 4px;
+}
+
+.beaver-shield-credit__logo {
+	width: 132px;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.beaver-shield-credit__text strong {
+	display: block;
+	margin-bottom: 2px;
+}
+
+.beaver-shield-credit__text {
+	color: var(--bs-muted);
+	font-size: 13px;
+}
+
+@media screen and (max-width: 782px) {
+	.beaver-shield-layout {
+		display: block;
+	}
+
+	.beaver-shield-rail {
+		position: static;
+		margin-bottom: 16px;
+	}
+
+	.beaver-shield-panel {
+		padding: 8px 16px 16px;
+	}
+}

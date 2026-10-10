@@ -539,6 +539,11 @@ final class BP_Providers {
 		if ( $cfg['json_mode'] ) {
 			$body['response_format'] = array( 'type' => 'json_object' );
 		}
+		// Steady answers where a caller asks for them (term suggestions), only on DeepSeek, which
+		// documents the field; other models may reject a non-default value (2.9.1).
+		if ( isset( $cfg['temperature'] ) && 'deepseek' === ( $cfg['provider'] ?? '' ) ) {
+			$body['temperature'] = max( 0.0, min( 2.0, (float) $cfg['temperature'] ) );
+		}
 
 		return array(
 			'url'     => (string) $cfg['url'],

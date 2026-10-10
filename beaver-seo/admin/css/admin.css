@@ -1,0 +1,138 @@
+/**
+ * Beaver SEO admin styles.
+ *
+ * Built on the core admin palette so the screens inherit the active colour
+ * scheme instead of fighting it.
+ */
+
+.beaver-seo-panel {
+	padding: 4px 20px 20px;
+	margin-bottom: 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+}
+
+.beaver-seo-panel h2 {
+	font-size: 15px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.beaver-seo-danger {
+	color: #b32d2e;
+}
+
+.beaver-seo-danger:hover {
+	color: #8a2424;
+}
+
+/* Snippet preview --------------------------------------------------------- */
+
+.beaver-seo-preview {
+	display: block;
+	max-width: 600px;
+	padding: 14px 16px;
+	margin: 0 0 14px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	font-family: arial, sans-serif;
+}
+
+.beaver-seo-preview__url {
+	display: block;
+	font-size: 13px;
+	color: #202124;
+}
+
+.beaver-seo-preview__title {
+	display: block;
+	margin-top: 2px;
+	font-size: 18px;
+	line-height: 1.3;
+	color: #1a0dab;
+}
+
+.beaver-seo-preview__description {
+	display: block;
+	margin-top: 2px;
+	font-size: 13px;
+	line-height: 1.4;
+	color: #4d5156;
+}
+
+/* Post/term editor fields -------------------------------------------------- */
+
+.beaver-seo-fields p {
+	margin: 0 0 12px;
+}
+
+.beaver-seo-fields label {
+	font-weight: 600;
+}
+
+.beaver-seo-fields input[type="text"],
+.beaver-seo-fields input[type="url"],
+.beaver-seo-fields textarea {
+	margin-top: 4px;
+}
+
+.beaver-seo-term-row img[data-beaver-seo-image-preview] {
+	display: block;
+	margin-bottom: 8px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+/* Maker's credit ------------------------------------------------------------ */
+
+.beaver-seo-credit {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 32px 0 0;
+	padding: 12px 18px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #2271b1;
+}
+
+.beaver-seo-credit__logo {
+	flex: 0 0 auto;
+	display: block;
+	height: 34px;
+	width: auto;
+}
+
+.beaver-seo-credit__text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.beaver-seo-credit__text strong {
+	display: block;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.beaver-seo-credit__text a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.beaver-seo-credit__text a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media screen and ( max-width: 782px ) {
+	.beaver-seo-credit {
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-right: 12px;
+	}
+}

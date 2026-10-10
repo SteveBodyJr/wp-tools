@@ -258,7 +258,7 @@ function verify_site( array $before ) {
 	}
 	list( , $frbody ) = array_slice( get( $fr ), 1 );
 	ok( 'repeated text translated once and used twice', 2 === substr_count( $frbody, 'Réserver' ) );
-	ok( 'old address 301 to the translated one', 301 === get( home_url( '/fr/safari-tours/' ) )[0] );
+	ok( 'old address 301 to the translated one', 301 === get( home_url( '/fr/' . get_post_field( 'post_name', $page ) . '/' ) )[0] ); // The page this run made (earlier runs leave safari-tours-2, -3...).
 	ok( 'missing page 404', 404 === get( home_url( '/fr/bp-no-such-page/' ) )[0] );
 	$t = TRP_Translate_Press::get_trp_instance()->get_component( 'query' )->get_table_name( 'fr_FR' );
 	ok( 'manual translation still manual', 2 === (int) $wpdb->get_var( "SELECT status FROM `{$t}` WHERE original = 'Book Now'" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared

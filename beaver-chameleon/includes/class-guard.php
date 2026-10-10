@@ -49,6 +49,10 @@ class Beaver_Chameleon_Guard {
 			return $commentdata;
 		}
 
+		if ( ! Beaver_Chameleon_Settings::is_enabled( 'comment' ) ) {
+			return $commentdata;
+		}
+
 		self::check();
 
 		return $commentdata;
@@ -68,6 +72,10 @@ class Beaver_Chameleon_Guard {
 	 */
 	public static function guard_login( $username = '', $password = '' ) {
 		if ( ! Beaver_Chameleon_Plugin::is_login_post() ) {
+			return;
+		}
+
+		if ( ! Beaver_Chameleon_Settings::is_enabled( 'login' ) ) {
 			return;
 		}
 
