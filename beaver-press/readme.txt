@@ -4,7 +4,7 @@ Tags: safari, tourism, multilingual, translation, multilingual seo
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,20 @@ Beaver Press is free software under the GNU General Public License v2 or later; 
 The translation engine in engine/ is TranslatePress - Multilingual 3.3.7 (free edition), Copyright 2017 Cozmoslabs, licensed under the GNU General Public License v2 or later, included without changes. Source: https://wordpress.org/plugins/translatepress-multilingual/ (code: https://plugins.svn.wordpress.org/translatepress-multilingual/tags/3.3.7/). Its own licence and copyright notices, and those of the libraries it bundles, remain in its files. Beaver Press is not affiliated with or endorsed by Cozmoslabs. No code from paid editions is included.
 
 == Changelog ==
+
+= 3.0.1 =
+* Pause and Cancel now stop a run at once: a step that was fetching a page no longer writes "running" back over them, and two steps can never hold the run lock together.
+* No text is paid for twice: the engine keeps a batch's texts locked for as long as our request can take (it let them go after 50 seconds), and each request may take longer for bigger batches.
+* A batch that comes back cut off, unreadable or declined is split in halves and sent again; only a text that fails on its own is counted against, so one difficult text no longer leaves its whole batch untranslated.
+* An empty provider account (Anthropic "credit balance is too low", OpenAI "insufficient_quota") stops the run with an alert instead of reporting "Finished" with nothing translated.
+* Arabic, Persian, Hindi and other scripts' digits pass the facts check: a correct translation that writes the price in its own digits is no longer refused.
+* Redo keeps the owner's translations carried onto changed texts, and tries texts given up on again; "Retranslate with AI" also tries a text given up on.
+* Translated addresses keep WordPress's endings: the second page of a translated archive or post, its feed and comment pages no longer answer 404.
+* A page shown in the original language while its translation is incomplete is no longer kept by other page caches (WP Rocket, LiteSpeed, Cloudflare), and those caches are told to drop a page when it becomes complete, so its noindex never outlives it.
+* Ready pages are no longer emptied by WordPress's own records (embed caches written while a page renders).
+* Security: the signed run header is never sent to another site when a page redirects; the shared BEAVER_PRESS_API_KEY constant is never used for a custom endpoint, and a saved key goes only to the address it was saved for; a settings import cannot switch the visitor guard off, and a changed custom endpoint drops its saved key.
+* Claude Haiku 5.5 in the model list, with its price and effort setting. JSON replies wrapped in a sentence are read.
+* Tests: a crashed test counts as failed (it used to count as passed).
 
 = 3.0.0 =
 * A mature, professional admin in WordPress's own colours: calm cards with hairline borders, one type scale and aligned figures; a quiet header (title, version, provider status, Translate site) with plain tabs.

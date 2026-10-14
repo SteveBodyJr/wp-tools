@@ -137,11 +137,25 @@ final class BP_Transfer {
 			$mt  = is_array( $mt ) ? $mt : array();
 			$raw = array_intersect_key( $data['engine'], array_flip( self::ENGINE_KEYS ) );
 			$raw = array_map( static fn( $v ) => is_scalar( $v ) ? (string) $v : '', $raw );
-			$new = BP_Engine_Settings::sanitize( array_merge( $mt, $raw ), $raw );
+			// A file never lets visitors start paid translations: that stays this site's own choice.
+			$guard_off = 'no' === ( $raw['bp-visitor-guard'] ?? '' );
+			unset( $raw['bp-visitor-guard'] );
+			$before = BP_Engine_Settings::current( $mt );
+			$new    = BP_Engine_Settings::sanitize( array_merge( $mt, $raw ), $raw );
 			$new['translation-engine'] = BP_Engine_Settings::ENGINE;
 			update_option( 'trp_machine_translation_settings', $new );
 			/* translators: 1: provider, 2: model */
 			$done[] = sprintf( __( 'Engine: %1$s, model %2$s (automatic translation switched on).', 'beaver-press' ), $new['bp-provider'], $new['bp-model'] );
+			$after = BP_Engine_Settings::current( $new );
+			if ( 'custom' === $after['provider'] && $after['url'] !== $before['url'] ) {
+				// The key saved for the old address must not go to the new one.
+				BP_Keys::delete( 'custom' );
+				/* translators: %s: endpoint address */
+				$done[] = sprintf( __( 'Custom endpoint changed to %s: its saved key was removed. Check the address, then paste the key for it.', 'beaver-press' ), $after['url'] );
+			}
+			if ( $guard_off ) {
+				$done[] = __( 'The file lets visitors start new translations: not applied, this site keeps its own setting (Automatic Translation -> Who can trigger new translations).', 'beaver-press' );
+			}
 			if ( '' === BP_Keys::get( $new['bp-provider'] ) ) {
 				/* translators: %s: provider */
 				$done[] = sprintf( __( 'No API key saved for %s on this site yet: paste it in Beaver Press -> Languages -> Automatic Translation.', 'beaver-press' ), $new['bp-provider'] );

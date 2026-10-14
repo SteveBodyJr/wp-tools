@@ -43,6 +43,7 @@ final class BP_Engine_Settings {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_action( 'wp_ajax_bp_test_connection', array( __CLASS__, 'ajax_test' ) );
 		add_action( 'wp_ajax_bp_list_models', array( __CLASS__, 'ajax_models' ) );
+		add_filter( 'trp_machine_translation_lock_timeout', array( __CLASS__, 'lock_timeout' ) );
 	}
 
 	/**
@@ -85,16 +86,43 @@ final class BP_Engine_Settings {
 		$preset   = BP_Providers::preset( $provider );
 		$model    = trim( (string) ( $mt['bp-model'] ?? '' ) );
 		$endpoint = (string) ( $mt['bp-endpoint'] ?? '' );
+		$chunk    = min( 50, max( 5, (int) ( $mt['bp-chunk-size'] ?? 20 ) ) );
 		return array(
 			'provider' => $provider,
 			'api'      => $preset['api'],
 			'url'      => 'custom' === $provider ? $endpoint : $preset['url'],
 			'endpoint' => $endpoint,
 			'model'    => '' !== $model ? $model : (string) $preset['model'],
-			'chunk'    => min( 50, max( 5, (int) ( $mt['bp-chunk-size'] ?? 20 ) ) ),
+			'chunk'    => $chunk,
 			'effort'   => in_array( $mt['bp-effort'] ?? '', array( 'low', 'medium', 'high' ), true ) ? $mt['bp-effort'] : 'low',
-			'timeout'  => 60,
+			'timeout'  => self::timeout( $chunk ),
 		);
+	}
+
+	/**
+	 * Seconds one request may take: a bigger batch is a longer reply, and a reply cut off by
+	 * the timeout is still billed and then asked for again.
+	 *
+	 * @param int $chunk Strings per request.
+	 * @return int
+	 */
+	public static function timeout( $chunk ) {
+		return min( 240, 60 + 4 * (int) $chunk );
+	}
+
+	/**
+	 * How long the engine keeps strings locked for one request. Its default (50 seconds) is
+	 * shorter than one of our requests can take (timeout, then one retry after a wait of up to
+	 * 8 seconds), and a lock that runs out while the request is still going lets the editor,
+	 * the top-up or the background updater send the same strings again and pay twice. It must
+	 * also outlast the run's time budget (240 seconds, BP_Guard).
+	 *
+	 * @param int $seconds Engine default.
+	 * @return int
+	 */
+	public static function lock_timeout( $seconds ) {
+		$timeout = (int) self::current( get_option( 'trp_machine_translation_settings', array() ) )['timeout'];
+		return max( (int) $seconds, 270, 2 * $timeout + 40 );
 	}
 
 	/**
@@ -401,9 +429,18 @@ final class BP_Engine_Settings {
 		$typed  = preg_replace( '/\s+/', '', (string) wp_unslash( $_POST['key'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key, used as typed, never output.
 		// phpcs:enable
 		$engine = self::current( $mt );
+		$key    = $typed;
+		if ( '' === $key ) {
+			// The saved key goes only to the address it was saved for: a custom endpoint typed
+			// here but not saved needs its key typed too.
+			$saved = self::current( get_option( 'trp_machine_translation_settings', array() ) );
+			if ( 'custom' !== $engine['provider'] || ( 'custom' === $saved['provider'] && $saved['url'] === $engine['url'] ) ) {
+				$key = BP_Keys::get( $engine['provider'] );
+			}
+		}
 		return array(
 			'engine' => $engine,
-			'key'    => '' !== $typed ? $typed : BP_Keys::get( $engine['provider'] ),
+			'key'    => $key,
 		);
 	}
 

@@ -18,6 +18,14 @@ defined( 'ABSPATH' ) || exit;
  */
 class BP_AI_Machine_Translator extends TRP_Machine_Translator {
 
+	/** Batch errors caused by what was sent: the batch is split and sent again (reason recorded for a single string). */
+	const SPLIT_ON = array(
+		'bp_refusal'   => 'declined by the model',
+		'bp_truncated' => 'reply cut off',
+		'bp_bad_json'  => 'reply not readable',
+		'bp_empty'     => 'empty reply',
+	);
+
 	/**
 	 * Engine settings (provider, model, endpoint, chunk size, effort).
 	 *
@@ -55,8 +63,10 @@ class BP_AI_Machine_Translator extends TRP_Machine_Translator {
 		$key    = $this->get_api_key();
 		$out    = array();
 		$todo   = array();
+		// "Retranslate with AI" is asked for one text on purpose: it is tried even if given up on.
+		$explicit = class_exists( 'BP_Provenance' ) && BP_Provenance::$explicit;
 		foreach ( $new_strings as $id => $text ) {
-			if ( BP_Batch::given_up( (string) $text, $target_language_code ) ) {
+			if ( ! $explicit && BP_Batch::given_up( (string) $text, $target_language_code ) ) {
 				$out[ $id ] = (string) $text;
 			} else {
 				$todo[ $id ] = (string) $text;
@@ -70,7 +80,9 @@ class BP_AI_Machine_Translator extends TRP_Machine_Translator {
 			$todo    = array_diff_key( $todo, $carried );
 		}
 
-		foreach ( array_chunk( $todo, max( 1, $this->get_chunk_size() ), true ) as $chunk ) {
+		$queue = array_chunk( $todo, max( 1, $this->get_chunk_size() ), true );
+		while ( $queue ) {
+			$chunk = array_shift( $queue );
 			$reply = 'deepl' === $engine['api']
 				? $this->send_deepl( $chunk, $source_language_code, $target_language_code, $key, $engine )
 				: $this->send_model( $chunk, $source_language_code, $target_language_code, $key, $engine );
@@ -91,12 +103,18 @@ class BP_AI_Machine_Translator extends TRP_Machine_Translator {
 			);
 
 			if ( is_wp_error( $reply ) ) {
-				// A declined batch is about its content: count it against each string.
-				if ( 'bp_refusal' === $reply->get_error_code() ) {
-					foreach ( $chunk as $text ) {
-						BP_Batch::record_failure( $text, $target_language_code, 'declined by the model' );
-					}
+				$why = self::SPLIT_ON[ $reply->get_error_code() ] ?? '';
+				if ( '' === $why ) {
+					continue; // Connection, key, quota: nothing about these strings, tried again later.
 				}
+				// Declined, cut off or unreadable: usually one string or the batch's length. Halves
+				// are sent again, so only a string that fails on its own is counted against.
+				if ( count( $chunk ) > 1 ) {
+					$half = (int) ceil( count( $chunk ) / 2 );
+					array_unshift( $queue, array_slice( $chunk, 0, $half, true ), array_slice( $chunk, $half, null, true ) );
+					continue;
+				}
+				BP_Batch::record_failure( (string) reset( $chunk ), $target_language_code, $why );
 				continue;
 			}
 

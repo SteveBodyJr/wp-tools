@@ -186,7 +186,7 @@ final class BP_Batch {
 
 	/**
 	 * Readable text only: no placeholders, tags or entities (their digits are not facts),
-	 * full-width digits as plain ones.
+	 * digits of every script as plain ones.
 	 *
 	 * @param string $text Text.
 	 * @return string
@@ -196,7 +196,30 @@ final class BP_Batch {
 		$text = html_entity_decode( (string) $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 		$text = preg_replace( '/1TP\d+T/', ' ', $text );
 		$text = preg_replace( '/<[^>]*>/', ' ', $text );
-		return strtr( $text, array_combine( preg_split( '//u', '０１２３４５６７８９', -1, PREG_SPLIT_NO_EMPTY ), range( 0, 9 ) ) );
+		// Digits of every script (full-width, Arabic-Indic ٣٥٥٠, Persian ۳۵۵۰, Devanagari १२...)
+		// as 0-9, so a translation that writes a price in its own digits keeps the fact.
+		return (string) preg_replace_callback( '/\p{Nd}/u', static fn( $m ) => (string) self::digit_value( $m[0] ), $text );
+	}
+
+	/**
+	 * Value of one decimal digit of any script. Unicode keeps each script's ten digits in a
+	 * row starting at a code point ending in 0 or 6, so the value is found without intl.
+	 *
+	 * @param string $digit One \p{Nd} character.
+	 * @return int|string 0-9, or the character itself when unknown.
+	 */
+	private static function digit_value( $digit ) {
+		if ( class_exists( 'IntlChar' ) ) {
+			$value = IntlChar::charDigitValue( $digit );
+			return $value >= 0 ? $value : $digit;
+		}
+		$code = mb_ord( $digit, 'UTF-8' );
+		foreach ( array( 0x30, 0xFF10, 0x0660, 0x06F0, 0x07C0, 0x0966, 0x09E6, 0x0A66, 0x0AE6, 0x0B66, 0x0BE6, 0x0C66, 0x0CE6, 0x0D66, 0x0DE6, 0x0E50, 0x0ED0, 0x0F20, 0x1040, 0x1090, 0x17E0, 0x1810 ) as $zero ) {
+			if ( $code >= $zero && $code <= $zero + 9 ) {
+				return $code - $zero;
+			}
+		}
+		return $digit;
 	}
 
 	/**
@@ -208,7 +231,7 @@ final class BP_Batch {
 	 * @return string[]
 	 */
 	private static function numbers( $text ) {
-		preg_match_all( '/\d{1,3}(?:[,.\x{00A0}\x{202F}\x{2009} \'’，．]\d{3})+(?!\d)|\d+|[〇零一二两兩三四五六七八九十]/u', $text, $m );
+		preg_match_all( '/\d{1,3}(?:[,.\x{00A0}\x{202F}\x{2009}\x{066C} \'’，．]\d{3})+(?!\d)|\d+|[〇零一二两兩三四五六七八九十]/u', $text, $m );
 		$words = array( '〇' => '0', '零' => '0', '一' => '1', '二' => '2', '两' => '2', '兩' => '2', '三' => '3', '四' => '4', '五' => '5', '六' => '6', '七' => '7', '八' => '8', '九' => '9', '十' => '10' );
 		return array_map( static fn( $n ) => ltrim( $words[ $n ] ?? preg_replace( '/\D/', '', $n ), '0' ) . '#', $m[0] );
 	}
@@ -421,6 +444,16 @@ final class BP_Batch {
 			uasort( $list, static fn( $a, $b ) => $b['time'] <=> $a['time'] );
 			$list = array_slice( $list, 0, self::MAX_REJECTS, true );
 		}
+		update_option( self::REJECT_OPTION, $list, false );
+	}
+
+	/**
+	 * Forget the failures of one language (Redo tries every text again).
+	 *
+	 * @param string $language Target language.
+	 */
+	public static function forget_language( $language ) {
+		$list = array_filter( self::rejects(), static fn( $r ) => ( $r['language'] ?? '' ) !== (string) $language );
 		update_option( self::REJECT_OPTION, $list, false );
 	}
 

@@ -244,6 +244,24 @@ final class BP_Instructions {
 	}
 
 	/**
+	 * Which rows of a language's table Redo sets back: machine translations, except a manual
+	 * translation the engine stored as machine when it was kept on a changed original
+	 * (provenance outdated or edited); those are the owner's words.
+	 *
+	 * @param string $language Language code.
+	 * @return string SQL condition on alias d.
+	 */
+	private static function redo_where( $language ) {
+		global $wpdb;
+		return $wpdb->prepare(
+			'd.status = 1 AND NOT EXISTS (SELECT 1 FROM ' . BP_Provenance::table() . ' p WHERE p.language = %s AND p.source_hash = MD5(d.original) AND p.status IN (%s, %s))', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- own table name.
+			$language,
+			BP_Provenance::OUTDATED,
+			BP_Provenance::MANUAL
+		);
+	}
+
+	/**
 	 * Machine translations of a language that "Redo" would send again.
 	 *
 	 * @param string $code Language code.
@@ -256,7 +274,7 @@ final class BP_Instructions {
 			return array( 'strings' => 0, 'chars' => 0 );
 		}
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from TranslatePress.
-		$row = $wpdb->get_row( "SELECT COUNT(*) AS n, COALESCE(SUM(CHAR_LENGTH(original)),0) AS c FROM `{$table}` WHERE status = 1" );
+		$row = $wpdb->get_row( "SELECT COUNT(*) AS n, COALESCE(SUM(CHAR_LENGTH(original)),0) AS c FROM `{$table}` d WHERE " . self::redo_where( $code ) );
 		return array(
 			'strings' => (int) ( $row->n ?? 0 ),
 			'chars'   => (int) ( $row->c ?? 0 ),
@@ -284,7 +302,8 @@ final class BP_Instructions {
 		$table = TRP_Translate_Press::get_trp_instance()->get_component( 'query' )->get_table_name( $language );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from TranslatePress.
 		do_action( 'beaver_press_before_reset', __( 'Redo', 'beaver-press' ), (string) ( BP_Run::languages()[ $language ] ?? $language ) ); // Backup first.
-		$reset = (int) $wpdb->query( "UPDATE `{$table}` SET translated = '', status = 0 WHERE status = 1" );
+		$reset = (int) $wpdb->query( "UPDATE `{$table}` d SET d.translated = '', d.status = 0 WHERE " . self::redo_where( $language ) );
+		BP_Batch::forget_language( $language ); // Texts given up on are tried again with the new instructions.
 		do_action( 'beaver_press_translations_saved', $language );
 		$state = BP_Run::add( BP_Run::urls(), array( $language ) );
 		if ( is_wp_error( $state ) ) {

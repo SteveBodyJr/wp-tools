@@ -85,6 +85,41 @@ $u = 'Only $50 today ' . wp_generate_password( 6, false );
 $r = engine_for( 'deepseek' )->translate( array( $u ), 'fr_FR', 'en_US' );
 ok( 'TranslatePress translate(): $ restored', isset( $r[ $u ] ) && false !== strpos( $r[ $u ], '$50' ) && 0 === strpos( $r[ $u ], 'FR ' ), wp_json_encode( $r ) );
 
+// 10. A cut-off batch is split in halves; only the string that fails on its own is counted.
+$cut = function ( $pre, $args, $url ) {
+	$body = json_decode( $args['body'], true );
+	if ( false === strpos( $url, 'deepseek' ) || false === strpos( (string) ( $body['messages'][1]['content'] ?? '' ), 'CUTME' ) ) { return $pre; }
+	return array( 'headers' => array(), 'body' => wp_json_encode( array( 'choices' => array( array( 'finish_reason' => 'length', 'message' => array( 'content' => '{"s1": "tr' ) ) ) ) ), 'response' => array( 'code' => 200, 'message' => '' ), 'cookies' => array(), 'filename' => null );
+};
+add_filter( 'pre_http_request', $cut, 20, 3 ); // After the fake provider (which counts the call).
+$n = count( $GLOBALS['calls'] );
+$r = engine_for( 'deepseek' )->translate_array( array( 'a' => 'Alpha split one', 'b' => 'Beta split two', 'c' => 'CUTME split three', 'd' => 'Delta split four' ), 'fr_FR', 'en_US' );
+remove_filter( 'pre_http_request', $cut, 20 );
+$rej = BP_Batch::rejects();
+ok( 'cut-off batch split: the others translated', isset( $r['a'], $r['b'], $r['d'] ) && ! isset( $r['c'] ), wp_json_encode( $r ) );
+ok( 'cut-off: 5 requests (4, 2, 2, 1, 1)', 5 === count( $GLOBALS['calls'] ) - $n, (string) ( count( $GLOBALS['calls'] ) - $n ) );
+ok( 'cut-off: only the failing string counted', 'reply cut off' === ( $rej[ 'fr_FR:' . md5( 'CUTME split three' ) ]['reason'] ?? '' ) && ! isset( $rej[ 'fr_FR:' . md5( 'Alpha split one' ) ] ) );
+
+// 11. An empty account stops as "payment required" (a run stops on it), without a retry.
+$n = count( $GLOBALS['calls'] );
+$GLOBALS['force'] = array( 400, array( 'type' => 'error', 'error' => array( 'type' => 'invalid_request_error', 'message' => 'Your credit balance is too low to access the Anthropic API.' ) ) );
+engine_for( 'claude' )->translate_array( array( 'x' => 'Credit test text' ), 'fr_FR', 'en_US' );
+ok( 'no credit (Anthropic) -> bp_http_402, one request', 'bp_http_402' === ( BP_Providers::last_error( true )['code'] ?? '' ) && 1 === count( $GLOBALS['calls'] ) - $n );
+$GLOBALS['force'] = array( 429, array( 'error' => array( 'message' => 'You exceeded your current quota.', 'type' => 'insufficient_quota', 'code' => 'insufficient_quota' ) ) );
+engine_for( 'deepseek' )->translate_array( array( 'x' => 'Quota test text' ), 'fr_FR', 'en_US' );
+ok( 'no quota (OpenAI style) -> bp_http_402', 'bp_http_402' === ( BP_Providers::last_error( true )['code'] ?? '' ) );
+$GLOBALS['force'] = null;
+
+// 12. JSON inside a sentence is still read.
+$GLOBALS['force'] = array( 200, array( 'choices' => array( array( 'finish_reason' => 'stop', 'message' => array( 'content' => "Here is the JSON:\n```json\n{\"s1\": \"FR Wrapped reply\"}\n```" ) ) ) ) );
+$r = engine_for( 'deepseek' )->translate_array( array( 'w' => 'Wrapped reply' ), 'fr_FR', 'en_US' );
+$GLOBALS['force'] = null;
+ok( 'JSON wrapped in prose read', 'FR Wrapped reply' === ( $r['w'] ?? '' ), wp_json_encode( $r ) );
+
+// 13. Haiku 5.5 takes effort and has a price.
+ok( 'Haiku 5.5: effort yes, Haiku 4.5: no', BP_Providers::claude_has_effort( 'claude-haiku-5-5' ) && ! BP_Providers::claude_has_effort( 'claude-haiku-4-5' ) );
+ok( 'Haiku 5.5 priced', array( 0.1, 0.5 ) === ( BP_Usage::prices()['claude-haiku-5-5'] ?? null ) );
+
 // Clean up.
 if ( null === $keys_before ) { delete_option( BP_Keys::OPTION ); } else { update_option( BP_Keys::OPTION, $keys_before, false ); }
 if ( null === $rej_before ) { delete_option( BP_Batch::REJECT_OPTION ); } else { update_option( BP_Batch::REJECT_OPTION, $rej_before, false ); }

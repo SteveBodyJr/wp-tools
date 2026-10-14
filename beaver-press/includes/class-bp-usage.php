@@ -43,6 +43,7 @@ final class BP_Usage {
 				array(
 					'claude-opus-5-5'   => array( 4.0, 20.0 ),
 					'claude-sonnet-5-5' => array( 2.0, 10.0 ),
+					'claude-haiku-5-5'  => array( 0.1, 0.5 ), // Prompts up to 100K tokens (a batch always is).
 					'claude-haiku-4-5'  => array( 1.0, 5.0 ),
 					'deepseek-flash'    => array( 0.3, 1.2 ),
 					'deepseek-v4-flash' => array( 0.3, 1.2 ),

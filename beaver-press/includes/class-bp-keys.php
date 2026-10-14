@@ -98,7 +98,10 @@ final class BP_Keys {
 	 */
 	private static function constant_name( $provider ) {
 		$specific = 'BEAVER_PRESS_' . strtoupper( preg_replace( '/[^a-z0-9]/i', '_', (string) $provider ) ) . '_API_KEY';
-		foreach ( array( $specific, 'BEAVER_PRESS_API_KEY' ) as $name ) {
+		// The shared constant is never used for a custom endpoint: its address is typed in
+		// wp-admin, and the key would go to whatever address an administrator enters there.
+		$names = 'custom' === $provider ? array( $specific ) : array( $specific, 'BEAVER_PRESS_API_KEY' );
+		foreach ( $names as $name ) {
 			if ( defined( $name ) && '' !== trim( (string) constant( $name ) ) ) {
 				return $name;
 			}

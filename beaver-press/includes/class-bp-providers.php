@@ -76,7 +76,7 @@ final class BP_Providers {
 				'url'        => 'https://api.anthropic.com/v1/messages',
 				'models_url' => 'https://api.anthropic.com/v1/models',
 				'model'      => 'claude-opus-5-5',
-				'models'     => array( 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-4-5' ),
+				'models'     => array( 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-haiku-4-5' ),
 				'keys_url'   => 'https://console.anthropic.com/settings/keys',
 			),
 			'openai'   => array(
@@ -615,6 +615,15 @@ final class BP_Providers {
 				return is_array( $data ) ? $data : new WP_Error( 'bp_bad_body', __( 'The provider returned a response that is not JSON.', 'beaver-press' ) );
 			}
 
+			// An empty account answers 400 (Anthropic: "credit balance is too low") or 429
+			// (OpenAI: insufficient_quota): report it as payment required, which stops a run.
+			// Waiting does not help, so it is not retried.
+			$error = is_array( $data ) && is_array( $data['error'] ?? null ) ? $data['error'] : array();
+			if ( ( 400 === $code && false !== stripos( (string) ( $error['message'] ?? '' ), 'credit balance' ) )
+				|| ( 429 === $code && in_array( 'insufficient_quota', array( $error['code'] ?? '', $error['type'] ?? '' ), true ) ) ) {
+				return new WP_Error( 'bp_http_402', trim( __( 'The provider account has no credit left. Top it up, then resume.', 'beaver-press' ) . ' ' . wp_strip_all_tags( (string) ( $error['message'] ?? '' ) ) ) );
+			}
+
 			if ( 1 === $attempt && in_array( $code, self::RETRY_CODES, true ) ) {
 				$wait = (int) wp_remote_retrieve_header( $response, 'retry-after' );
 				sleep( min( 8, max( 1, $wait ) ) );
@@ -747,11 +756,21 @@ final class BP_Providers {
 		if ( preg_match( '/^```(?:json)?\s*(.*?)\s*```$/s', $text, $m ) ) {
 			$text = $m[1];
 		}
-		return json_decode( $text, true );
+		$data = json_decode( $text, true );
+		// Some models put a sentence or a fence around the object ("Here is the JSON: ...").
+		if ( null === $data ) {
+			$start = strpos( $text, '{' );
+			$end   = strrpos( $text, '}' );
+			if ( false !== $start && false !== $end && $end > $start ) {
+				$data = json_decode( substr( $text, $start, $end - $start + 1 ), true );
+			}
+		}
+		return $data;
 	}
 
 	/**
-	 * Whether a Claude model takes output_config.effort (Opus/Sonnet 4.6 and later, Fable, Mythos).
+	 * Whether a Claude model takes output_config.effort (Opus/Sonnet 4.6 and later, Haiku 5.5
+	 * and later, Fable, Mythos).
 	 *
 	 * @param string $model Model ID.
 	 * @return bool
@@ -760,11 +779,14 @@ final class BP_Providers {
 		if ( preg_match( '/^claude-(fable|mythos)-/', $model ) ) {
 			return true;
 		}
-		if ( ! preg_match( '/^claude-(opus|sonnet)-(\d+)(?:-(\d+))?/', $model, $m ) ) {
+		if ( ! preg_match( '/^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d+))?/', $model, $m ) ) {
 			return false;
 		}
 		$major = (int) $m[2];
 		$minor = isset( $m[3] ) ? (int) $m[3] : 0;
+		if ( 'haiku' === $m[1] ) {
+			return $major > 5 || ( 5 === $major && $minor >= 5 );
+		}
 		return $major >= 5 || ( 4 === $major && $minor >= 6 );
 	}
 

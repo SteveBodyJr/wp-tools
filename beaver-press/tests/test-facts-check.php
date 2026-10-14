@@ -28,6 +28,11 @@ ok( 'Chinese: save 15% as 85折', keeps( 'Save 15% on 5 nights or more.', '入�
 ok( 'Chinese: save 10% as 8折 refused', 'numbers changed' === why( 'Save 10% now.', '现在享8折。' ) );
 ok( '11 pm as 23 h', keeps( 'Around 11 pm', 'Vers 23 h' ) );
 ok( '6:30 am kept', keeps( 'Starts at 6:30 am', 'Début à 6 h 30' ) );
+ok( 'Arabic-Indic digits and thousands mark', keeps( 'From $3,550 per person', 'من ٣٬٥٥٠ دولار للشخص' ) );
+ok( 'Arabic-Indic digits, no mark', keeps( '7 days, 6 nights', '٧ أيام، ٦ ليال' ) );
+ok( 'Persian digits', keeps( 'From $3,550', 'از ۳۵۵۰ دلار' ) );
+ok( 'Devanagari digits', keeps( '12 days', '१२ दिन' ) );
+ok( 'Arabic-Indic: changed price refused', 'numbers changed' === why( 'From $3,550', 'من ٣٥٠٠ دولار' ) );
 ok( '12 am as 0 h', keeps( 'At 12 am', 'À 0 h' ) );
 ok( '19th century as XIXe', keeps( 'a 19th-century building', 'un bâtiment du XIXe siècle' ) );
 ok( '19th century as 1800-tallet', keeps( 'a 19th-century building', 'en bygning fra 1800-tallet' ) );

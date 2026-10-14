@@ -118,9 +118,24 @@ final class BP_Cache {
 	 * @param WP_Post $post Post.
 	 */
 	public static function post_changed( $new, $old, $post ) {
-		if ( ( 'publish' === $new || 'publish' === $old ) && $post instanceof WP_Post && ! wp_is_post_revision( $post ) ) {
+		if ( ( 'publish' === $new || 'publish' === $old ) && $post instanceof WP_Post && ! wp_is_post_revision( $post ) && self::shown_type( $post->post_type ) ) {
 			self::flush();
 		}
+	}
+
+	/**
+	 * Whether posts of a type show on pages: viewable types, menus and the site editor's parts.
+	 * WordPress's own records (embed caches written while a page renders, customizer drafts)
+	 * would otherwise empty the ready pages and restart the warm-up on every page with a video.
+	 *
+	 * @param string $type Post type.
+	 * @return bool
+	 */
+	private static function shown_type( $type ) {
+		if ( in_array( $type, array( 'nav_menu_item', 'wp_navigation', 'wp_template', 'wp_template_part', 'wp_global_styles', 'wp_block' ), true ) ) {
+			return true;
+		}
+		return is_post_type_viewable( $type );
 	}
 
 	/**
@@ -165,6 +180,12 @@ final class BP_Cache {
 					wp_delete_file( $file );
 				}
 			}
+			// Page caches of other plugins may hold this page's previous state (for example the
+			// original-language copy marked noindex while it was incomplete).
+			if ( function_exists( 'rocket_clean_files' ) ) {
+				rocket_clean_files( array( $url ) );
+			}
+			do_action( 'litespeed_purge_url', $url );
 		}
 	}
 

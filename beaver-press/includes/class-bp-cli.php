@@ -611,7 +611,7 @@ class BP_CLI {
 		}
 		while ( 'running' === $state['status'] ) {
 			$state = BP_Run::step();
-			if ( get_transient( BP_Run::LOCK ) && (int) $state['pos'] === $shown ) {
+			if ( BP_Run::locked() && (int) $state['pos'] === $shown ) {
 				sleep( 2 ); // Another process (admin page, cron) holds the lock; follow it.
 				$state = BP_Run::state();
 			}

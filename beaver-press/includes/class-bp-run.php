@@ -30,8 +30,11 @@ final class BP_Run {
 	/** Queue of [language, url] (separate, not autoloaded). */
 	const QUEUE_OPTION = 'beaver_press_run_queue';
 
-	/** Lock transient. */
+	/** Lock option (taken with add_option, so two steps can never both take it). */
 	const LOCK = 'bp_run_lock';
+
+	/** Seconds after which a lock left by a killed step is taken over. */
+	const LOCK_TTL = 600;
 
 	/** Cron hook. */
 	const CRON = 'beaver_press_run_tick';
@@ -484,6 +487,67 @@ final class BP_Run {
 	/* ------------------------------------------------------------------ */
 
 	/**
+	 * Whether the stored run changed under this step (the admin page paused, cancelled or
+	 * restarted it while a page was fetched). A pause or an error is taken over and this
+	 * step's progress kept; after a cancel or a new run this step's state must not be saved.
+	 *
+	 * @param array $state   This step's state (status, message, languages and budget taken over).
+	 * @param bool  $abandon Set when this step's state must be dropped.
+	 * @return bool True when the step must stop.
+	 */
+	private static function interrupted( array &$state, &$abandon ) {
+		wp_cache_delete( self::STATE_OPTION, 'options' );
+		$stored = self::state();
+		if ( 'idle' === $stored['status'] || (int) $stored['started'] !== (int) $state['started'] ) {
+			$abandon = true;
+			return true;
+		}
+		$state['languages'] = $stored['languages']; // Pages added meanwhile.
+		$state['budget']    = $stored['budget'];    // Resume past the budget sets it to 0.
+		if ( 'running' === $stored['status'] ) {
+			return false;
+		}
+		$state['status']  = $stored['status'];
+		$state['message'] = $stored['message'];
+		return true;
+	}
+
+	/**
+	 * Take the run lock. add_option() fails when the row exists, so only one step gets it;
+	 * a lock older than LOCK_TTL (a step killed by a timeout) is taken over.
+	 *
+	 * @return bool
+	 */
+	private static function lock() {
+		if ( add_option( self::LOCK, time(), '', false ) ) {
+			return true;
+		}
+		if ( self::locked() ) {
+			return false;
+		}
+		self::unlock();
+		return add_option( self::LOCK, time(), '', false );
+	}
+
+	/**
+	 * Release the run lock.
+	 */
+	private static function unlock() {
+		delete_option( self::LOCK );
+	}
+
+	/**
+	 * Whether a step holds the run lock now.
+	 *
+	 * @return bool
+	 */
+	public static function locked() {
+		wp_cache_delete( self::LOCK, 'options' );
+		$since = (int) get_option( self::LOCK, 0 );
+		return $since > 0 && time() - $since < self::LOCK_TTL;
+	}
+
+	/**
 	 * Fetch the next pages until the step budget is used. One page at a time, under a lock.
 	 *
 	 * @param int $budget Seconds.
@@ -494,10 +558,9 @@ final class BP_Run {
 		if ( 'running' !== $state['status'] ) {
 			return $state;
 		}
-		if ( get_transient( self::LOCK ) ) {
+		if ( ! self::lock() ) {
 			return $state; // Another step (browser or cron) is fetching a page.
 		}
-		set_transient( self::LOCK, 1, 10 * MINUTE_IN_SECONDS );
 		if ( function_exists( 'set_time_limit' ) ) {
 			@set_time_limit( 360 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- one page can take minutes with a slow model.
 		}
@@ -508,7 +571,12 @@ final class BP_Run {
 		$started        = microtime( true );
 
 		$offered = self::languages();
+		$abandon = false;
 		while ( $state['pos'] < count( $queue ) && ( microtime( true ) - $started ) < $budget ) {
+			// Paused, cancelled or restarted from the admin page while the last page was fetched.
+			if ( self::interrupted( $state, $abandon ) ) {
+				break;
+			}
 			list( $language, $url ) = $queue[ $state['pos'] ];
 			if ( ! isset( $offered[ $language ] ) ) {
 				$state['pos']++; // Language removed since the run started: skip its pages.
@@ -545,9 +613,19 @@ final class BP_Run {
 				$state['message'] = $stop;
 				break;
 			}
+			if ( self::interrupted( $state, $abandon ) ) {
+				break;
+			}
 			self::save( $state );
 		}
 
+		if ( ! $abandon && 'running' === $state['status'] ) {
+			self::interrupted( $state, $abandon );
+		}
+		if ( $abandon ) {
+			self::unlock();
+			return self::state(); // Cancelled, or a new run started: its state is not this step's to write.
+		}
 		if ( 'running' === $state['status'] && $state['pos'] >= count( $queue ) ) {
 			$state['status']   = 'done';
 			$state['finished'] = time();
@@ -555,7 +633,7 @@ final class BP_Run {
 			delete_option( self::QUEUE_OPTION );
 		}
 		self::save( $state );
-		delete_transient( self::LOCK );
+		self::unlock();
 		if ( 'running' === $state['status'] ) {
 			self::schedule();
 		}
@@ -595,22 +673,36 @@ final class BP_Run {
 	 * @return true|string True, or why it failed.
 	 */
 	public static function fetch( $url ) {
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout'     => 300,
-				'redirection' => 3,
-				'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ),
-				'headers'     => array(
-					BP_Guard::HEADER => BP_Guard::run_token(),
-					'Cache-Control'  => 'no-cache',
-				),
-			)
-		);
-		if ( is_wp_error( $response ) ) {
-			return $response->get_error_message();
+		// Redirects are followed here, not by WP HTTP: it would send the signed header on to
+		// any host a page redirects to. Only redirects that stay on this site are followed.
+		$home = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		for ( $hop = 0; $hop <= 3; $hop++ ) {
+			$response = wp_remote_get(
+				$url,
+				array(
+					'timeout'     => 300,
+					'redirection' => 0,
+					'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ),
+					'headers'     => array(
+						BP_Guard::HEADER => BP_Guard::run_token(),
+						'Cache-Control'  => 'no-cache',
+					),
+				)
+			);
+			if ( is_wp_error( $response ) ) {
+				return $response->get_error_message();
+			}
+			$code     = (int) wp_remote_retrieve_response_code( $response );
+			$location = (string) wp_remote_retrieve_header( $response, 'location' );
+			if ( $code < 300 || $code >= 400 || '' === $location ) {
+				break;
+			}
+			$location = WP_Http::make_absolute_url( $location, $url );
+			if ( strtolower( (string) wp_parse_url( $location, PHP_URL_HOST ) ) !== $home ) {
+				return true; // The page lives on another site: nothing of ours to translate.
+			}
+			$url = $location;
 		}
-		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 404 === $code && false !== strpos( (string) $url, self::MISSING_PATH ) ) {
 			return true; // The page-not-found check: 404 is its answer.
 		}

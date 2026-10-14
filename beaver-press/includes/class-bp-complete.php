@@ -248,6 +248,15 @@ final class BP_Complete {
 	 * @return string
 	 */
 	private static function original_page( $language ) {
+		// A stand-in until the translation is complete: page caches (WP Rocket, LiteSpeed,
+		// Cloudflare and others) must not keep it, or its noindex outlives the translation.
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+		if ( ! headers_sent() ) {
+			header( 'Cache-Control: no-store, max-age=0' );
+			header( 'X-LiteSpeed-Cache-Control: no-cache' );
+		}
 		$trp      = TRP_Translate_Press::get_trp_instance();
 		$settings = $trp->get_component( 'settings' )->get_settings();
 		$html     = $trp->get_component( 'translation_render' )->remove_trp_html_tags( self::$original );

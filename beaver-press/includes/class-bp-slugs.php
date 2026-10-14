@@ -422,8 +422,30 @@ final class BP_Slugs {
 	public static function translate_path( $path, $from, $to ) {
 		$map      = self::map();
 		$path     = BP_Slug_Bases::to_original( (string) $path, $from ); // Translated prefix -> original.
-		$original = $map[ $from ]['back'][ $path ] ?? $path;
-		return BP_Slug_Bases::to_language( $map[ $to ]['to'][ $original ] ?? $original, $to );
+		$original = self::lookup( $map[ $from ]['back'] ?? array(), $path );
+		return BP_Slug_Bases::to_language( self::lookup( $map[ $to ]['to'] ?? array(), $original ), $to );
+	}
+
+	/** WordPress's endings after an object's address: archive page, post page, feed, embed, comment page. */
+	const TAIL = '#^(.+?)/(page/\d+|\d+|feed(?:/[a-z0-9_-]+)?|embed|comment-page-\d+|trackback)$#';
+
+	/**
+	 * Look a path up in one direction of the map. An ending WordPress adds after the address
+	 * (/page/2, /2, /feed, /embed, /comment-page-2) is kept, so the second page of a
+	 * translated archive or post is found too.
+	 *
+	 * @param array  $table Path => path.
+	 * @param string $path  Path (no slashes at the ends).
+	 * @return string The mapped path, or $path.
+	 */
+	private static function lookup( array $table, $path ) {
+		if ( isset( $table[ $path ] ) ) {
+			return $table[ $path ];
+		}
+		if ( $table && preg_match( self::TAIL, (string) $path, $m ) && isset( $table[ $m[1] ] ) ) {
+			return $table[ $m[1] ] . '/' . $m[2];
+		}
+		return $path;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -514,7 +536,7 @@ final class BP_Slugs {
 		}
 		$map      = self::map();
 		$asked    = BP_Slug_Bases::to_original( $parts['path'], $TRP_LANGUAGE );
-		$original = $map[ $TRP_LANGUAGE ]['back'][ $asked ] ?? $asked;
+		$original = self::lookup( $map[ $TRP_LANGUAGE ]['back'] ?? array(), $asked );
 		if ( $original === $parts['path'] ) {
 			return $parse;
 		}
