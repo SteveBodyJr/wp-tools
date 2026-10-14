@@ -344,6 +344,7 @@ final class BP_Admin {
 						</tbody>
 					</table>
 					<?php endif; ?>
+					<?php self::render_language_suggestions( $languages ); ?>
 				</div>
 
 				<div class="bp-col">
@@ -404,20 +405,71 @@ final class BP_Admin {
 							array( ! $bp_new, $bp_new ? sprintf( __( 'Not translated yet: %s', 'beaver-press' ), implode( ', ', $bp_new ) ) : __( 'Every language has translations', 'beaver-press' ) ),
 							array( true, BP_Topup::status() ),
 						);
-						$bp_bad = count( array_filter( $bp_checks, static fn( $c ) => false === $c[0] ) );
+						$bp_checks = array_merge( $bp_checks, BP_Hosting::checks() );
+						$bp_bad    = count( array_filter( $bp_checks, static fn( $c ) => false === $c[0] ) );
 						?>
-						<div class="bp-card__head"><h2><?php esc_html_e( 'Health', 'beaver-press' ); ?></h2><span class="bp-card__meta"><?php echo esc_html( $bp_bad ? sprintf( /* translators: %s: number of problems */ _n( '%s thing to fix', '%s things to fix', $bp_bad, 'beaver-press' ), number_format_i18n( $bp_bad ) ) : __( 'All good', 'beaver-press' ) ); ?></span><a class="bp-card__act" href="<?php echo esc_url( admin_url( 'admin.php?page=trp_machine_translation' ) ); ?>"><?php esc_html_e( 'Engine settings', 'beaver-press' ); ?></a></div>
+						<div class="bp-card__head" id="bp-health"><h2><?php esc_html_e( 'Health', 'beaver-press' ); ?></h2><span class="bp-card__meta"><?php echo esc_html( $bp_bad ? sprintf( /* translators: %s: number of problems */ _n( '%s thing to fix', '%s things to fix', $bp_bad, 'beaver-press' ), number_format_i18n( $bp_bad ) ) : __( 'All good', 'beaver-press' ) ); ?></span><a class="bp-card__act" href="<?php echo esc_url( admin_url( 'admin.php?page=trp_machine_translation' ) ); ?>"><?php esc_html_e( 'Engine settings', 'beaver-press' ); ?></a></div>
 						<ul class="bp-checks bp-card__body">
 							<?php foreach ( $bp_checks as list( $bp_ok, $bp_text ) ) : ?>
 								<li class="<?php echo true === $bp_ok ? 'is-ok' : ( false === $bp_ok ? 'is-no' : 'is-wait' ); ?>"><?php echo esc_html( $bp_text ); ?></li>
 							<?php endforeach; ?>
 						</ul>
+						<?php BP_Hosting::render_help(); ?>
+						<form class="bp-card__foot bp-actions" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+							<input type="hidden" name="action" value="bp_hosting_check" />
+							<?php wp_nonce_field( 'bp_hosting_check' ); ?>
+							<?php $bp_host = BP_Hosting::last(); ?>
+							<?php if ( $bp_host ) : ?>
+								<span class="bp-foot__link"><?php echo esc_html( sprintf( /* translators: %s: time ago */ __( 'Hosting checked %s ago', 'beaver-press' ), human_time_diff( (int) $bp_host['time'] ) ) ); ?></span>
+							<?php endif; ?>
+							<button type="submit" class="button"><?php esc_html_e( 'Check hosting', 'beaver-press' ); ?></button>
+						</form>
 					</div>
 				</div>
 			</div>
 
 			<?php self::render_usage(); ?>
 			<?php self::render_credit(); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * The translation profile's suggested languages the site does not offer yet (for safari
+	 * sites: the largest markets after English first, then those worth it where the operator
+	 * already sells). Nothing is added by itself: each language costs a translation run.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param array $languages Offered languages (code => name).
+	 */
+	private static function render_language_suggestions( array $languages ) {
+		$settings = TRP_Translate_Press::get_trp_instance()->get_component( 'settings' )->get_settings();
+		$have     = array_merge( array_keys( $languages ), array( (string) $settings['default-language'] ) );
+		$prefix   = static fn( $c ) => strtolower( substr( (string) $c, 0, 2 ) );
+		$have_pre = array_map( $prefix, $have );
+		$missing  = static function ( array $codes ) use ( $have_pre, $prefix ) {
+			return array_values( array_filter( $codes, static fn( $c ) => ! in_array( $prefix( $c ), $have_pre, true ) ) );
+		};
+		$main = $missing( (array) BP_Profiles::get( 'languages', array() ) );
+		$more = $missing( (array) BP_Profiles::get( 'languages_more', array() ) );
+		if ( ! $main && ! $more ) {
+			return;
+		}
+		$names = (array) TRP_Translate_Press::get_trp_instance()->get_component( 'languages' )->get_language_names( array_merge( $main, $more ), 'english_name' );
+		$list  = static fn( array $codes ) => implode( ', ', array_map( static fn( $c ) => (string) ( $names[ $c ] ?? $c ), $codes ) );
+		?>
+		<div class="bp-card__body bp-suggest-langs">
+			<p>
+				<strong><?php esc_html_e( 'Suggested for this site:', 'beaver-press' ); ?></strong>
+				<?php if ( $main ) : ?>
+					<?php echo esc_html( sprintf( /* translators: %s: language names */ __( '%s: after English, the largest markets for trips like yours.', 'beaver-press' ), $list( $main ) ) ); ?>
+				<?php endif; ?>
+				<?php if ( $more ) : ?>
+					<?php echo esc_html( sprintf( /* translators: %s: language names */ __( 'Worth it if you already sell there: %s.', 'beaver-press' ), $list( $more ) ) ); ?>
+				<?php endif; ?>
+				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=translate-press' ) ); ?>"><?php esc_html_e( 'Add a language', 'beaver-press' ); ?></a>
+			</p>
 		</div>
 		<?php
 	}

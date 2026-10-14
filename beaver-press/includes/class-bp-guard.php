@@ -33,6 +33,8 @@ final class BP_Guard {
 		// The Translate-site run finishes a page in one visit: more time for its requests only.
 		if ( self::is_run_request() ) {
 			add_filter( 'trp_machine_translation_time_budget', static fn() => 240 );
+			// Tells the hosting check (BP_Hosting) that the signature reached WordPress.
+			add_action( 'send_headers', static fn() => header( self::HEADER . ': ok' ) );
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- may be disabled by the host.
 			}

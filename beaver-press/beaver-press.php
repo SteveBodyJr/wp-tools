@@ -3,7 +3,7 @@
  * Plugin Name:       Beaver Press
  * Plugin URI:        https://digitalbeavertz.com/
  * Description:       Translate the whole website into other languages with Claude, ChatGPT, DeepSeek, Gemini, DeepL or any OpenAI-compatible model: language switcher, visual editor, translated addresses, sitemaps and forms. API keys stay encrypted in wp-admin.
- * Version:           3.0.1
+ * Version:           3.1.0
  * Requires at least: 6.5
  * Requires PHP:      8.0
  * Author:            Digital Beaver
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BP_VERSION', '3.0.1' );
+define( 'BP_VERSION', '3.1.0' );
 define( 'BP_FILE', __FILE__ );
 define( 'BP_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BP_URL', plugin_dir_url( __FILE__ ) );
@@ -94,6 +94,7 @@ require_once BP_PATH . 'includes/class-bp-quiet.php';
 require_once BP_PATH . 'includes/class-bp-numbers.php';
 require_once BP_PATH . 'includes/class-bp-usage.php';
 require_once BP_PATH . 'includes/class-bp-run.php';
+require_once BP_PATH . 'includes/class-bp-hosting.php';
 require_once BP_PATH . 'includes/class-bp-auto.php';
 require_once BP_PATH . 'includes/class-bp-topup.php';
 require_once BP_PATH . 'includes/class-bp-names-ai.php';

@@ -10,6 +10,7 @@
  *     wp beaver-press pages [--language=fr_FR] [--missing] [--format=table|csv|json]
  *     wp beaver-press draft-addresses [--languages=...] [--pages=...] [--machine]
  *     wp beaver-press cache-clear
+ *     wp beaver-press hosting
  *
  * Commands run as the Translate-site run does (same queue, same state as Settings ->
  * Beaver Press), so a run started here shows in wp-admin and the other way round.
@@ -576,6 +577,27 @@ class BP_CLI {
 	public function cache_clear() {
 		BP_Cache::clear();
 		WP_CLI::success( 'Ready translated pages cleared.' );
+	}
+
+	/**
+	 * Check the hosting: can the site reach itself, do scheduled tasks run, may a request run long.
+	 *
+	 * When the public address cannot be reached from the server, the server's own address is
+	 * tried and, if it works, kept for every request the site makes to itself.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp beaver-press hosting
+	 */
+	public function hosting() {
+		$result = BP_Hosting::check();
+		foreach ( BP_Hosting::checks() as list( $ok, $text ) ) {
+			WP_CLI::log( ( true === $ok ? '[ok]   ' : ( false === $ok ? '[FIX]  ' : '[note] ' ) ) . $text );
+		}
+		if ( 'none' === $result['reach'] ) {
+			WP_CLI::error( 'The site cannot reach itself: Translate site, the top-up and form preparation cannot work. Set BEAVER_PRESS_LOOPBACK_IP in wp-config.php or ask the host to allow it.' );
+		}
+		WP_CLI::success( 'local' === $result['reach'] ? sprintf( 'Reached through %s; kept for the site\'s own requests.', $result['ip'] ) : 'The site reaches itself.' );
 	}
 
 	/* ------------------------------------------------------------------ */

@@ -335,3 +335,10 @@
 /* Pages table: the select-all box sits in the header row. */
 .bp-page .bp-pages__table thead td, .bp-page .bp-pages__table thead th { position: sticky; top: 32px; z-index: 1; background: var(--bp-fill); vertical-align: middle; }
 @media (max-width: 782px) { .bp-page .bp-ins form > p:has(> textarea) { grid-template-columns: minmax(0, 1fr); } .bp-page .bp-pages__table thead td, .bp-page .bp-pages__table thead th { position: static; } }
+/* 3.1.0: hosting help and suggested languages. */
+.bp-page .bp-hosting-help { padding-top: 0; }
+.bp-page .bp-hosting-help summary { cursor: pointer; color: var(--bp-muted); }
+.bp-page .bp-hosting-help p { margin: 10px 0 4px; }
+.bp-page .bp-code-block { margin: 0; padding: 8px 10px; overflow-x: auto; background: var(--bp-fill); border: 1px solid var(--bp-line); border-radius: 4px; font-size: 12px; white-space: pre; }
+.bp-page .bp-suggest-langs { border-top: 1px solid var(--bp-soft); }
+.bp-page .bp-suggest-langs p { margin: 0; color: var(--bp-muted); }

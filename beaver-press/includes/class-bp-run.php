@@ -363,6 +363,15 @@ final class BP_Run {
 		if ( '' !== $blocker ) {
 			return new WP_Error( 'bp_run_blocked', $blocker );
 		}
+		// The run opens every page through the site's own address: check that it can (at most once a day).
+		$hosting = BP_Hosting::last();
+		if ( ! $hosting || 'none' === $hosting['reach'] || time() - (int) $hosting['time'] > DAY_IN_SECONDS ) {
+			$hosting = BP_Hosting::check();
+		}
+		if ( 'none' === $hosting['reach'] ) {
+			/* translators: %s: reason */
+			return new WP_Error( 'bp_run_unreachable', sprintf( __( 'The site cannot reach itself (%s), so it cannot open its pages to translate them. See Health on the Overview.', 'beaver-press' ), $hosting['error'] ) );
+		}
 		$languages = array_values( array_intersect( $languages, array_keys( self::languages() ) ) );
 		if ( ! $languages ) {
 			return new WP_Error( 'bp_run_no_language', __( 'Tick at least one language.', 'beaver-press' ) );
@@ -679,7 +688,7 @@ final class BP_Run {
 		for ( $hop = 0; $hop <= 3; $hop++ ) {
 			$response = wp_remote_get(
 				$url,
-				array(
+				BP_Hosting::args( array(
 					'timeout'     => 300,
 					'redirection' => 0,
 					'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ),
@@ -687,7 +696,7 @@ final class BP_Run {
 						BP_Guard::HEADER => BP_Guard::run_token(),
 						'Cache-Control'  => 'no-cache',
 					),
-				)
+				) )
 			);
 			if ( is_wp_error( $response ) ) {
 				return $response->get_error_message();
@@ -878,13 +887,13 @@ final class BP_Run {
 	public static function visitor_fetch( $url ) {
 		$response = wp_remote_get(
 			$url,
-			array(
+			BP_Hosting::args( array(
 				'timeout'     => 60,
 				'redirection' => 2,
 				'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ),
 				'cookies'     => array(),
 				'headers'     => array( 'Cache-Control' => 'no-cache' ), // Ready pages are counted when built.
-			)
+			) )
 		);
 		return is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
 	}

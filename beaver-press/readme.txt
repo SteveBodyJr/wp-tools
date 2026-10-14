@@ -4,7 +4,7 @@ Tags: safari, tourism, multilingual, translation, multilingual seo
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 3.0.1
+Stable tag: 3.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,7 +15,7 @@ Multilingual SEO and AI translation built for safari and tourism websites: real 
 Beaver Press makes safari and tourism websites multilingual: safari operators, tour companies, travel agencies, lodges, camps, hotels and destination companies. Travellers find each language in search, read pages written for them, and book in their language. Built in Tanzania, with East African tourism in mind; it follows your own site wherever you operate.
 
 * **Safari & Tourism translation profile**: the AI is told it translates a safari and tourism business, writes natural, persuasive tourism language for international travellers, uses the established words for game drives, tented camps, walking safaris and the like, keeps lodge, camp, package and park names, and never invents prices, durations or sightings. Your own instructions come last and win.
-* **SEO-friendly language addresses**: your language at the root (example.com/safaris/), the others under their code (example.com/fr/safaris/, /de/, /it/, /es/, /sw/...); optional translated slugs (/fr/safaris-en-tanzanie/) and translated prefixes; old addresses answer 301.
+* **SEO-friendly language addresses**: your language at the root (example.com/safaris/), the others under their code (example.com/fr/safaris/, /de/, /it/, /es/, /nl/...); optional translated slugs (/fr/safaris-en-tanzanie/) and translated prefixes; old addresses answer 301.
 * **Server-rendered translated pages**: search engines and travellers get the translated HTML directly, no JavaScript needed.
 * **AI-assisted translation, stored once**: Claude, ChatGPT, DeepSeek, Gemini, DeepL or any OpenAI-compatible endpoint. Each text is translated once per language and stored (translation memory: "Book now" is translated once and used everywhere). Visitors never cause AI requests.
 * **Found in each language, not just translated**: per-language terms (game drive = Pirschfahrt everywhere) and the search words travellers really use, preferred in titles, headings and descriptions where the text already says the same.
@@ -26,7 +26,7 @@ Beaver Press makes safari and tourism websites multilingual: safari operators, t
 * **Works with Yoast SEO, Rank Math and SEOPress** (tested): one canonical, one hreflang set, language sitemaps added to their sitemap index, their noindex choices respected.
 * **Gutenberg and Elementor** (tested), language switcher (shortcode, block, menu, floating), provider/model provenance for new translations, backup, export (JSON, CSV), import with dry run, restore, and a debug view for administrators.
 
-Languages are the ones you add in Beaver Press; for safari travellers English, French, German, Spanish, Italian and Swahili are common choices.
+Languages are the ones you add in Beaver Press. For a safari site the Overview suggests German, French, Spanish and Italian (the largest safari markets after English), then Dutch, Polish and Chinese where you already sell. Swahili and other languages work too, but international travellers rarely book a safari in Swahili.
 
 Designed & built by Digital Beaver - https://digitalbeavertz.com/
 
@@ -76,6 +76,12 @@ Beaver Press is free software under the GNU General Public License v2 or later; 
 The translation engine in engine/ is TranslatePress - Multilingual 3.3.7 (free edition), Copyright 2017 Cozmoslabs, licensed under the GNU General Public License v2 or later, included without changes. Source: https://wordpress.org/plugins/translatepress-multilingual/ (code: https://plugins.svn.wordpress.org/translatepress-multilingual/tags/3.3.7/). Its own licence and copyright notices, and those of the libraries it bundles, remain in its files. Beaver Press is not affiliated with or endorsed by Cozmoslabs. No code from paid editions is included.
 
 == Changelog ==
+
+= 3.1.0 =
+* Hosting check on the Overview (Health, "Check hosting"; `wp beaver-press hosting`): whether the site can reach itself, whether WordPress's scheduled tasks run or are late, and whether PHP may run a long request. Translate site, the top-up, form preparation and the ready-page warm-up all depend on these; a run no longer starts when the site cannot reach itself, and says why.
+* When the site's public address does not work from its own server (common on shared hosting, behind Cloudflare or in containers), the server's own address is found and used for every request the site makes to itself; `BEAVER_PRESS_LOOPBACK_IP` in wp-config.php sets it by hand.
+* Health shows how to run without the browser: a ready real-cron line for cPanel or crontab, and the WP-CLI commands.
+* Suggested languages for safari sites on the Overview: German, French, Spanish and Italian (the largest safari markets after English), then Dutch, Polish and Chinese where you already sell; only those the site does not offer yet. Swahili is no longer suggested (it still works when you add it).
 
 = 3.0.1 =
 * Pause and Cancel now stop a run at once: a step that was fetching a page no longer writes "running" back over them, and two steps can never hold the run lock together.

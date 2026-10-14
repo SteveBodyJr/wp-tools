@@ -29,6 +29,7 @@ are in `readme.txt`.
 | `includes/class-bp-glossary.php` | Names kept in every language (groups, per-name choices, own list); DeepL `<bp-keep>` |
 | `includes/class-bp-guard.php` | Visitor guard (editors browsing do not translate either); signed `X-Beaver-Press-Run` requests |
 | `includes/class-bp-run.php` | Translate-site run, chosen pages, page list, free progress check |
+| `includes/class-bp-hosting.php` | Hosting check (site reaches itself, WP-Cron, PHP time limit), server-address fallback for requests to itself (`BEAVER_PRESS_LOOPBACK_IP`), real-cron and WP-CLI help |
 | `includes/class-bp-auto.php` | Edited content translated in the background |
 | `includes/class-bp-topup.php` | Daily top-up: pages with a few texts missing are finished at night |
 | `includes/class-bp-usage.php` | Usage per day and run, estimate, model prices, daily limit |

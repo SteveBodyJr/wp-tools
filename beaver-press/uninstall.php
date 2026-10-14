@@ -24,6 +24,8 @@ wp_clear_scheduled_hook( 'beaver_press_auto_tick' );
 delete_option( 'beaver_press_run_queue' );
 delete_transient( 'bp_run_lock' ); // Before 3.0.1 the lock was a transient.
 delete_option( 'bp_run_lock' );
+delete_option( 'beaver_press_hosting' );
+delete_option( 'beaver_press_loopback_ip' );
 wp_clear_scheduled_hook( 'beaver_press_run_tick' );
 foreach ( array( 'claude', 'openai', 'deepseek', 'gemini', 'deepl', 'custom' ) as $bp_provider ) {
 	delete_transient( 'bp_models_' . $bp_provider );

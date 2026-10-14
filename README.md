@@ -19,7 +19,7 @@ already bundles, and nothing that assumes a persistent object cache.
 | [beaver-alt-text](beaver-alt-text/README.md) | 1.2.0 | Writes alt text for images that have none, using a vision model. Reviewed before publishing. |
 | [beaver-appbar](beaver-appbar/README.md) | 1.0.0 | Gives a site the bottom tab bar of a phone app. Any theme, no external request. |
 | [beaver-chameleon](beaver-chameleon/README.md) | 1.1.0 | A daily-mutating honeypot and a human-interaction trap for the comment and login forms. Invisible to visitors, every block logged. |
-| [beaver-press](beaver-press/README.md) | 3.0.1 | Translates the whole site into other languages with Claude, ChatGPT, DeepSeek, Gemini or DeepL: language switcher, visual editor, translated addresses, sitemaps and forms. One plugin; the free TranslatePress engine (GPL) is bundled unchanged. |
+| [beaver-press](beaver-press/README.md) | 3.1.0 | Translates the whole site into other languages with Claude, ChatGPT, DeepSeek, Gemini or DeepL: language switcher, visual editor, translated addresses, sitemaps and forms. One plugin; the free TranslatePress engine (GPL) is bundled unchanged. |
 | [beaver-debug](beaver-debug/README.md) | 1.1.0 | Records what goes wrong on a site you cannot SSH into, and makes it shareable. |
 | [beaver-filemanager](beaver-filemanager/README.md) | 1.1.0 | A full file manager inside wp-admin, with backups and a restorable trash. |
 | [beaver-image-optimizer](beaver-image-optimizer/README.md) | 1.3.7 | Converts JPEG and PNG to WebP using only what PHP already ships with. |

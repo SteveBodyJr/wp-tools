@@ -48,6 +48,7 @@ final class BP_Plugin {
 		BP_Quiet::init();
 		BP_Numbers::init();
 		BP_Run::init();
+		BP_Hosting::init();
 		BP_Auto::init();
 		BP_Topup::init();
 		BP_Names_AI::init();

@@ -58,6 +58,12 @@ final class BP_Profiles {
 				'name_example' => 'Kilimanjaro stays Kilimanjaro, not Kilimandjaro or Kilimandscharo; translate the generic words around park and place names the way a %1$s travel website would (National Park, Lake, Crater, Island, Mount, Route, Gate): in French "Serengeti National Park" becomes "Parc national du Serengeti" and "Lake Manyara" becomes "lac Manyara".',
 				// Suggested site instruction until the owner saves one (%s = the site's own name).
 				'site'         => '%s is a safari and tourism business. Write warmly and precisely, like an experienced safari planner talking to a traveller: clear, friendly and never pushy, with no hype or superlatives that are not in the original. Keep the names of the company, lodges, camps, packages and parks as written. If the site describes another country or kind of trip, follow the site.',
+				// Languages suggested on the Overview (3.1.0): the largest safari markets after English,
+				// then markets worth it where the operator already sells. Swahili is supported but not
+				// suggested: international travellers do not book safaris in it, and East African
+				// travellers book in English.
+				'languages'      => array( 'de_DE', 'fr_FR', 'es_ES', 'it_IT' ),
+				'languages_more' => array( 'nl_NL', 'pl_PL', 'zh_CN' ),
 				// Suggested per-language instructions.
 				'langs'        => array(
 					'fr' => 'Address the reader formally (vous). Use French typography: a space before ? ! : ; and « » quotation marks.',
