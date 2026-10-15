@@ -82,6 +82,31 @@ ready as files. Providers: Claude, ChatGPT, DeepSeek, Gemini, DeepL, any OpenAI-
 (and the engine's Google). Keys are encrypted with the site's salts and never sent to the browser,
 logs, debug output or export files.
 
+**Batches that fail.** A batch that comes back cut off, unreadable or declined is split in halves and
+sent again; only a text that fails on its own counts towards the give-up list (after two failures it
+is kept in the original, so it stops costing money). Redo and "Retranslate with AI" try given-up
+texts again. The engine's string lock is held longer than one request can take
+(`trp_machine_translation_lock_timeout`, at least 270 s), so two processes never pay for the same
+strings; a request's timeout grows with the batch size. An empty provider account (Anthropic "credit
+balance", OpenAI `insufficient_quota`) is `bp_http_402`: the run stops and the owner is alerted.
+
+**Hosting.** The run, the top-up, form preparation and the ready-page warm-up open the site's own pages
+over HTTP (`BP_Run::fetch()` signed with `X-Beaver-Press-Run`, `BP_Run::visitor_fetch()`) and rely on
+WP-Cron. `BP_Hosting` checks both: Overview -> Health -> Check hosting, `wp beaver-press hosting`, and
+before a run starts (at most once a day). The check opens the page-not-found address in the original
+language as the signed run (nothing is translated) and reads the guard's reply header
+`X-Beaver-Press-Run: ok`; it also reads how late the oldest scheduled task is and the PHP time limit.
+When the public address fails from the server, 127.0.0.1 or `SERVER_ADDR` is tried and kept for every
+request the site makes to itself (curl's resolve list, so the URL, Host header and TLS name stay the
+site's); `BEAVER_PRESS_LOOPBACK_IP` sets it by hand. A run does not start while the site cannot reach
+itself. Health shows a real-cron line and the WP-CLI commands for hosts where WP-Cron does not run.
+Redirects are followed by hand and only on the site's own host: the run header never leaves the site.
+
+**Languages suggested.** A translation profile lists the languages to suggest (`languages`, then
+`languages_more`); the Overview shows those the site does not offer yet, and never adds one by itself
+(each language is a paid run). Safari & Tourism: German, French, Spanish, Italian, then Dutch, Polish,
+Chinese. Swahili is supported but not suggested: international travellers do not book safaris in it.
+
 **Manual translations** (visual editor, import as manual) are never replaced by automatic
 translation: it only fills empty ones. "Redo a language" resets machine translations only (after an
 automatic backup). An import replaces manual translations only when that option is ticked.
@@ -132,6 +157,12 @@ never cached, never shows keys.
 WooCommerce compatibility: not tested / not part of this release scope. Search Console URL inspection needs a public site and has not been
 done. LibreTranslate is not implemented. Changed-text detection only covers texts linked to a post.
 
+The server-address fallback (3.1.0) is tested only where the public address and 127.0.0.1 are the same
+machine; the first live site behind Cloudflare or a host firewall is its real test. Gemini's quota
+errors (`RESOURCE_EXHAUSTED`) are not told apart from rate limits, so an empty Gemini account does not
+stop a run by itself. Texts given up on count as translated for page completeness, on purpose: a page is
+not kept out of search for one sentence left in the original.
+
 ## Rules
 
 - Never edit files in `engine/`; use its hooks and component instances (branding lives in
@@ -141,10 +172,17 @@ done. LibreTranslate is not implemented. Changed-text detection only covers text
 - Theme scripts that write text must use the theme's `ryT()` / `ryName()` / `ryDeep()` helpers
   (Raya: `inc/raya-i18n.php`) or that text stays in the original language.
 - Tests start with `tests/bootstrap.php`, which copies settings and keys and restores them however the test ends.
+  `tests/run-all.sh` counts a test as passed only when it exits 0 and prints its "N passed, M failed"
+  line; from the source folder set `BP_WP_LOAD` to a test site's `wp-load.php`.
+- Every request the site makes to itself goes through `BP_Run::fetch()` or `BP_Run::visitor_fetch()`,
+  whose arguments pass through `BP_Hosting::args()`. Never a bare `wp_remote_get()` to the site: it would
+  lose the server-address fallback and could carry the run header to another host on a redirect.
+- Engine prices and model lists (`BP_Usage::prices()`, `BP_Providers::presets()`): a model without a
+  price counts as $0, so the spending limit cannot stop it. Add the price with the model.
 
 ## Moving a site from the separate plugin
 
-Install Beaver Press 2.x, deactivate the separate TranslatePress plugin (data stays: same tables
+Install Beaver Press, deactivate the separate TranslatePress plugin (data stays: same tables
 and options; it has no uninstaller), check the site, then delete the separate plugin.
 
 ## Filters
@@ -156,6 +194,12 @@ and options; it has no uninstaller), check the site, then delete the separate pl
 `beaver_press_prefetch`, `beaver_press_suggest`, `beaver_press_complete_only`,
 `beaver_press_slugs`, `beaver_press_slug_language`, `beaver_press_slug_bases`, `beaver_press_topup_enabled`, `beaver_press_sitemap`, `beaver_press_schema`,
 `beaver_press_names_rule`, `beaver_press_carry_changed`, `beaver_press_similar_percent`, `beaver_press_profiles`.
+
+## Constants (wp-config.php)
+
+`BEAVER_PRESS_<PROVIDER>_API_KEY` (for example `BEAVER_PRESS_CLAUDE_API_KEY`) and `BEAVER_PRESS_API_KEY`
+(every provider except a custom endpoint, whose address is typed in wp-admin) override the saved keys.
+`BEAVER_PRESS_LOOPBACK_IP` is the server address for the site's requests to itself.
 
 GPL-2.0-or-later. The engine in `engine/` is TranslatePress free, Copyright Cozmoslabs, GPL-2.0-or-later.
 Designed & built by Digital Beaver, https://digitalbeavertz.com/

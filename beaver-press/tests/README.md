@@ -20,14 +20,19 @@ killed outright, the next test restores the copy first and prints a NOTE. New te
 Environment: `BP_WP_LOAD` (path to wp-load.php), `BP_HOST`, `BP_SITE` (site URL for the HTTP
 tests), `BP_TEST_SLUG` (a translated language's URL slug, default `fr`), `PHP_BIN`.
 
+`run-all.sh` counts a test as failed when it crashes, exits with an error or does not end with its
+"N passed, M failed" line, and stops at once when it cannot find `wp-load.php`. In the source folder
+(`WP TOOLS/OUR PLUGINS/beaver-press`) that is always so: set `BP_WP_LOAD`, for example
+`BP_WP_LOAD=/opt/lampp/htdocs/bp-test-wp/wp-load.php BP_SITE=http://localhost/bp-test-wp`.
+
 | Test | Covers |
 |---|---|
 | test-keys-providers.php | encrypted keys, provider requests, errors never showing keys |
 | test-engine-settings.php | engine panel, sanitising, models, test connection |
-| test-batches.php | batches, checks, placeholders, DeepL, Claude schema, give-up list |
+| test-batches.php | batches, checks, placeholders, DeepL, Claude schema, give-up list; 3.0.1: a cut-off batch split (only the failing text counted), no credit stops as `bp_http_402`, JSON inside a sentence read, Haiku 5.5 effort and price |
 | test-terms.php | 2.8.0 terms per language (plural match), search words, request order, service pages (search, nothing found, 404) |
 | test-admin-tabs.php | 2.7.0 admin: tabs, switch rows (same field names), Costs and limits form, limits store, prefixes in use |
-| test-facts-check.php | facts kept: numbers by value in every language (thousands marks, 24-hour times, centuries, Chinese number words, 万 and 折), addresses, shortcodes; meaning lines in the prompt |
+| test-facts-check.php | facts kept: numbers by value in every language (thousands marks, 24-hour times, centuries, Chinese number words, 万 and 折, Arabic-Indic, Persian and Devanagari digits), addresses, shortcodes; meaning lines in the prompt |
 | test-visitor-guard.php | only editors, cron/CLI and the signed run start paid translations |
 | test-glossary-prompt.php | names kept, prompt wording |
 | test-usage-estimate.php | usage log, estimate, daily limit |
@@ -38,6 +43,8 @@ tests), `BP_TEST_SLUG` (a translated language's URL slug, default `fr`), `PHP_BI
 | test-names-ai.php | names card, AI rule, suggestions, new names |
 | test-alerts.php | provider alerts: notice, one email per problem |
 | test-budget.php | spending limit per day and month |
+| test-run-control.php | 3.0.1: Pause and Cancel win over a step fetching a page, a new run is never overwritten, atomic run lock (stale lock taken over), translated addresses keep /page/2, /2, /feed, /comment-page-2 |
+| test-hosting.php | 3.1.0: the guard answers a signed request only, the site reaches itself, server-address fallback kept, unreachable reported and Translate site refused, cron lateness, safari languages suggested (never Swahili, only those missing) |
 | test-missing-texts.php | which texts a page misses, recurring ones |
 | test-history.php | settings history and restore |
 | test-backup.php | translation backup, export, import rules, dry run, restore |
