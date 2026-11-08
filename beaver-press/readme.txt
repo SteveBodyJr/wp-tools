@@ -4,7 +4,7 @@ Tags: safari, tourism, multilingual, translation, multilingual seo
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 3.1.0
+Stable tag: 3.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,15 @@ Beaver Press is free software under the GNU General Public License v2 or later; 
 The translation engine in engine/ is TranslatePress - Multilingual 3.3.7 (free edition), Copyright 2017 Cozmoslabs, licensed under the GNU General Public License v2 or later, included without changes. Source: https://wordpress.org/plugins/translatepress-multilingual/ (code: https://plugins.svn.wordpress.org/translatepress-multilingual/tags/3.3.7/). Its own licence and copyright notices, and those of the libraries it bundles, remain in its files. Beaver Press is not affiliated with or endorsed by Cozmoslabs. No code from paid editions is included.
 
 == Changelog ==
+
+= 3.2.0 =
+* Link previews in the right language: each page prints og:locale (its own language) and og:locale:alternate (the other published languages). A page shown in the original language because its translation is incomplete gets the original og:locale and no alternates. Skipped when Yoast, Rank Math, SEOPress, All in One SEO or The SEO Framework is active; a theme that prints its own turns it off with the beaver_press_og_locale filter. Codes without a country get the one Facebook expects ("ar" becomes ar_AR, "sw" sw_KE).
+* Soft hyphens stay in visible text only. Shared strings had carried them into page titles, meta descriptions, JSON-LD and alt, title and aria-label attributes, where search results, previews and screen readers got them literally.
+* Translated meta, Open Graph and Twitter descriptions over 160 characters end at their last full sentence that fits, Arabic question marks included (filter beaver_press_meta_description_max; 0 turns it off).
+* The page cache also starts afresh when theme files change without a new theme version (checked at most once a minute; filter beaver_press_cache_watch_theme). Before, an edited template or stylesheet kept serving the old ready pages until the cache was cleared by hand.
+
+= 3.1.1 =
+* Saving a page or post no longer takes 25-40 seconds. The cron hook that warms the cache had the same name as the filter that switches warming on, so every save rebuilt pages inside the save, and the background job was never scheduled. Warming now runs in the background, as intended.
 
 = 3.1.0 =
 * Hosting check on the Overview (Health, "Check hosting"; `wp beaver-press hosting`): whether the site can reach itself, whether WordPress's scheduled tasks run or are late, and whether PHP may run a long request. Translate site, the top-up, form preparation and the ready-page warm-up all depend on these; a run no longer starts when the site cannot reach itself, and says why.

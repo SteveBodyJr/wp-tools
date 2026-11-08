@@ -31,7 +31,7 @@ final class BP_Cache {
 	const CRON = 'beaver_press_cache_purge';
 
 	/** Cron hook that builds the ready pages again after they were cleared. */
-	const WARM_CRON = 'beaver_press_cache_warm';
+	const WARM_CRON = 'beaver_press_cache_warm_tick'; // not the name of the filter in flush(): sharing it ran the warm inside every save
 
 	/** Warm-up progress: [ 'gen' => generation, 'offset' => next address ]. */
 	const WARM_OPTION = 'beaver_press_cache_warm';
@@ -103,11 +103,64 @@ final class BP_Cache {
 	 * New plugin or theme code: start afresh (ready pages carry the old markup).
 	 */
 	public static function check_build() {
-		$build = BP_VERSION . '|' . wp_get_theme()->get( 'Version' ) . '|' . (string) apply_filters( 'beaver_press_cache_build', '' );
+		$build = BP_VERSION . '|' . wp_get_theme()->get( 'Version' ) . '|' . self::theme_stamp() . '|' . (string) apply_filters( 'beaver_press_cache_build', '' );
 		if ( get_option( 'beaver_press_cache_build' ) !== $build ) {
 			update_option( 'beaver_press_cache_build', $build, true );
 			self::flush();
 		}
+	}
+
+	/**
+	 * Fingerprint of the theme's files (newest modification time + file count), so a theme file
+	 * edited or uploaded without a new theme Version also starts afresh. Before 3.2.0 such an
+	 * edit kept serving ready pages with the old markup (and the old stylesheet addresses) until
+	 * someone cleared the cache by hand.
+	 *
+	 * Looked at no more than once a minute: the result is kept in a small file in the cache folder,
+	 * so the other requests cost one stat and one tiny read. Off with
+	 * add_filter( 'beaver_press_cache_watch_theme', '__return_false' ).
+	 *
+	 * @since 3.2.0
+	 * @return string
+	 */
+	public static function theme_stamp() {
+		if ( ! apply_filters( 'beaver_press_cache_watch_theme', true ) ) {
+			return '';
+		}
+		$marker = self::root() . '/theme-stamp-' . get_current_blog_id() . '.txt';
+		$mtime  = @filemtime( $marker ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- missing file is normal.
+		if ( false !== $mtime && $mtime > time() - MINUTE_IN_SECONDS ) {
+			return (string) @file_get_contents( $marker ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file.
+		}
+		$newest = 0;
+		$count  = 0;
+		foreach ( array_unique( array( get_stylesheet_directory(), get_template_directory() ) ) as $dir ) {
+			if ( ! is_dir( $dir ) ) {
+				continue;
+			}
+			$items = new RecursiveIteratorIterator(
+				new RecursiveCallbackFilterIterator(
+					new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+					static function ( $file ) {
+						if ( $file->isDir() ) {
+							return ! in_array( $file->getFilename(), array( 'node_modules', 'vendor', '.git', 'docs', 'languages' ), true );
+						}
+						return (bool) preg_match( '/\.(php|css|js|json|html)$/i', $file->getFilename() );
+					}
+				)
+			);
+			$items->setMaxDepth( 5 );
+			foreach ( $items as $file ) {
+				++$count;
+				$newest = max( $newest, (int) $file->getMTime() );
+			}
+		}
+		$stamp = $newest . '-' . $count;
+		if ( wp_mkdir_p( self::root() ) ) {
+			@file_put_contents( $marker, $stamp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- tiny marker; unwritable means checked next time.
+			@chmod( $marker, 0664 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- web server and WP-CLI are often different users.
+		}
+		return $stamp;
 	}
 
 	/**

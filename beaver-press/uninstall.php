@@ -70,6 +70,7 @@ delete_option( 'beaver_press_cache_gen' );
 delete_option( 'beaver_press_cache_build' );
 wp_clear_scheduled_hook( 'beaver_press_cache_purge' );
 wp_clear_scheduled_hook( 'beaver_press_cache_warm' );
+wp_clear_scheduled_hook( 'beaver_press_cache_warm_tick' );
 delete_option( 'beaver_press_cache_warm' );
 // Ready translated pages.
 $bp_uploads = wp_upload_dir( null, false );

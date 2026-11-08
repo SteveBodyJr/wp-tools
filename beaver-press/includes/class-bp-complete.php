@@ -272,6 +272,9 @@ final class BP_Complete {
 		$html     = preg_replace( '/(<link\s+rel=["\']canonical["\']\s+href=["\'])[^"\']*/i', '${1}' . esc_url( $original ), $html );
 		$html     = preg_replace( '/(<meta\s+property=["\']og:url["\']\s+content=["\'])[^"\']*/i', '${1}' . esc_url( $original ), $html );
 		$html     = preg_replace( '/<link\s+rel=["\']alternate["\']\s+hreflang=["\'][^"\']*["\'][^>]*>\s*/i', '', $html );
+		// Link previews: the page shows the original language, so its og:locale is the original's (3.2.0).
+		$html = preg_replace( '/<meta\s+property=["\']og:locale:alternate["\'][^>]*>\s*/i', '', $html );
+		$html = preg_replace( '/(<meta\s+property=["\']og:locale["\']\s+content=["\'])[^"\']*/i', '${1}' . esc_attr( BP_Seo::og_code( (string) $settings['default-language'] ) ), $html );
 		$html = preg_replace( '/<meta\s+name=["\']robots["\'][^>]*>/i', '', $html );
 		$html = preg_replace( '/<head\b[^>]*>/i', '$0' . "\n" . '<meta name="robots" content="noindex, follow" />', $html, 1 );
 

@@ -193,7 +193,8 @@ and options; it has no uninstaller), check the site, then delete the separate pl
 `beaver_press_cache`, `beaver_press_cache_ttl`, `beaver_press_cache_original`,
 `beaver_press_prefetch`, `beaver_press_suggest`, `beaver_press_complete_only`,
 `beaver_press_slugs`, `beaver_press_slug_language`, `beaver_press_slug_bases`, `beaver_press_topup_enabled`, `beaver_press_sitemap`, `beaver_press_schema`,
-`beaver_press_names_rule`, `beaver_press_carry_changed`, `beaver_press_similar_percent`, `beaver_press_profiles`.
+`beaver_press_names_rule`, `beaver_press_carry_changed`, `beaver_press_similar_percent`, `beaver_press_profiles`,
+`beaver_press_og_locale`, `beaver_press_meta_description_max`, `beaver_press_cache_watch_theme` (3.2.0).
 
 ## Constants (wp-config.php)
 
